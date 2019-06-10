@@ -184,3 +184,31 @@ The following are unary operators:
 
 **Description**: Only simple assignments are allowed. Comma-operator assignments are not allowed
 
+## 4 Declarations & Definitions
+
+Declarations in Bluefin are much simpler than in other languages. 
+
+### 4.1 Function Definition
+
+**Syntax**: *type* *identifier* ( *paramList* ) *block*
+
+**Constraints**: Function definition must occur with the prototype. Declarations aren't allowed
+
+### 4.2 Struct Definition
+
+**Syntax**: struct *identifier* { *struct-decl-list* };
+
+**Constraints**: Definition must occur with declaration. Currently, initialization with `s = {...}` isn't allowed.
+
+### 4.3 Variables Declaration and Definition
+
+**Syntax**: *type* *identifier* [= *expr*]?
+
+**Constraints**: The type can be user-defined or built-in. LHS must be of the same type as RHS. 
+
+**Semantics**: A variable declaration (without the `= *expr*) will be assigned a default value of 0 or false if it's a built-in type. 
+If the variable is a struct, then all member will be set to 0 or false, and recursively for member structs.
+ 
+
+
+
