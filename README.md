@@ -7,10 +7,10 @@ TODO: add ptrs, classes, and arrays
 
 # Bluefin Language Standard
 This standard is organized in a similar format as "Part 6: Language" of the [C89/90 Standard](https://www.pdf-archive.com/2014/10/02/ansi-iso-9899-1990-1/ansi-iso-9899-1990-1.pdf). 
-Where appropriate, it copies verbatium from the C Standard.
+Where appropriate, this standard copies descriptions verbatum from C's standard.
 Since Bluefin is a hobby project, it goes without saying that this standard is a lot shorter and less detailed than C's Standard.
 
-## 1 Lexical Elements
+## 1 Key Lexical Elements
 
 Tokens: keyword, identifier, numbers, string-literal, operator, punctuator
 
@@ -19,7 +19,7 @@ Tokens: keyword, identifier, numbers, string-literal, operator, punctuator
 The following keywords are reserved and not to be used as identifiers: 
 
 `break`, `continue`, `if`, `else`, `while` (*control flow*) <br />
-`int`, `float`, `string`, `void`, `bool` *(built-in types)* <br />
+`int`, `float`, `string`, `void`, `bool`, `true`, `false` *(built-in types)* <br />
 `struct` *(user-defined type)* <br />
 `return` *(for functions)*
 
@@ -182,7 +182,9 @@ The following are unary operators:
 
 **Constraints**: The lhs must be an identifier of the same type as the rhs. 
 
-**Description**: Only simple assignments are allowed. Comma-operator assignments are not allowed
+**Description**: Only simple assignments are allowed. Comma-operator assignments are not allowed.
+
+**Semantics**: The value of an assignment operation is that of its left operand after the assignment.
 
 ## 4 Declarations & Definitions
 
@@ -209,6 +211,58 @@ Declarations in Bluefin are much simpler than in other languages.
 **Semantics**: A variable declaration (without the `= *expr*) will be assigned a default value of 0 or false if it's a built-in type. 
 If the variable is a struct, then all member will be set to 0 or false, and recursively for member structs.
  
+## 5 Statements
 
+A statement specifies an action to be performed. It can either contain expressions or are themselves expressions. There are four types of statements
 
+### 5.1 Block
 
+**Syntax**: { *declaration-list* *statement-list* }
+
+**Description**: Blocks contain declarations or other statements, grouping them into one unit. A block also represents a scope.
+
+### 5.2 Expression statement
+
+**Syntax**: *expr* ;
+
+As its name implies, an expression statement is literally an expression followed by a semicolon.
+The most important ones are assignment and function calls.
+
+### 5.3 If statement
+
+**Syntax**: if ( *expr* ) { *statments* } [ else { *statement* } ]
+
+**Semantics**: The expression must evaluate to a bool type. 
+To solve the 'dangling else' problem, each else is associated with its closest if. 
+
+### 5.4 While statement
+
+**Syntax**: while ( *expr* ) { *loop-body* }
+
+**Semantics**: The expression must evaluate to a bool type.
+The loop body comprises of statements and executes continuously until the expression evaluates to false.
+
+### 5.5 Return statement
+
+**Syntax**: return *expr*?
+
+**Constraints**:  <br />
+If a function's return type is void:
+- a return statement cannot contain an expression
+- a return statement is also optional
+
+If a function's return type isn't void:
+- A return statement with an expression must be included. The value of the expression is the returned value of the function. 
+- In addition, return statements without an expression are prohibited
+
+### 5.6 Break statement
+
+**Constraints**: A break statement can appear only in a loop body.
+
+**Semantics**: A break statement terminates execution of the smallest enclosing while statement (so no more loop iterations.
+
+### 5.7 Continue statement
+
+**Constraints**: A continue statement can appear only in a loop body.
+
+**Semantics**: A continue statement causes the program to jump to the end of its loop body (equivalent to immediately before the }, so the loop can be executed again).
