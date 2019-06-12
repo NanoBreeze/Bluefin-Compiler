@@ -95,6 +95,12 @@ The following punctuators are valid:
 
 **Description**: Punctuators don't specify an operation to be performed that would result in a value. They can be thoughts of as separators. Depending on context, some symbols may appear as both punctuators and operators.
 
+### 1.7 Whitespace
+
+The following are whitespace: ` `, \r, \n, \t
+
+**Description**: Whitespaces are skipped
+
 ## 2 Conversions
 
 ### 2.1 Implicit
@@ -117,17 +123,18 @@ There are several kinds of expressions:
 
 ### 3.1 Primary expressions
 
-**Syntax**: (Identifier | Number | String Literal | (expr))
+**Syntax**: <br />
+*primary-expr* -> (Identifier | Number | String Literal | (expr))
 
 **Description**: These are the building blocks for more complex expressions
 
 ### 3.2 Postfix operator expressions
 
-**Syntax**: 
-*primary-expr* <br />
-*postfix-expr* `[` *expr* `]` <br />
-*postfix-expr* `(` *argument-expr-list* `)` <br />
-*postfix-expr* `.` *identifier*
+**Syntax**: <br />
+*postfix-expr* -> *postfix-expr* `[` *expr* `]` <br />
+*postfix-expr* -> *postfix-expr* `(` *argument-expr-list* `)` <br />
+*postfix-expr* -> *postfix-expr* `.` *identifier* <br />
+*postfix-expr* -> *primary-expr*
 
 **Array subscripting**: TODO
 
@@ -137,19 +144,20 @@ There are several kinds of expressions:
 
 ### 3.3 Unary operator expressions
 
-The following are unary operators:
-
-`-`, `!`
+**Syntax**: <br />
+*unary-expr* -> (- | !) *postfix-expr* | *postfix-expr*  
 
 **Constraints**: the operand of `-` must be a number type; the operand of `!` must be a bool type.
+
+**Description**: Chaining - and ! together are not allowed.
 
 ### 3.4 Binary operator expressions
  
 #### 3.4.1 Multiplicative and additive 
 
 **Syntax**: <br />
-*add-expr* (+ | -) *mult-expr* <br />
-*mult-expr* (* | / | %) *primary-expr* 
+*mult-expr* -> *mult-expr* (* | / | %) *unary-expr* | *unary-expr* <br />
+*add-expr* -> *add-expr* (+ | -) *mult-expr* | *mult-expr*
 
 **Constraints**: Each operand must be of number type. The operands of `%` must be integer type. It cannot be float.
 
@@ -158,31 +166,33 @@ The following are unary operators:
 #### 3.4.2 Numerical Relational 
 
 **Syntax**: <br />
-*rel-expr* (< | > | <= | >=) *add-expr*
+*rel-expr* -> *rel-expr* (< | > | <= | >=) *add-expr* | *add-expr*
 
-**Constraints**: Both operands must be number types. Bool are not allowed.
+**Constraints**: Both operands must be number types. Promotion rules apply. Bool are not allowed.
+
+**Semantics**: The return value is a bool. 
 
 #### 3.4.3 Equality
 
 **Syntax**: <br />
-*equality* (== | !=) *rel-expr*
+*equality-expr* -> *equality-expr* (== | !=) *rel-expr* | *rel-expr*
 
 **Constraints**: Both operands must be bool types or a number type. Promotion for numbers are allowed.
 
 #### 3.4.4 Logical AND and OR
 
 **Syntax**: <br />
-*expr* && *expr* <br />
-*expr* || *logical-and* 
+*logical-AND-expr* -> *logical-AND-expr* && *equality-expr* | *equality-expr* <br />
+*logical-OR-expr* -> *logical-OR-expr* || *logical-AND-expr* | *logical-AND-expr*
 
 #### 3.4.5 Assignment
 
 **Syntax**: <br />
-*unary-expr* = *assign-expr*
+*assign-expr* -> *unary-expr* = *assign-expr* | *logical-OR-expr*
 
 **Constraints**: The lhs must be an identifier of the same type as the rhs. 
 
-**Description**: Only simple assignments are allowed. Comma-operator assignments are not allowed.
+**Description**: Only simple assignments are allowed. Comma-operator assignments are not allowed. This grammar suggests chaining is allowed (eg, `int a = b = c= d;`).
 
 **Semantics**: The value of an assignment operation is that of its left operand after the assignment.
 
@@ -192,19 +202,23 @@ Declarations in Bluefin are much simpler than in other languages.
 
 ### 4.1 Function Definition
 
-**Syntax**: *type* *identifier* ( *paramList* ) *block*
+**Syntax**: <br />
+*funcDef* -> *type* *identifier* ( *paramList? ) *block* <br />
+*paramList* -> *type* *identifier* (, *paramList*) *
 
 **Constraints**: Function definition must occur with the prototype. Declarations aren't allowed
 
 ### 4.2 Struct Definition
 
-**Syntax**: struct *identifier* { *struct-decl-list* };
+**Syntax**: <br />
+*structDef* -> struct *identifier* { *varDecl* * }; <br />
 
 **Constraints**: Definition must occur with declaration. Currently, initialization with `s = {...}` isn't allowed.
 
 ### 4.3 Variables Declaration and Definition
 
-**Syntax**: *type* *identifier* [= *expr*]?
+**Syntax**: <br />
+*varDecl* -> *type* *identifier* [= *expr*]? ';'
 
 **Constraints**: The type can be user-defined or built-in. LHS must be of the same type as RHS. 
 
@@ -217,7 +231,7 @@ A statement specifies an action to be performed. It can either contain expressio
 
 ### 5.1 Block
 
-**Syntax**: { *declaration-list* *statement-list* }
+**Syntax**: { *statement-list* }
 
 **Description**: Blocks contain declarations or other statements, grouping them into one unit. A block also represents a scope.
 
@@ -266,3 +280,10 @@ If a function's return type isn't void:
 **Constraints**: A continue statement can appear only in a loop body.
 
 **Semantics**: A continue statement causes the program to jump to the end of its loop body (equivalent to immediately before the }, so the loop can be executed again).
+
+### 5.8 Declaration statement
+
+**Syntax**: *type* ID [= expr]? ';'
+
+**Semantics**: For now, this is just a var declaration. Unlike C89, a declaration can occur anywhere in a block and not necessarily at the top.
+

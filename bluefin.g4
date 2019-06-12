@@ -1,66 +1,93 @@
 grammar bluefin;
 
-program : (funcDef | varDef)+ ;
+program : (funcDef | varDecl | structDef)+ ;
 
-funcDef : type ID '(' ')' block
-       | type ID '(' parameterList ')' block
-       ;
+funcDef : type ID '(' paramList? ')' block ;
 
-type : 'int' | 'double' | 'string' ;
+type : builtinType
+     | ID ;
 
-parameterList : parameter (',' parameter)* ;
+builtinType : INT | FLOAT | STRING | BOOL | VOID ;
 
-parameter : type ID;
+paramList : param (',' param)* ;
+
+param : type ID;
 
 block : '{' stmt* '}' ;
 
-stmt : varDef
-     | stmtIf
+stmt : stmtIf
      | stmtWhile
-     | stmtAssign
      | stmtReturn
-     | funcCall
-     ;
-
-varDef : type ID '=' expr ';' ;
-
-/* ANTLR is left-associative by default and resolves ambiguity by selecting top-most alternative
-It also resolves direct left recrusion so don't need to manually remove them
-This means that precedence and associativeness ambiguities are avoided
-TODO: handle negatives and power (right associative)
-*/
-expr : expr ('*' | '/') expr
-     | expr ('+' | '-') expr
-     | ID
-     | INT
-     | DOUBLE
-     | STRING
-     ;
+     | stmtBreak
+     | stmtContinue
+     | block
+     | stmtExpr
+     | varDecl ;
 
 stmtIf : 'if' '(' expr ')' block ('else' block)? ;
 
-stmtWhile : 'while' '(' expr ')' block;
+stmtWhile : 'while' '(' expr ')' block ;
 
-stmtAssign : ID '=' expr ';' ;
+stmtReturn : 'return' expr? ';' ;
 
-stmtReturn : 'return' expr ';' ;
+stmtBreak : 'break' ';' ;
 
-funcCall : ID '(' ')'
-         | ID '(' exprList ')'
-         ;
+stmtContinue : 'continue' ';' ;
 
-exprList : expr (',' expr)* ;
+stmtExpr : expr ';' ;
+
+structDef : 'struct' ID '{' varDecl* '}' ';' ;
+
+varDecl : type ID ('=' expr)? ';' ;
+
+/* ANTLR is left-associative by default and resolves ambiguity by selecting top-most alternative
+It also resolves direct left recrusion so don't need to manually remove them
+This means that precedence and associativeness ambiguities are solved
+TODO: handle power (right associative)
+*/
+expr : primaryExpr                          # primaExpr
+     | postfixExpr                          # postExpr
+     | ('-' | '!') expr                     # unaryExpr
+     | expr ('*' | '/') expr                # multiExpr
+     | expr ('+' | '-') expr                # addExpr
+     | expr ('<' | '<=' | '>' | '>=') expr  # relExpr
+     | expr ('==' | '!=') expr              # equalityExpr
+     | expr ('&&') expr                     # logicalANDExpr
+     | expr ('||') expr                     # logicalORExpr
+     |<assoc=right> expr '=' expr           # simpleAssignExpr
+     ;
+
+postfixExpr : postfixExpr '(' argList? ')'
+            | postfixExpr '.' ID
+            | primaryExpr
+            ;
+
+argList : expr (',' expr) ;
+
+primaryExpr : ID
+            | INT
+            | FLOAT
+            | STRING
+            | '(' expr ')'
+            ;
+
 
 ID : LETTER+;     // only characters
 
-LETTER : [a-zA-Z];
-
 INT : DIGIT+;       // even '007' and '000' are ints
 
-DIGIT : [0-9];
+FLOAT: DIGIT+ '.' DIGIT+ ;
 
-DOUBLE : INT '.' INT ;           // bsically an INT with a fractional part
+BOOL: 'true' | 'false' ;
+
+VOID: 'void' ;
 
 STRING : '"' .*? '"' ;                // no escaping " for now
 
 WS : [ \t\r\n]+ -> skip;
+
+fragment
+LETTER : [a-zA-Z];
+
+fragment
+DIGIT : [0-9];
