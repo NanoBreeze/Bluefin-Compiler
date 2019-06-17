@@ -52,31 +52,39 @@ public:
 
     virtual antlrcpp::Any visitVarDecl(bluefinParser::VarDeclContext *context) = 0;
 
-    virtual antlrcpp::Any visitUnaryExpr(bluefinParser::UnaryExprContext *context) = 0;
-
-    virtual antlrcpp::Any visitAddExpr(bluefinParser::AddExprContext *context) = 0;
+    virtual antlrcpp::Any visitMemberAccess(bluefinParser::MemberAccessContext *context) = 0;
 
     virtual antlrcpp::Any visitMultiExpr(bluefinParser::MultiExprContext *context) = 0;
+
+    virtual antlrcpp::Any visitPrimaryFloat(bluefinParser::PrimaryFloatContext *context) = 0;
 
     virtual antlrcpp::Any visitSimpleAssignExpr(bluefinParser::SimpleAssignExprContext *context) = 0;
 
     virtual antlrcpp::Any visitLogicalANDExpr(bluefinParser::LogicalANDExprContext *context) = 0;
 
-    virtual antlrcpp::Any visitRelExpr(bluefinParser::RelExprContext *context) = 0;
+    virtual antlrcpp::Any visitPrimaryId(bluefinParser::PrimaryIdContext *context) = 0;
 
-    virtual antlrcpp::Any visitPrimaExpr(bluefinParser::PrimaExprContext *context) = 0;
+    virtual antlrcpp::Any visitPrimaryBool(bluefinParser::PrimaryBoolContext *context) = 0;
 
-    virtual antlrcpp::Any visitPostExpr(bluefinParser::PostExprContext *context) = 0;
-
-    virtual antlrcpp::Any visitEqualityExpr(bluefinParser::EqualityExprContext *context) = 0;
+    virtual antlrcpp::Any visitPrimaryInt(bluefinParser::PrimaryIntContext *context) = 0;
 
     virtual antlrcpp::Any visitLogicalORExpr(bluefinParser::LogicalORExprContext *context) = 0;
 
-    virtual antlrcpp::Any visitPostfixExpr(bluefinParser::PostfixExprContext *context) = 0;
+    virtual antlrcpp::Any visitPrimaryString(bluefinParser::PrimaryStringContext *context) = 0;
+
+    virtual antlrcpp::Any visitUnaryExpr(bluefinParser::UnaryExprContext *context) = 0;
+
+    virtual antlrcpp::Any visitPrimaryParenth(bluefinParser::PrimaryParenthContext *context) = 0;
+
+    virtual antlrcpp::Any visitAddExpr(bluefinParser::AddExprContext *context) = 0;
+
+    virtual antlrcpp::Any visitFuncCall(bluefinParser::FuncCallContext *context) = 0;
+
+    virtual antlrcpp::Any visitRelExpr(bluefinParser::RelExprContext *context) = 0;
+
+    virtual antlrcpp::Any visitEqualityExpr(bluefinParser::EqualityExprContext *context) = 0;
 
     virtual antlrcpp::Any visitArgList(bluefinParser::ArgListContext *context) = 0;
-
-    virtual antlrcpp::Any visitPrimaryExpr(bluefinParser::PrimaryExprContext *context) = 0;
 
 
 };

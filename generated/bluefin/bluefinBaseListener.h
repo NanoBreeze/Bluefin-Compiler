@@ -66,14 +66,14 @@ public:
   virtual void enterVarDecl(bluefinParser::VarDeclContext * /*ctx*/) override { }
   virtual void exitVarDecl(bluefinParser::VarDeclContext * /*ctx*/) override { }
 
-  virtual void enterUnaryExpr(bluefinParser::UnaryExprContext * /*ctx*/) override { }
-  virtual void exitUnaryExpr(bluefinParser::UnaryExprContext * /*ctx*/) override { }
-
-  virtual void enterAddExpr(bluefinParser::AddExprContext * /*ctx*/) override { }
-  virtual void exitAddExpr(bluefinParser::AddExprContext * /*ctx*/) override { }
+  virtual void enterMemberAccess(bluefinParser::MemberAccessContext * /*ctx*/) override { }
+  virtual void exitMemberAccess(bluefinParser::MemberAccessContext * /*ctx*/) override { }
 
   virtual void enterMultiExpr(bluefinParser::MultiExprContext * /*ctx*/) override { }
   virtual void exitMultiExpr(bluefinParser::MultiExprContext * /*ctx*/) override { }
+
+  virtual void enterPrimaryFloat(bluefinParser::PrimaryFloatContext * /*ctx*/) override { }
+  virtual void exitPrimaryFloat(bluefinParser::PrimaryFloatContext * /*ctx*/) override { }
 
   virtual void enterSimpleAssignExpr(bluefinParser::SimpleAssignExprContext * /*ctx*/) override { }
   virtual void exitSimpleAssignExpr(bluefinParser::SimpleAssignExprContext * /*ctx*/) override { }
@@ -81,29 +81,41 @@ public:
   virtual void enterLogicalANDExpr(bluefinParser::LogicalANDExprContext * /*ctx*/) override { }
   virtual void exitLogicalANDExpr(bluefinParser::LogicalANDExprContext * /*ctx*/) override { }
 
-  virtual void enterRelExpr(bluefinParser::RelExprContext * /*ctx*/) override { }
-  virtual void exitRelExpr(bluefinParser::RelExprContext * /*ctx*/) override { }
+  virtual void enterPrimaryId(bluefinParser::PrimaryIdContext * /*ctx*/) override { }
+  virtual void exitPrimaryId(bluefinParser::PrimaryIdContext * /*ctx*/) override { }
 
-  virtual void enterPrimaExpr(bluefinParser::PrimaExprContext * /*ctx*/) override { }
-  virtual void exitPrimaExpr(bluefinParser::PrimaExprContext * /*ctx*/) override { }
+  virtual void enterPrimaryBool(bluefinParser::PrimaryBoolContext * /*ctx*/) override { }
+  virtual void exitPrimaryBool(bluefinParser::PrimaryBoolContext * /*ctx*/) override { }
 
-  virtual void enterPostExpr(bluefinParser::PostExprContext * /*ctx*/) override { }
-  virtual void exitPostExpr(bluefinParser::PostExprContext * /*ctx*/) override { }
-
-  virtual void enterEqualityExpr(bluefinParser::EqualityExprContext * /*ctx*/) override { }
-  virtual void exitEqualityExpr(bluefinParser::EqualityExprContext * /*ctx*/) override { }
+  virtual void enterPrimaryInt(bluefinParser::PrimaryIntContext * /*ctx*/) override { }
+  virtual void exitPrimaryInt(bluefinParser::PrimaryIntContext * /*ctx*/) override { }
 
   virtual void enterLogicalORExpr(bluefinParser::LogicalORExprContext * /*ctx*/) override { }
   virtual void exitLogicalORExpr(bluefinParser::LogicalORExprContext * /*ctx*/) override { }
 
-  virtual void enterPostfixExpr(bluefinParser::PostfixExprContext * /*ctx*/) override { }
-  virtual void exitPostfixExpr(bluefinParser::PostfixExprContext * /*ctx*/) override { }
+  virtual void enterPrimaryString(bluefinParser::PrimaryStringContext * /*ctx*/) override { }
+  virtual void exitPrimaryString(bluefinParser::PrimaryStringContext * /*ctx*/) override { }
+
+  virtual void enterUnaryExpr(bluefinParser::UnaryExprContext * /*ctx*/) override { }
+  virtual void exitUnaryExpr(bluefinParser::UnaryExprContext * /*ctx*/) override { }
+
+  virtual void enterPrimaryParenth(bluefinParser::PrimaryParenthContext * /*ctx*/) override { }
+  virtual void exitPrimaryParenth(bluefinParser::PrimaryParenthContext * /*ctx*/) override { }
+
+  virtual void enterAddExpr(bluefinParser::AddExprContext * /*ctx*/) override { }
+  virtual void exitAddExpr(bluefinParser::AddExprContext * /*ctx*/) override { }
+
+  virtual void enterFuncCall(bluefinParser::FuncCallContext * /*ctx*/) override { }
+  virtual void exitFuncCall(bluefinParser::FuncCallContext * /*ctx*/) override { }
+
+  virtual void enterRelExpr(bluefinParser::RelExprContext * /*ctx*/) override { }
+  virtual void exitRelExpr(bluefinParser::RelExprContext * /*ctx*/) override { }
+
+  virtual void enterEqualityExpr(bluefinParser::EqualityExprContext * /*ctx*/) override { }
+  virtual void exitEqualityExpr(bluefinParser::EqualityExprContext * /*ctx*/) override { }
 
   virtual void enterArgList(bluefinParser::ArgListContext * /*ctx*/) override { }
   virtual void exitArgList(bluefinParser::ArgListContext * /*ctx*/) override { }
-
-  virtual void enterPrimaryExpr(bluefinParser::PrimaryExprContext * /*ctx*/) override { }
-  virtual void exitPrimaryExpr(bluefinParser::PrimaryExprContext * /*ctx*/) override { }
 
 
   virtual void enterEveryRule(antlr4::ParserRuleContext * /*ctx*/) override { }

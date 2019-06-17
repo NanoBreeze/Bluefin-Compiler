@@ -64,14 +64,14 @@ public:
   virtual void enterVarDecl(bluefinParser::VarDeclContext *ctx) = 0;
   virtual void exitVarDecl(bluefinParser::VarDeclContext *ctx) = 0;
 
-  virtual void enterUnaryExpr(bluefinParser::UnaryExprContext *ctx) = 0;
-  virtual void exitUnaryExpr(bluefinParser::UnaryExprContext *ctx) = 0;
-
-  virtual void enterAddExpr(bluefinParser::AddExprContext *ctx) = 0;
-  virtual void exitAddExpr(bluefinParser::AddExprContext *ctx) = 0;
+  virtual void enterMemberAccess(bluefinParser::MemberAccessContext *ctx) = 0;
+  virtual void exitMemberAccess(bluefinParser::MemberAccessContext *ctx) = 0;
 
   virtual void enterMultiExpr(bluefinParser::MultiExprContext *ctx) = 0;
   virtual void exitMultiExpr(bluefinParser::MultiExprContext *ctx) = 0;
+
+  virtual void enterPrimaryFloat(bluefinParser::PrimaryFloatContext *ctx) = 0;
+  virtual void exitPrimaryFloat(bluefinParser::PrimaryFloatContext *ctx) = 0;
 
   virtual void enterSimpleAssignExpr(bluefinParser::SimpleAssignExprContext *ctx) = 0;
   virtual void exitSimpleAssignExpr(bluefinParser::SimpleAssignExprContext *ctx) = 0;
@@ -79,29 +79,41 @@ public:
   virtual void enterLogicalANDExpr(bluefinParser::LogicalANDExprContext *ctx) = 0;
   virtual void exitLogicalANDExpr(bluefinParser::LogicalANDExprContext *ctx) = 0;
 
-  virtual void enterRelExpr(bluefinParser::RelExprContext *ctx) = 0;
-  virtual void exitRelExpr(bluefinParser::RelExprContext *ctx) = 0;
+  virtual void enterPrimaryId(bluefinParser::PrimaryIdContext *ctx) = 0;
+  virtual void exitPrimaryId(bluefinParser::PrimaryIdContext *ctx) = 0;
 
-  virtual void enterPrimaExpr(bluefinParser::PrimaExprContext *ctx) = 0;
-  virtual void exitPrimaExpr(bluefinParser::PrimaExprContext *ctx) = 0;
+  virtual void enterPrimaryBool(bluefinParser::PrimaryBoolContext *ctx) = 0;
+  virtual void exitPrimaryBool(bluefinParser::PrimaryBoolContext *ctx) = 0;
 
-  virtual void enterPostExpr(bluefinParser::PostExprContext *ctx) = 0;
-  virtual void exitPostExpr(bluefinParser::PostExprContext *ctx) = 0;
-
-  virtual void enterEqualityExpr(bluefinParser::EqualityExprContext *ctx) = 0;
-  virtual void exitEqualityExpr(bluefinParser::EqualityExprContext *ctx) = 0;
+  virtual void enterPrimaryInt(bluefinParser::PrimaryIntContext *ctx) = 0;
+  virtual void exitPrimaryInt(bluefinParser::PrimaryIntContext *ctx) = 0;
 
   virtual void enterLogicalORExpr(bluefinParser::LogicalORExprContext *ctx) = 0;
   virtual void exitLogicalORExpr(bluefinParser::LogicalORExprContext *ctx) = 0;
 
-  virtual void enterPostfixExpr(bluefinParser::PostfixExprContext *ctx) = 0;
-  virtual void exitPostfixExpr(bluefinParser::PostfixExprContext *ctx) = 0;
+  virtual void enterPrimaryString(bluefinParser::PrimaryStringContext *ctx) = 0;
+  virtual void exitPrimaryString(bluefinParser::PrimaryStringContext *ctx) = 0;
+
+  virtual void enterUnaryExpr(bluefinParser::UnaryExprContext *ctx) = 0;
+  virtual void exitUnaryExpr(bluefinParser::UnaryExprContext *ctx) = 0;
+
+  virtual void enterPrimaryParenth(bluefinParser::PrimaryParenthContext *ctx) = 0;
+  virtual void exitPrimaryParenth(bluefinParser::PrimaryParenthContext *ctx) = 0;
+
+  virtual void enterAddExpr(bluefinParser::AddExprContext *ctx) = 0;
+  virtual void exitAddExpr(bluefinParser::AddExprContext *ctx) = 0;
+
+  virtual void enterFuncCall(bluefinParser::FuncCallContext *ctx) = 0;
+  virtual void exitFuncCall(bluefinParser::FuncCallContext *ctx) = 0;
+
+  virtual void enterRelExpr(bluefinParser::RelExprContext *ctx) = 0;
+  virtual void exitRelExpr(bluefinParser::RelExprContext *ctx) = 0;
+
+  virtual void enterEqualityExpr(bluefinParser::EqualityExprContext *ctx) = 0;
+  virtual void exitEqualityExpr(bluefinParser::EqualityExprContext *ctx) = 0;
 
   virtual void enterArgList(bluefinParser::ArgListContext *ctx) = 0;
   virtual void exitArgList(bluefinParser::ArgListContext *ctx) = 0;
-
-  virtual void enterPrimaryExpr(bluefinParser::PrimaryExprContext *ctx) = 0;
-  virtual void exitPrimaryExpr(bluefinParser::PrimaryExprContext *ctx) = 0;
 
 
 };

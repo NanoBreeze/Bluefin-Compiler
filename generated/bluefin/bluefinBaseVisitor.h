@@ -81,15 +81,15 @@ public:
     return visitChildren(ctx);
   }
 
-  virtual antlrcpp::Any visitUnaryExpr(bluefinParser::UnaryExprContext *ctx) override {
-    return visitChildren(ctx);
-  }
-
-  virtual antlrcpp::Any visitAddExpr(bluefinParser::AddExprContext *ctx) override {
+  virtual antlrcpp::Any visitMemberAccess(bluefinParser::MemberAccessContext *ctx) override {
     return visitChildren(ctx);
   }
 
   virtual antlrcpp::Any visitMultiExpr(bluefinParser::MultiExprContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual antlrcpp::Any visitPrimaryFloat(bluefinParser::PrimaryFloatContext *ctx) override {
     return visitChildren(ctx);
   }
 
@@ -101,19 +101,15 @@ public:
     return visitChildren(ctx);
   }
 
-  virtual antlrcpp::Any visitRelExpr(bluefinParser::RelExprContext *ctx) override {
+  virtual antlrcpp::Any visitPrimaryId(bluefinParser::PrimaryIdContext *ctx) override {
     return visitChildren(ctx);
   }
 
-  virtual antlrcpp::Any visitPrimaExpr(bluefinParser::PrimaExprContext *ctx) override {
+  virtual antlrcpp::Any visitPrimaryBool(bluefinParser::PrimaryBoolContext *ctx) override {
     return visitChildren(ctx);
   }
 
-  virtual antlrcpp::Any visitPostExpr(bluefinParser::PostExprContext *ctx) override {
-    return visitChildren(ctx);
-  }
-
-  virtual antlrcpp::Any visitEqualityExpr(bluefinParser::EqualityExprContext *ctx) override {
+  virtual antlrcpp::Any visitPrimaryInt(bluefinParser::PrimaryIntContext *ctx) override {
     return visitChildren(ctx);
   }
 
@@ -121,15 +117,35 @@ public:
     return visitChildren(ctx);
   }
 
-  virtual antlrcpp::Any visitPostfixExpr(bluefinParser::PostfixExprContext *ctx) override {
+  virtual antlrcpp::Any visitPrimaryString(bluefinParser::PrimaryStringContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual antlrcpp::Any visitUnaryExpr(bluefinParser::UnaryExprContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual antlrcpp::Any visitPrimaryParenth(bluefinParser::PrimaryParenthContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual antlrcpp::Any visitAddExpr(bluefinParser::AddExprContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual antlrcpp::Any visitFuncCall(bluefinParser::FuncCallContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual antlrcpp::Any visitRelExpr(bluefinParser::RelExprContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual antlrcpp::Any visitEqualityExpr(bluefinParser::EqualityExprContext *ctx) override {
     return visitChildren(ctx);
   }
 
   virtual antlrcpp::Any visitArgList(bluefinParser::ArgListContext *ctx) override {
-    return visitChildren(ctx);
-  }
-
-  virtual antlrcpp::Any visitPrimaryExpr(bluefinParser::PrimaryExprContext *ctx) override {
     return visitChildren(ctx);
   }
 

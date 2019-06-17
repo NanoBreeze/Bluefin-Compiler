@@ -7,7 +7,7 @@ funcDef : type ID '(' paramList? ')' block ;
 type : builtinType
      | ID ;
 
-builtinType : INT | FLOAT | STRING | BOOL | VOID ;
+builtinType : TInt | TFloat | TString | TBool | TVoid ;
 
 paramList : param (',' param)* ;
 
@@ -45,8 +45,14 @@ It also resolves direct left recrusion so don't need to manually remove them
 This means that precedence and associativeness ambiguities are solved
 TODO: handle power (right associative)
 */
-expr : primaryExpr                          # primaExpr
-     | postfixExpr                          # postExpr
+expr : INT                                  # primaryInt
+     | FLOAT                                # primaryFloat
+     | STRING                               # primaryString
+     | ID                                   # primaryId
+     | BOOL                                 # primaryBool
+     | '(' expr ')'                         # primaryParenth
+     | expr '(' argList? ')'                # funcCall
+     | expr '.' ID                          # memberAccess
      | ('-' | '!') expr                     # unaryExpr
      | expr ('*' | '/') expr                # multiExpr
      | expr ('+' | '-') expr                # addExpr
@@ -57,32 +63,27 @@ expr : primaryExpr                          # primaExpr
      |<assoc=right> expr '=' expr           # simpleAssignExpr
      ;
 
-postfixExpr : postfixExpr '(' argList? ')'
-            | postfixExpr '.' ID
-            | primaryExpr
-            ;
+argList : expr (',' expr)* ;
 
-argList : expr (',' expr) ;
+TInt : 'int' ;
 
-primaryExpr : ID
-            | INT
-            | FLOAT
-            | STRING
-            | '(' expr ')'
-            ;
+TFloat : 'float' ;
 
+TString : 'string' ;
 
-ID : LETTER+;     // only characters
+TBool : 'bool' ;
 
-INT : DIGIT+;       // even '007' and '000' are ints
+TVoid : 'void' ;
 
 FLOAT: DIGIT+ '.' DIGIT+ ;
 
 BOOL: 'true' | 'false' ;
 
-VOID: 'void' ;
-
 STRING : '"' .*? '"' ;                // no escaping " for now
+
+ID : LETTER+;     // only characters
+
+INT : DIGIT+;       // even '007' and '000' are ints
 
 WS : [ \t\r\n]+ -> skip;
 

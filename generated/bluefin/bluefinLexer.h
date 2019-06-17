@@ -17,8 +17,8 @@ public:
     T__7 = 8, T__8 = 9, T__9 = 10, T__10 = 11, T__11 = 12, T__12 = 13, T__13 = 14, 
     T__14 = 15, T__15 = 16, T__16 = 17, T__17 = 18, T__18 = 19, T__19 = 20, 
     T__20 = 21, T__21 = 22, T__22 = 23, T__23 = 24, T__24 = 25, T__25 = 26, 
-    T__26 = 27, T__27 = 28, ID = 29, INT = 30, FLOAT = 31, BOOL = 32, VOID = 33, 
-    STRING = 34, WS = 35
+    T__26 = 27, T__27 = 28, TInt = 29, TFloat = 30, TString = 31, TBool = 32, 
+    TVoid = 33, FLOAT = 34, BOOL = 35, STRING = 36, ID = 37, INT = 38, WS = 39
   };
 
   bluefinLexer(antlr4::CharStream *input);

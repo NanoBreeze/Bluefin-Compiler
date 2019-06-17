@@ -2,8 +2,8 @@
 
 #include "antlr4-runtime.h"
 
-#include "generated/bluefin/bluefinLexer.h"
-#include "generated/bluefin/bluefinParser.h"
+#include "../generated/bluefin/bluefinLexer.h"
+#include "../generated/bluefin/bluefinParser.h"
 
 using std::cout;
 using std::endl;
@@ -12,7 +12,7 @@ using namespace antlr4;
 
 
 int main() {
-	cout << "Helo" << endl;
+	cout << "Hello" << endl;
 
 	ANTLRInputStream input2("int hello() {int b = 7; }");
 	bluefin::bluefinLexer lexer2(&input2);

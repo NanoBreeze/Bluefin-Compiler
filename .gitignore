@@ -11,3 +11,10 @@ x64
 *.vcxproj*
 .vs
 bin
+
+# Tests
+TestBluefin/Debug
+packages
+
+# Miscellaneous
+antlr4-*
