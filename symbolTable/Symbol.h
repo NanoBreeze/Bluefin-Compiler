@@ -6,15 +6,19 @@ namespace bluefin {
 
 	using std::string;
 
+	/**
+	Abstract class
+	*/
 	class Symbol {
-	public:
 
+	public:
+		string getName() const { return name; }
+		Type getType() const { return type; }
+
+	protected:
 		// name is the name of the id, eg, a, hello, wow
 		Symbol(const string& name, const Type type) : name{ name }, type{ type } 
 		{}
-
-		string getName() const { return name; }
-		Type getType() const { return type; }
 
 	private:
 		const string name;
