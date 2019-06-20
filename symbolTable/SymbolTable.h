@@ -13,9 +13,6 @@ namespace bluefin {
 		
 		void enterScope(const string scopeName="");
 	
-		/*
-		Returns the enclosing scope
-		*/
 		void exitScope();
 
 		void declare(Symbol* symbol);
