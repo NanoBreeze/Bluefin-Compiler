@@ -8,13 +8,15 @@ namespace bluefin {
 
 	class Type
 	{
-	public:
-		Type(const string& typeName) : typeName{ typeName } 
-		{}
 
+	public:
 		string getName() const {
 			return typeName;
 		}
+
+	protected:
+		Type(const string& typeName) : typeName{ typeName } 
+		{}
 
 	private:
 		const string typeName;

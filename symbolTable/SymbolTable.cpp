@@ -2,13 +2,15 @@
 
 using namespace bluefin;
 
-void SymbolTable::enterScope() {
-	Scope* scope = new Scope(currScope); // TODO: how are we ever going to delete this scope
+void SymbolTable::enterScope(const string scopeName) {
+	Scope* scope = new Scope(currScope, scopeName); // TODO: how are we ever going to delete this scope
 	currScope = scope;
 }
 
-Scope* SymbolTable::exitScope() {
-	return currScope->getEnclosingScope();
+void SymbolTable::exitScope() {
+	Scope* enclosingScope = currScope->getEnclosingScope();
+	delete currScope;
+	currScope = enclosingScope;
 }
 
 void SymbolTable::declare(const string name, Symbol* symbol) {

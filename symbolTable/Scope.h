@@ -14,7 +14,7 @@ namespace bluefin {
 	{
 	public:
 
-		Scope(Scope* enclosingScope) : enclosingScope{ enclosingScope }
+		Scope(Scope* enclosingScope, string name = "") : enclosingScope{ enclosingScope }, name{ name }
 		{}
 		
 		/**
@@ -26,10 +26,17 @@ namespace bluefin {
 		\brief Looks up the name/identifier in the current scope and returns the symbol
 		*/
 		Symbol* resolve(const string name) const; 
+
 		Scope* getEnclosingScope() const;
+
+		inline string getName() const { return name; }
+
+		// TODO: for testing only. can't get friend function working
+		inline unordered_map<string, Symbol*> getSymbols() const { return symbols; }
 
 	private:
 		Scope* enclosingScope;
 		unordered_map<string, Symbol*> symbols;
+		const string name;
 	};
 }
