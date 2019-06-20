@@ -13,8 +13,8 @@ void SymbolTable::exitScope() {
 	currScope = enclosingScope;
 }
 
-void SymbolTable::declare(const string name, Symbol* symbol) {
-	currScope->declare(name, symbol);
+void SymbolTable::declare(Symbol* symbol) {
+	currScope->declare(symbol);
 }
 
 

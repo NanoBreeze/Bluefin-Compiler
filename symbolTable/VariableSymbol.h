@@ -8,8 +8,8 @@ namespace bluefin {
 	using std::string;
 
 	class VariableSymbol : public Symbol {
-	public:
 
+	public:
 		VariableSymbol(const string& name, const Type type) :
 			Symbol(name, type) {}
 	};

@@ -18,9 +18,9 @@ namespace bluefin {
 		{}
 		
 		/**
-		\brief Puts the <name, symbol> pair into a map for further use
+		\brief Puts the <symbol.name, symbol> pair into a map for further use
 		*/
-		void declare(const string name, Symbol* symbol);
+		void declare(Symbol* symbol);
 
 		/**
 		\brief Looks up the name/identifier in the current scope and returns the symbol

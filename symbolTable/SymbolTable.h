@@ -18,13 +18,7 @@ namespace bluefin {
 		*/
 		void exitScope();
 
-		/**
-		TODO: throw error or return something if multiple 
-		redeclarations within same scope (using same name)
-		TODO: the name is supposed to be the same as the 
-		symbol name. Thus, consider removing first param
-		*/
-		void declare(const string name, Symbol* symbol);
+		void declare(Symbol* symbol);
 
 
 		/*

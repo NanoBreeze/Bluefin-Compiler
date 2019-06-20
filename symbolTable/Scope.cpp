@@ -3,14 +3,14 @@
 
 using namespace bluefin;
 
-void Scope::declare(const string name, Symbol* symbol)
+void Scope::declare(Symbol* symbol)
 {
 	// if definition already exists, throw an exception
-	if (symbols.count(name)) {
-		throw RedefinitionException(name);
+	if (symbols.count(symbol->getName())) {
+		throw RedefinitionException(symbol->getName());
 	}
 
-	symbols.emplace(name, symbol);
+	symbols.emplace(symbol->getName(), symbol);
 }
 
 Symbol* Scope::resolve(string name) const

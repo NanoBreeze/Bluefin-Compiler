@@ -88,10 +88,10 @@ namespace SymbolTableTests {
 		SymbolTable symtab;
 		symtab.enterScope("First");
 
-		Symbol* symA = new VariableSymbol("a", BuiltinType("int"));
-		Symbol* symB = new VariableSymbol("b", BuiltinType("float"));
-		symtab.declare("a", symA);
-		symtab.declare("b", symB); 
+		Symbol* symA = new VariableSymbol("a", BuiltinType(BuiltinType::Possibilities::INT));
+		Symbol* symB = new VariableSymbol("b", BuiltinType(BuiltinType::Possibilities::FLOAT));
+		symtab.declare(symA);
+		symtab.declare(symB); 
 
 		unordered_map<string, Symbol*> symbols = symtab.getCurrScope()->getSymbols();
 		
@@ -104,16 +104,16 @@ namespace SymbolTableTests {
 		SymbolTable symtab;
 
 		symtab.enterScope("First");
-		Symbol* symA = new VariableSymbol("a", BuiltinType("int"));
-		Symbol* symB = new VariableSymbol("b", BuiltinType("float"));
-		symtab.declare("a", symA);
-		symtab.declare("b", symB); 
+		Symbol* symA = new VariableSymbol("a", BuiltinType(BuiltinType::Possibilities::INT));
+		Symbol* symB = new VariableSymbol("b", BuiltinType(BuiltinType::Possibilities::INT));
+		symtab.declare(symA);
+		symtab.declare(symB); 
 
 		symtab.enterScope("Second");
-		Symbol* symC = new VariableSymbol("c", BuiltinType("int"));
-		Symbol* symD = new VariableSymbol("d", BuiltinType("float"));
-		symtab.declare("c", symC);
-		symtab.declare("d", symD); 
+		Symbol* symC = new VariableSymbol("c", BuiltinType(BuiltinType::Possibilities::INT));
+		Symbol* symD = new VariableSymbol("d", BuiltinType(BuiltinType::Possibilities::FLOAT));
+		symtab.declare(symC);
+		symtab.declare(symD); 
 
 		Scope* secondScope = symtab.getCurrScope();
 		ASSERT_EQ(secondScope->getName(), "Second");
@@ -135,18 +135,18 @@ namespace SymbolTableTests {
 		SymbolTable symtab;
 
 		symtab.enterScope("First");
-		Symbol* symA = new VariableSymbol("a", BuiltinType("int"));
-		Symbol* symB = new VariableSymbol("b", BuiltinType("float"));
-		symtab.declare("a", symA);
-		symtab.declare("b", symB);
+		Symbol* symA = new VariableSymbol("a", BuiltinType(BuiltinType::Possibilities::INT));
+		Symbol* symB = new VariableSymbol("b", BuiltinType(BuiltinType::Possibilities::INT));
+		symtab.declare(symA);
+		symtab.declare(symB);
 
 		symtab.enterScope("Second");
-		Symbol* symA2 = new VariableSymbol("a", BuiltinType("float"));
-		Symbol* symB2 = new FunctionSymbol("b", BuiltinType("float"));
-		Symbol* symD = new VariableSymbol("d", BuiltinType("float"));
-		symtab.declare("a", symA2);
-		symtab.declare("b", symB2);
-		symtab.declare("d", symD);
+		Symbol* symA2 = new VariableSymbol("a", BuiltinType(BuiltinType::Possibilities::INT));
+		Symbol* symB2 = new FunctionSymbol("b", BuiltinType(BuiltinType::Possibilities::FLOAT));
+		Symbol* symD = new VariableSymbol("d", BuiltinType(BuiltinType::Possibilities::INT));
+		symtab.declare(symA2);
+		symtab.declare(symB2);
+		symtab.declare(symD);
 
 		Scope* secondScope = symtab.getCurrScope();
 		ASSERT_EQ(secondScope->getName(), "Second");
@@ -174,11 +174,11 @@ namespace SymbolTableTests {
 		SymbolTable symtab;
 
 		symtab.enterScope("First");
-		Symbol* symA = new VariableSymbol("a", BuiltinType("int"));
-		Symbol* symAFunc = new FunctionSymbol("a", BuiltinType("float"));
-		symtab.declare("a", symA);
+		Symbol* symA = new VariableSymbol("a", BuiltinType(BuiltinType::Possibilities::INT));
+		Symbol* symAFunc = new FunctionSymbol("a", BuiltinType(BuiltinType::Possibilities::FLOAT));
+		symtab.declare(symA);
 
-		ASSERT_THROW(symtab.declare("a", symAFunc), RedefinitionException);
+		ASSERT_THROW(symtab.declare(symAFunc), RedefinitionException);
 	}
 
 	TEST(SymbolTable, ResolutionInSameScope) {
@@ -186,10 +186,10 @@ namespace SymbolTableTests {
 		SymbolTable symtab;
 
 		symtab.enterScope("First");
-		Symbol* symA = new VariableSymbol("a", BuiltinType("int"));
-		Symbol* symB = new VariableSymbol("b", BuiltinType("int"));
-		symtab.declare("a", symA);
-		symtab.declare("b", symB);
+		Symbol* symA = new VariableSymbol("a", BuiltinType(BuiltinType::Possibilities::INT));
+		Symbol* symB = new VariableSymbol("b", BuiltinType(BuiltinType::Possibilities::FLOAT));
+		symtab.declare(symA);
+		symtab.declare(symB);
 
 		Symbol* resA = symtab.resolve("a");
 		Symbol* resA2 = symtab.resolve("a");
@@ -205,14 +205,14 @@ namespace SymbolTableTests {
 		SymbolTable symtab;
 
 		symtab.enterScope("First");
-		Symbol* symA = new VariableSymbol("a", BuiltinType("int"));
-		Symbol* symB = new VariableSymbol("b", BuiltinType("int"));
-		symtab.declare("a", symA);
-		symtab.declare("b", symB);
+		Symbol* symA = new VariableSymbol("a", BuiltinType(BuiltinType::Possibilities::INT));
+		Symbol* symB = new VariableSymbol("b", BuiltinType(BuiltinType::Possibilities::INT));
+		symtab.declare(symA);
+		symtab.declare(symB);
 
 		symtab.enterScope("Second");
-		Symbol* symA2 = new VariableSymbol("a", BuiltinType("int"));
-		symtab.declare("a", symA2);
+		Symbol* symA2 = new VariableSymbol("a", BuiltinType(BuiltinType::Possibilities::INT));
+		symtab.declare(symA2);
 
 		Symbol* resA2 = symtab.resolve("a");
 		Symbol* resB = symtab.resolve("b");
@@ -229,10 +229,10 @@ namespace SymbolTableTests {
 		SymbolTable symtab;
 
 		symtab.enterScope("First");
-		Symbol* symA = new VariableSymbol("a", BuiltinType("int"));
-		Symbol* symB = new VariableSymbol("b", BuiltinType("int"));
-		symtab.declare("a", symA);
-		symtab.declare("b", symB);
+		Symbol* symA = new VariableSymbol("a", BuiltinType(BuiltinType::Possibilities::INT));
+		Symbol* symB = new VariableSymbol("b", BuiltinType(BuiltinType::Possibilities::INT));
+		symtab.declare(symA);
+		symtab.declare(symB);
 
 		symtab.enterScope("Second");
 		Symbol* resC = symtab.resolve("c");

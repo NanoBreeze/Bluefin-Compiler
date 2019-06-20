@@ -8,7 +8,10 @@ namespace bluefin {
 
 	class Type
 	{
-
+		
+		/*
+		All types are symbols, and all symbols already have names
+		so don't need this
 	public:
 		string getName() const {
 			return typeName;
@@ -20,6 +23,7 @@ namespace bluefin {
 
 	private:
 		const string typeName;
+		*/
 	};
 }
 
