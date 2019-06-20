@@ -25,7 +25,7 @@ Symbol* SymbolTable::resolve(const string name) {
 	do {
 		Symbol* sym = scope->resolve(name);
 		if (sym) { return sym; }
-	} while (scope = currScope->getEnclosingScope());
+	} while (scope = scope->getEnclosingScope());
 		
 	return nullptr;
 }

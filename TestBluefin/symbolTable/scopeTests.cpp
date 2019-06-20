@@ -1,7 +1,7 @@
 #include "pch.h"
 
 #include <iostream>
-#include <../symbolTable/Exceptions.h>
+#include "../symbolTable/Exceptions.h"
 #include "../symbolTable/Symbol.h"
 #include "../symbolTable/SymbolTable.h"
 #include "../symbolTable/Scope.h"
@@ -181,5 +181,63 @@ namespace SymbolTableTests {
 		ASSERT_THROW(symtab.declare("a", symAFunc), RedefinitionException);
 	}
 
+	TEST(SymbolTable, ResolutionInSameScope) {
+
+		SymbolTable symtab;
+
+		symtab.enterScope("First");
+		Symbol* symA = new VariableSymbol("a", BuiltinType("int"));
+		Symbol* symB = new VariableSymbol("b", BuiltinType("int"));
+		symtab.declare("a", symA);
+		symtab.declare("b", symB);
+
+		Symbol* resA = symtab.resolve("a");
+		Symbol* resA2 = symtab.resolve("a");
+		Symbol* resB = symtab.resolve("b");
+
+		ASSERT_EQ(resA, symA);
+		ASSERT_EQ(resA2, symA);
+		ASSERT_EQ(resB, symB);
+	}
+
+	TEST(SymbolTable, ResolutionInDifferentScopes) {
+
+		SymbolTable symtab;
+
+		symtab.enterScope("First");
+		Symbol* symA = new VariableSymbol("a", BuiltinType("int"));
+		Symbol* symB = new VariableSymbol("b", BuiltinType("int"));
+		symtab.declare("a", symA);
+		symtab.declare("b", symB);
+
+		symtab.enterScope("Second");
+		Symbol* symA2 = new VariableSymbol("a", BuiltinType("int"));
+		symtab.declare("a", symA2);
+
+		Symbol* resA2 = symtab.resolve("a");
+		Symbol* resB = symtab.resolve("b");
+		ASSERT_EQ(resA2, symA2);
+		ASSERT_EQ(resB, symB);
+
+		symtab.exitScope();
+		Symbol* resA = symtab.resolve("a");
+		ASSERT_EQ(resA, symA);
+	}
+
+	TEST(SymbolTable, MissingDeclaration) {
+
+		SymbolTable symtab;
+
+		symtab.enterScope("First");
+		Symbol* symA = new VariableSymbol("a", BuiltinType("int"));
+		Symbol* symB = new VariableSymbol("b", BuiltinType("int"));
+		symtab.declare("a", symA);
+		symtab.declare("b", symB);
+
+		symtab.enterScope("Second");
+		Symbol* resC = symtab.resolve("c");
+
+		ASSERT_EQ(resC, nullptr);
+	}
 }
 
