@@ -14,7 +14,8 @@ namespace bluefin {
 	{
 	public:
 
-		Scope(Scope* enclosingScope, string name = "") : enclosingScope{ enclosingScope }, name{ name }
+		Scope(Scope* enclosingScope, string name = "") :
+			enclosingScope{ enclosingScope }, mostRecentDeclaredSymbol{ nullptr }, name{ name }
 		{}
 		
 		/**
@@ -27,9 +28,11 @@ namespace bluefin {
 		*/
 		Symbol* resolve(const string name) const; 
 
-		Scope* getEnclosingScope() const;
+		inline Scope* getEnclosingScope() const { return enclosingScope; }
 
 		inline string getName() const { return name; }
+
+		inline Symbol* getMostRecentDeclaredSymbol() const { return mostRecentDeclaredSymbol; }
 
 		// TODO: for testing only. can't get friend function working
 		inline unordered_map<string, Symbol*> getSymbols() const { return symbols; }
@@ -38,5 +41,9 @@ namespace bluefin {
 		Scope* enclosingScope;
 		unordered_map<string, Symbol*> symbols;
 		const string name;
+
+		Symbol* mostRecentDeclaredSymbol; // Why would we need to know the most recently
+		// declared symbol? If we want to do something with it (eg, SymbolTable 
+		// needs it. if StructSymbol, attach scope)
 	};
 }

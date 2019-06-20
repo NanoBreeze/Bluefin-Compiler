@@ -11,9 +11,10 @@ void Scope::declare(Symbol* symbol)
 	}
 
 	symbols.emplace(symbol->getName(), symbol);
+	mostRecentDeclaredSymbol = symbol;
 }
 
-Symbol* Scope::resolve(string name) const
+Symbol* Scope::resolve(const string name) const
 {
 	auto it = symbols.find(name);
 	if (it == symbols.end()) {
@@ -22,7 +23,3 @@ Symbol* Scope::resolve(string name) const
 	return it->second;
 }
 
-Scope* Scope::getEnclosingScope() const
-{
-	return enclosingScope;
-}

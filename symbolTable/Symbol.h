@@ -15,6 +15,7 @@ namespace bluefin {
 	public:
 		string getName() const { return name; }
 		Type getType() const { return type; }
+		virtual ~Symbol() {}
 
 	protected:
 		// name is the name of the id, eg, a, hello, wow

@@ -8,6 +8,7 @@
 #include "../symbolTable/FunctionSymbol.h"
 #include "../symbolTable/VariableSymbol.h"
 #include "../symbolTable/BuiltinType.h"
+#include "../symbolTable/StructSymbol.h"
 
 namespace SymbolTableTests {
 
@@ -238,6 +239,63 @@ namespace SymbolTableTests {
 		Symbol* resC = symtab.resolve("c");
 
 		ASSERT_EQ(resC, nullptr);
+	}
+
+	TEST(SymbolTable, StructResolveMember) {
+		// Test resolution of member
+		// And that member doesn't go up in scope
+
+		SymbolTable symtab;
+
+		symtab.enterScope("First");
+		Symbol* globalB = new VariableSymbol("b", BuiltinType(BuiltinType::Possibilities::INT));
+		symtab.declare(globalB);
+		Symbol* structA = new StructSymbol("A");
+		symtab.declare(structA);
+
+		symtab.enterScope("struct A's definition");
+		Symbol* symB = new VariableSymbol("b", BuiltinType(BuiltinType::Possibilities::INT));
+		Symbol* symC = new VariableSymbol("c", BuiltinType(BuiltinType::Possibilities::STRING));
+		symtab.declare(symB);
+		symtab.declare(symC);
+		symtab.exitScope();
+
+		// A a;
+		Symbol* resolveA = symtab.resolve("A");
+		ASSERT_EQ(resolveA, structA);
+		Symbol* declarea = new VariableSymbol("a", structA->getType()); 
+		symtab.declare(declarea);
+
+		// a.b; a.c
+		StructSymbol* A = static_cast<StructSymbol*>(resolveA);
+		ASSERT_EQ(A->resolveMember("b"), symB);
+		ASSERT_EQ(A->resolveMember("c"), symC);
+	}
+
+	TEST(SymbolTable, StructMissingResolutionMember) {
+		SymbolTable symtab;
+
+		symtab.enterScope("First");
+		Symbol* globalB = new VariableSymbol("b", BuiltinType(BuiltinType::Possibilities::INT));
+		symtab.declare(globalB);
+		Symbol* structA = new StructSymbol("A");
+		symtab.declare(structA);
+
+		symtab.enterScope("struct A's definition");
+		Symbol* symC = new VariableSymbol("c", BuiltinType(BuiltinType::Possibilities::STRING));
+		symtab.declare(symC);
+		symtab.exitScope();
+
+		// A a;
+		Symbol* resolveA = symtab.resolve("A");
+		ASSERT_EQ(resolveA, structA);
+		Symbol* declarea = new VariableSymbol("a", structA->getType());
+		symtab.declare(declarea);
+
+		// a.b; a.c
+		StructSymbol* A = static_cast<StructSymbol*>(resolveA);
+		ASSERT_EQ(A->resolveMember("b"), nullptr);
+		ASSERT_EQ(A->resolveMember("c"), symC);
 	}
 }
 
