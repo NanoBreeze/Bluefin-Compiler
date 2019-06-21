@@ -8,14 +8,13 @@ namespace bluefin {
 	class SymbolTable
 	{
 	public:
-		SymbolTable() : currScope{ nullptr }
-		{}
+		SymbolTable(); 
 		
-		void enterScope(const string scopeName="");
+		virtual void enterScope(const string scopeName="");
 	
-		void exitScope();
+		virtual void exitScope();
 
-		void declare(Symbol* symbol);
+		virtual void declare(Symbol* symbol);
 
 
 		/*
@@ -23,7 +22,7 @@ namespace bluefin {
 		parent scope, and continue bubbling upwards. 
 		If not found, return nullptr
 		*/
-		Symbol* resolve(const string name);
+		virtual Symbol* resolve(const string name);
 
 		/* 
 		This method is for testing currScope and the scope chain

@@ -13,8 +13,12 @@ namespace bluefin {
 	class Symbol {
 
 	public:
-		string getName() const { return name; }
-		Type getType() const { return type; }
+		inline string getName() const { return name; }
+		inline Type getType() const { return type; }
+
+		bool operator==(Symbol& rhs);
+
+		virtual string getCategoryName() const = 0; //eg, function, struct, builtin, var
 		virtual ~Symbol() {}
 
 	protected:

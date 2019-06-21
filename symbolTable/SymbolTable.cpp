@@ -1,7 +1,18 @@
 #include "SymbolTable.h"
 #include "StructSymbol.h"
+#include "BuiltinTypeSymbol.h"
 
 using namespace bluefin;
+
+SymbolTable::SymbolTable() : currScope{ new Scope(nullptr, "global") } {
+
+	// Add all built-in types to the global scope
+	declare(new BuiltinTypeSymbol(BuiltinTypeSymbol::Possibilities::BOOL));
+	declare(new BuiltinTypeSymbol(BuiltinTypeSymbol::Possibilities::FLOAT));
+	declare(new BuiltinTypeSymbol(BuiltinTypeSymbol::Possibilities::INT));
+	declare(new BuiltinTypeSymbol(BuiltinTypeSymbol::Possibilities::VOID));
+	declare(new BuiltinTypeSymbol(BuiltinTypeSymbol::Possibilities::STRING));
+}
 
 void SymbolTable::enterScope(const string scopeName) {
 	Scope* scope = new Scope(currScope, scopeName); 

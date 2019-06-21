@@ -4,7 +4,7 @@
 
 namespace bluefin {
 
-	class BuiltinType : public Type, public Symbol
+	class BuiltinTypeSymbol : public Type, public Symbol
 	{
 	public:
 
@@ -12,8 +12,10 @@ namespace bluefin {
 			INT, FLOAT, STRING, BOOL, VOID
 		};
 
-		BuiltinType(const Possibilities type) : Symbol{ convertEnumToString(type), *this } //TODO: use enum for typename?
+		BuiltinTypeSymbol(const Possibilities type) : Symbol{ convertEnumToString(type), *this } //TODO: use enum for typename?
 		{ } 
+
+		inline string getCategoryName() const override { return "builtinType"; }
 
 	private:
 		string convertEnumToString(Possibilities possibility) const {
