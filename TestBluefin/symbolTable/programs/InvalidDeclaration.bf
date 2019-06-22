@@ -1,0 +1,2 @@
+First a;
+void b;

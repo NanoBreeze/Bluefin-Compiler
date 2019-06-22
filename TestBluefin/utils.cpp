@@ -7,6 +7,7 @@
 #include "../generated/bluefin/bluefinParser.h"
 
 using namespace antlr4;
+using namespace std;
 using std::make_shared;
 
 string getSExpression(const string program) {
@@ -32,4 +33,29 @@ void improperSyntax(const string program) {
 	bluefin::bluefinParser parser(&tokens);
 	parser.setErrorHandler(make_shared<BailErrorStrategy>()); 
 	tree::ParseTree* tree = parser.program(); // expect exception to be thrown
+}
+
+namespace SymbolTableTests {
+
+	using namespace bluefin;
+
+	// Memory leaks! But that's okay b/c these are used just for tests
+	tree::ParseTree* createParseTree(std::istream& is) {
+
+		ANTLRInputStream* input = new ANTLRInputStream(is);
+
+		bluefinLexer* lexer = new bluefinLexer(input);
+		CommonTokenStream* tokens = new CommonTokenStream(lexer);
+
+		bluefinParser* parser = new bluefinParser(tokens);
+		return parser->program();
+	}
+
+	string readFile(const string filePath)
+	{
+		std::ifstream file(filePath);
+		std::stringstream buffer;
+		buffer << file.rdbuf();
+		return buffer.str();
+	}
 }

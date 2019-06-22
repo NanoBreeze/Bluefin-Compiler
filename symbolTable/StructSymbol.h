@@ -31,6 +31,8 @@ Creating a structsymbol and attaching its scope are now two different phases, bu
 
 		Symbol* resolveMember(const string memberName);
 
+		inline string getCategoryName() const override { return "struct"; }
+
 	private:
 		Scope* scope;
 	};

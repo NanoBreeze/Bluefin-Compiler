@@ -1,0 +1,25 @@
+declare - A - struct
+enterScope - Level 1
+resolve - int - builtinType
+declare - a - var
+resolve - int - builtinType
+declare - b - var
+resolve - int - builtinType
+declare - c - var
+exitScope - Level 1
+declare - B - struct
+enterScope - Level 1
+resolve - int - builtinType
+declare - a - var
+resolve - int - builtinType
+declare - d - var
+exitScope - Level 1
+declare - C - struct
+enterScope - Level 1
+resolve - A - struct
+declare - a - var
+resolve - B - struct
+declare - b - var
+resolve - int - builtinType
+declare - c - var
+exitScope - Level 1

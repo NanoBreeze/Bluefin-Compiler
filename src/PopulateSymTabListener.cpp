@@ -1,0 +1,61 @@
+#include "PopulateSymTabListener.h"
+
+#include <iostream>
+#include "../symbolTable/Symbol.h"
+#include "../symbolTable/VariableSymbol.h"
+#include "../symbolTable/StructSymbol.h"
+#include "../symbolTable/FunctionSymbol.h"
+#include <assert.h>
+
+using namespace bluefin;
+
+void PopulateSymTabListener::enterVarDecl(bluefinParser::VarDeclContext* ctx)  
+{
+	const string typeName = ctx->type()->getText();
+	Symbol* typeSymbol = symbolTable.resolve(typeName);
+	assert(typeSymbol != nullptr);
+
+	string varName = ctx->ID()->getText();
+	Symbol* varSym = new VariableSymbol(varName, typeSymbol->getType());
+
+	symbolTable.declare(varSym);
+}
+
+void PopulateSymTabListener::enterFuncDef(bluefinParser::FuncDefContext* ctx)
+{
+	// almost identical to enterVarDecl(..)
+	// TODO: Add param list
+	const string retTypeName = ctx->type()->getText();
+	Symbol* retTypeSymbol = symbolTable.resolve(retTypeName);
+	assert(retTypeSymbol != nullptr);
+
+	string funcName = ctx->ID()->getText();
+	Symbol* funcSym = new FunctionSymbol(funcName, retTypeSymbol->getType());
+
+	symbolTable.declare(funcSym);
+
+}
+
+void PopulateSymTabListener::enterStructDef(bluefinParser::StructDefContext* ctx)
+{
+	const string structName = ctx->ID()->getText();
+	Symbol* structSym = new StructSymbol(structName);
+	symbolTable.declare(structSym);
+
+	symbolTable.enterScope(); // since structs don't contain "block" elements
+}
+
+void PopulateSymTabListener::exitStructDef(bluefinParser::StructDefContext* ctx)
+{
+	symbolTable.exitScope();
+}
+
+void PopulateSymTabListener::enterBlock(bluefinParser::BlockContext* ctx)
+{
+	symbolTable.enterScope();
+}
+
+void PopulateSymTabListener::exitBlock(bluefinParser::BlockContext* ctx)
+{
+	symbolTable.exitScope();
+}

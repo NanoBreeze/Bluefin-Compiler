@@ -1,0 +1,8 @@
+resolve - int - builtinType
+declare - a - var
+resolve - int - builtinType
+declare - b - var
+resolve - void - builtinType
+declare - f - function
+enterScope - Level 1
+exitScope - Level 1

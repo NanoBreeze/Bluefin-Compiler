@@ -20,5 +20,7 @@ namespace bluefin {
 		FunctionSymbol(const string& name, const Type type) :
 			Symbol(name, type) 
 		{}
+
+		inline string getCategoryName() const override { return "function"; }
 	};
 }

@@ -1,0 +1,36 @@
+declare - First - struct
+enterScope - Level 1
+resolve - int - builtinType
+declare - b - var
+resolve - int - builtinType
+declare - c - var
+exitScope - Level 1
+resolve - First - struct
+declare - f - function
+enterScope - Level 1
+resolve - bool - builtinType
+declare - b - var
+resolve - string - builtinType
+declare - c - var
+exitScope - Level 1
+declare - Second - struct
+enterScope - Level 1
+resolve - First - struct
+declare - a - var
+resolve - string - builtinType
+declare - b - var
+exitScope - Level 1
+resolve - Second - struct
+declare - g - function
+resolve - First - struct
+declare - d - var
+enterScope = Level 1
+resolve - int - builtinType
+declare - e - var
+resolve - float - builtinType
+declare - f - var
+resolve - First - struct
+declare - a - var
+resolve - Second - struct
+declare - b - var
+exitScope - Level 1

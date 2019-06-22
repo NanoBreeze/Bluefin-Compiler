@@ -7,7 +7,7 @@
 #include "../symbolTable/Scope.h"
 #include "../symbolTable/FunctionSymbol.h"
 #include "../symbolTable/VariableSymbol.h"
-#include "../symbolTable/BuiltinType.h"
+#include "../symbolTable/BuiltinTypeSymbol.h"
 #include "../symbolTable/StructSymbol.h"
 
 namespace SymbolTableTests {
@@ -201,7 +201,7 @@ namespace SymbolTableTests {
 		Symbol* symAFunc = new FunctionSymbol("a", BuiltinTypeSymbol(BuiltinTypeSymbol::Possibilities::FLOAT));
 		symtab.declare(symA);
 
-		ASSERT_THROW(symtab.declare(symAFunc), RedefinitionException);
+		ASSERT_THROW(symtab.declare(symAFunc), ReclarationException);
 	}
 
 	TEST(SymbolTable, ResolutionInSameScope) {

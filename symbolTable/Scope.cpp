@@ -7,7 +7,7 @@ void Scope::declare(Symbol* symbol)
 {
 	// if definition already exists, throw an exception
 	if (symbols.count(symbol->getName())) {
-		throw RedefinitionException(symbol->getName());
+		throw ReclarationException(symbol->getName());
 	}
 
 	symbols.emplace(symbol->getName(), symbol);
