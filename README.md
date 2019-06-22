@@ -34,9 +34,10 @@ An identifier is a sequence of letters from the English alphabet. Unlike other l
 An identifier is used to denote a variable, a function, or a tag for a struct.
 
 **Scopes of Identifiers**: An identifier is visible (can be referred to) only if it is within its scope. There are three types of scopes:
-- File scope (global scope for the whole file)
-- Block scope (anything inside `{` ... `}`, including function blocks, while loops, and nested blocks)
-- Function prototype scope (eg, `n` in `void f(int n, int a[n])`)
+- File scope: global scope for the whole file)
+- Block scope: almost anything inside `{` ... `}`, including while loops, and nested blocks.
+ The sole exception are functions, in which the body and the parameters share the same scope. 
+ For functions, the block scope starts at the '(' and ends at the '}'. Note that the '{' will not create a second scope.
 
 **Types**: There are two categories of types: 
 1. Object types, including built-in types and user-defined `struct`s. Built-in types include: `float`, `int`, `string`. 
