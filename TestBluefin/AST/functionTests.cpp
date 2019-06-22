@@ -15,7 +15,7 @@ TEST(Function, NoParamBuiltinReturn) {
 	const string prog = "void hi() {}";
 	const string sExpr = getSExpression(prog);
 
-	const string expected = "(program (funcDef (type (builtinType void)) hi ( ) (block { })))";
+	const string expected = "(program (funcDef (type (builtinType void)) hi ( ) { }))";
 	EXPECT_EQ(sExpr, expected);
 }
 
@@ -24,7 +24,7 @@ TEST(Function, NoParamNotBuiltinReturn) {
 	const string prog = "Hi hi() {}";
 	const string sExpr = getSExpression(prog);
 
-	const string expected = "(program (funcDef (type Hi) hi ( ) (block { })))";
+	const string expected = "(program (funcDef (type Hi) hi ( ) { }))";
 	EXPECT_EQ(sExpr, expected);
 }
 
@@ -33,7 +33,7 @@ TEST(Function, SingleBuiltinParam) {
 	const string prog = "Hi hi(int a) {}";
 	const string sExpr = getSExpression(prog);
 
-	const string expected = "(program (funcDef (type Hi) hi ( (paramList (param (type (builtinType int)) a)) ) (block { })))";
+	const string expected = "(program (funcDef (type Hi) hi ( (paramList (param (type (builtinType int)) a)) ) { }))";
 	EXPECT_EQ(sExpr, expected);
 }
 
@@ -42,7 +42,7 @@ TEST(Function, DoubleParam) {
 	const string prog = "Hi hi(int a, float b) {}";
 	const string sExpr = getSExpression(prog);
 
-	const string expected = "(program (funcDef (type Hi) hi ( (paramList (param (type (builtinType int)) a) , (param (type (builtinType float)) b)) ) (block { })))";
+	const string expected = "(program (funcDef (type Hi) hi ( (paramList (param (type (builtinType int)) a) , (param (type (builtinType float)) b)) ) { }))";
 	EXPECT_EQ(sExpr, expected);
 }
 
@@ -51,7 +51,7 @@ TEST(Function, WithDefinition) {
 	const string prog = "Hi hi() { A x; }";
 	const string sExpr = getSExpression(prog);
 
-	const string expected = "(program (funcDef (type Hi) hi ( ) (block { (stmt (varDecl (type A) x ;)) })))";
+	const string expected = "(program (funcDef (type Hi) hi ( ) { (stmt (varDecl (type A) x ;)) }))";
 	EXPECT_EQ(sExpr, expected);
 }
 

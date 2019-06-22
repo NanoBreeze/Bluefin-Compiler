@@ -6,9 +6,8 @@ resolve - Another - struct
 declare - b - var
 resolve - void - builtinType
 declare - g - function
-resolve - Second - UNRESOLVED
-declare - b - var
 enterScope - Level 1
+resolve - Second - UNRESOLVED
 resolve - Third - UNRESOLVED
 exitScope - Level 1
 declare - Third - struct

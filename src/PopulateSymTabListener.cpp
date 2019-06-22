@@ -28,7 +28,6 @@ void PopulateSymTabListener::enterVarDecl(bluefinParser::VarDeclContext* ctx)
 void PopulateSymTabListener::enterFuncDef(bluefinParser::FuncDefContext* ctx)
 {
 	// almost identical to enterVarDecl(..)
-	// TODO: Add param list
 	const string retTypeName = ctx->type()->getText();
 	Symbol* retTypeSymbol = symbolTable.resolve(retTypeName);
 	// assert(retTypeSymbol != nullptr); if this fails, we don't want to stop execution just right now
@@ -39,6 +38,28 @@ void PopulateSymTabListener::enterFuncDef(bluefinParser::FuncDefContext* ctx)
 
 		symbolTable.declare(funcSym);
 	}
+
+	symbolTable.enterScope();
+}
+
+void PopulateSymTabListener::enterParam(bluefinParser::ParamContext* ctx)
+{
+	// almost identical to enterVarDecl(..)
+	const string retTypeName = ctx->type()->getText();
+	Symbol* retTypeSymbol = symbolTable.resolve(retTypeName);
+	// assert(retTypeSymbol != nullptr); if this fails, we don't want to stop execution just right now
+
+	if (retTypeSymbol) {
+		string funcName = ctx->ID()->getText();
+		Symbol* funcSym = new VariableSymbol(funcName, retTypeSymbol->getType());
+
+		symbolTable.declare(funcSym);
+	}
+}
+
+void PopulateSymTabListener::exitFuncDef(bluefinParser::FuncDefContext* ctx)
+{
+	symbolTable.exitScope();
 }
 
 void PopulateSymTabListener::enterStructDef(bluefinParser::StructDefContext* ctx)

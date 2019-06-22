@@ -22,9 +22,9 @@ declare - b - var
 exitScope - Level 1
 resolve - Second - struct
 declare - g - function
+enterScope - Level 1
 resolve - First - struct
 declare - d - var
-enterScope = Level 1
 resolve - int - builtinType
 declare - e - var
 resolve - float - builtinType

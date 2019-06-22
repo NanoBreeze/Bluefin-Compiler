@@ -48,6 +48,7 @@ namespace SymbolTableTests {
 		CommonTokenStream* tokens = new CommonTokenStream(lexer);
 
 		bluefinParser* parser = new bluefinParser(tokens);
+		parser->setErrorHandler(make_shared<BailErrorStrategy>()); 
 		return parser->program();
 	}
 

@@ -1,4 +1,3 @@
-
 struct First {
 	int b;
 	int b ;

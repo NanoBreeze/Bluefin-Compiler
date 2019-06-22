@@ -1,7 +1,11 @@
 resolve - int - builtinType
 declare - a - var
-resolve - int - builtinType
+resolve - float - builtinType
 declare - b - var
+resolve - bool - builtinType
+declare - c - var
+resolve - string - builtinType
+declare - d - var
 resolve - void - builtinType
 declare - f - function
 enterScope - Level 1

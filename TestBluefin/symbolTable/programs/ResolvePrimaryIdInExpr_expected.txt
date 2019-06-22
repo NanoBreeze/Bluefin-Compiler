@@ -11,9 +11,9 @@ resolve - b - var
 exitScope - Level 1
 resolve - bool - builtinType
 declare - g - function
+enterScope - Level 1
 resolve - float - builtinType
 declare - a - var
-enterScope - Level 1
 resolve - b - var
 resolve - a - var
 exitScope - Level 1

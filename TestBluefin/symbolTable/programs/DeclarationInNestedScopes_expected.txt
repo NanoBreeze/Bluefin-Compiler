@@ -10,9 +10,9 @@ declare - c - var
 exitScope - Level 1
 resolve - bool - builtinType
 declare - g - function
+enterScope - Level 1
 resolve - int - builtinType
 declare - d - var
-enterScope - Level 1
 resolve - int - builtinType
 declare - e - var
 enterScope - Level 2

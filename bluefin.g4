@@ -2,7 +2,7 @@ grammar bluefin;
 
 program : (funcDef | varDecl | structDef)+ ;
 
-funcDef : type ID '(' paramList? ')' block ;
+funcDef : type ID '(' paramList? ')' '{' stmt* '}' ;
 
 type : builtinType
      | ID ;

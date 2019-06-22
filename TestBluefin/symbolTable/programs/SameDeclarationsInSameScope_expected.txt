@@ -11,9 +11,9 @@ declare - c - REDECLARATION
 exitScope - Level 1
 resolve - First - struct
 declare - f - function
+enterScope - Level 1
 resolve - float - builtinType
 declare - a - var
-enterScope - Level 1
 resolve - First - struct
 declare - a - REDECLARATION
 enterScope - Level 2
@@ -30,6 +30,10 @@ declare - b - var
 resolve - bool - builtinType
 declare - f - REDECLARATION
 enterScope - Level 1
+resolve - int - builtinType
+declare - x - var
+resolve - float - builtinType
+declare - x - REDECLARATION
 exitScope - Level 1
 resolve - int - builtinType
 declare - First - REDECLARATION

@@ -59,7 +59,7 @@ namespace SymbolTableTests {
 	}
 
 	TEST(SymbolTable, Program_SameDeclarationInSameScope) {
-		validateProgram("SameDeclarationInSameScope.bf", "SameDeclarationInSameScope_expected.txt");
+		validateProgram("SameDeclarationsInSameScope.bf", "SameDeclarationsInSameScope_expected.txt");
 	}
 	TEST(SymbolTable, Program_StructDeclaration) {
 		validateProgram("StructDeclaration.bf", "StructDeclaration_expected.txt");

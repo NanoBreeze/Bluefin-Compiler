@@ -3,7 +3,7 @@ void f() {
 	float b;
 	string c;
 }
-bool g(int d) {
+bool g(int d, float z) {
 	int e;
 	float f;
 	int g;

@@ -17,9 +17,9 @@ TEST(Statement, IfNoElse) {
 	
 	const string sExpr = getSExpression(prog);
 
-	const string header = "(program (funcDef (type (builtinType int)) main ( ) (block { ";
+	const string header = "(program (funcDef (type (builtinType int)) main ( ) { ";
 	const string expected = "(stmt (stmtIf if ( (expr 57) ) (block { })))";
-	const string footer = " })))";
+	const string footer = " }))";
 	EXPECT_EQ(sExpr, header + expected + footer);
 }
 
@@ -34,9 +34,9 @@ TEST(Statement, IfWithElse) {
 
 	const string sExpr = getSExpression(prog);
 
-	const string header = "(program (funcDef (type (builtinType int)) main ( ) (block { ";
+	const string header = "(program (funcDef (type (builtinType int)) main ( ) { ";
 	const string expected = "(stmt (stmtIf if ( (expr 57) ) (block { }) else (block { })))";
-	const string footer = " })))";
+	const string footer = " }))";
 	EXPECT_EQ(sExpr, header + expected + footer);
 }
 
@@ -50,9 +50,9 @@ TEST(Statement, While) {
 
 	const string sExpr = getSExpression(prog);
 
-	const string header = "(program (funcDef (type (builtinType int)) main ( ) (block { ";
+	const string header = "(program (funcDef (type (builtinType int)) main ( ) { ";
 	const string expected = "(stmt (stmtWhile while ( (expr 57) ) (block { })))";
-	const string footer = " })))";
+	const string footer = " }))";
 
 	EXPECT_EQ(sExpr, header + expected + footer);
 }
@@ -67,9 +67,9 @@ TEST(Statement, ReturnExpression) {
 
 	const string sExpr = getSExpression(prog);
 
-	const string header = "(program (funcDef (type (builtinType int)) main ( ) (block { ";
+	const string header = "(program (funcDef (type (builtinType int)) main ( ) { ";
 	const string expected = "(stmt (stmtReturn return (expr 57) ;))";
-	const string footer = " })))";
+	const string footer = " }))";
 
 	EXPECT_EQ(sExpr, header + expected + footer);
 }
@@ -84,9 +84,9 @@ TEST(Statement, ReturnNoExpr) {
 
 	const string sExpr = getSExpression(prog);
 
-	const string header = "(program (funcDef (type (builtinType int)) main ( ) (block { ";
+	const string header = "(program (funcDef (type (builtinType int)) main ( ) { ";
 	const string expected = "(stmt (stmtReturn return ;))";
-	const string footer = " })))";
+	const string footer = " }))";
 
 	EXPECT_EQ(sExpr, header + expected + footer);
 }
@@ -103,9 +103,9 @@ TEST(Statement, Break) {
 
 	const string sExpr = getSExpression(prog);
 
-	const string header = "(program (funcDef (type (builtinType int)) main ( ) (block { ";
+	const string header = "(program (funcDef (type (builtinType int)) main ( ) { ";
 	const string expected = "(stmt (stmtWhile while ( (expr 57) ) (block { (stmt (stmtBreak break ;)) })))";
-	const string footer = " })))";
+	const string footer = " }))";
 
 	EXPECT_EQ(sExpr, header + expected + footer);
 }
@@ -122,9 +122,9 @@ TEST(Statement, Continue) {
 
 	const string sExpr = getSExpression(prog);
 
-	const string header = "(program (funcDef (type (builtinType int)) main ( ) (block { ";
+	const string header = "(program (funcDef (type (builtinType int)) main ( ) { ";
 	const string expected = "(stmt (stmtWhile while ( (expr 57) ) (block { (stmt (stmtContinue continue ;)) })))";
-	const string footer = " })))";
+	const string footer = " }))";
 
 	EXPECT_EQ(sExpr, header + expected + footer);
 }
@@ -139,9 +139,9 @@ TEST(Statement, BlockEmpty) {
 
 	const string sExpr = getSExpression(prog);
 
-	const string header = "(program (funcDef (type (builtinType int)) main ( ) (block { ";
+	const string header = "(program (funcDef (type (builtinType int)) main ( ) { ";
 	const string expected = "(stmt (block { }))";
-	const string footer = " })))";
+	const string footer = " }))";
 
 	EXPECT_EQ(sExpr, header + expected + footer);
 }
@@ -158,9 +158,9 @@ TEST(Statement, BlockWithStatement) {
 
 	const string sExpr = getSExpression(prog);
 
-	const string header = "(program (funcDef (type (builtinType int)) main ( ) (block { ";
+	const string header = "(program (funcDef (type (builtinType int)) main ( ) { ";
 	const string expected = "(stmt (block { (stmt (varDecl (type A) m ;)) }))";
-	const string footer = " })))";
+	const string footer = " }))";
 
 	EXPECT_EQ(sExpr, header + expected + footer);
 }
@@ -175,9 +175,9 @@ TEST(Statement, StatementExpr) {
 
 	const string sExpr = getSExpression(prog);
 
-	const string header = "(program (funcDef (type (builtinType int)) main ( ) (block { ";
+	const string header = "(program (funcDef (type (builtinType int)) main ( ) { ";
 	const string expected = "(stmt (stmtExpr (expr 99) ;))";
-	const string footer = " })))";
+	const string footer = " }))";
 
 	EXPECT_EQ(sExpr, header + expected + footer);
 }
@@ -192,9 +192,9 @@ TEST(Statement, ExpressionPrecedence) {
 
 	const string sExpr = getSExpression(prog);
 
-	const string header = "(program (funcDef (type (builtinType int)) main ( ) (block { ";
+	const string header = "(program (funcDef (type (builtinType int)) main ( ) { ";
 	const string expected = "(stmt (stmtExpr (expr (expr (expr (expr (expr (expr (expr (expr (expr - (expr 1)) * (expr 2)) / (expr 3)) + (expr 4)) - (expr 5)) + (expr ( (expr (expr 6) - (expr 7)) ))) >= (expr 3)) == (expr 9)) || (expr (expr true) && (expr false))) ;))";
-	const string footer = " })))";
+	const string footer = " }))";
 
 	EXPECT_EQ(sExpr, header + expected + footer);
 }
@@ -210,9 +210,9 @@ TEST(Statement, ExpressionRightAssociativity) {
 
 	const string sExpr = getSExpression(prog);
 
-	const string header = "(program (funcDef (type (builtinType int)) main ( ) (block { ";
+	const string header = "(program (funcDef (type (builtinType int)) main ( ) { ";
 	const string expected = "(stmt (stmtExpr (expr (expr a) = (expr (expr b) = (expr c))) ;))";
-	const string footer = " })))";
+	const string footer = " }))";
 
 
 	EXPECT_EQ(sExpr, header + expected + footer);
@@ -229,9 +229,9 @@ TEST(Statement, FunctionCallWithNoArg) {
 
 	const string sExpr = getSExpression(prog);
 
-	const string header = "(program (funcDef (type (builtinType int)) main ( ) (block { ";
+	const string header = "(program (funcDef (type (builtinType int)) main ( ) { ";
 	const string expected = "(stmt (stmtExpr (expr (expr f) ( )) ;))";
-	const string footer = " })))";
+	const string footer = " }))";
 
 	EXPECT_EQ(sExpr, header + expected + footer);
 }
@@ -247,9 +247,9 @@ TEST(Statement, FunctionCallWithOneArg) {
 
 	const string sExpr = getSExpression(prog);
 
-	const string header = "(program (funcDef (type (builtinType int)) main ( ) (block { ";
+	const string header = "(program (funcDef (type (builtinType int)) main ( ) { ";
 	const string expected = "(stmt (stmtExpr (expr (expr f) ( (argList (expr (expr a) + (expr b))) )) ;))";
-	const string footer = " })))";
+	const string footer = " }))";
 
 	EXPECT_EQ(sExpr, header + expected + footer);
 }
@@ -265,9 +265,9 @@ TEST(Statement, FunctionCallWithTwoArgs) {
 
 	const string sExpr = getSExpression(prog);
 
-	const string header = "(program (funcDef (type (builtinType int)) main ( ) (block { ";
+	const string header = "(program (funcDef (type (builtinType int)) main ( ) { ";
 	const string expected = "(stmt (stmtExpr (expr (expr f) ( (argList (expr 5) , (expr (expr g) ( ))) )) ;))";
-	const string footer = " })))";
+	const string footer = " }))";
 
 	EXPECT_EQ(sExpr, header + expected + footer);
 }
@@ -282,9 +282,9 @@ TEST(Statement, StructMemberAccess) {
 
 	const string sExpr = getSExpression(prog);
 
-	const string header = "(program (funcDef (type (builtinType int)) main ( ) (block { ";
+	const string header = "(program (funcDef (type (builtinType int)) main ( ) { ";
 	const string expected = "(stmt (stmtExpr (expr (expr (expr a) . b) . c) ;))";
-	const string footer = " })))";
+	const string footer = " }))";
 
 	EXPECT_EQ(sExpr, header + expected + footer);
 }
@@ -301,9 +301,9 @@ TEST(Statement, VariableDecl) {
 
 	const string sExpr = getSExpression(prog);
 
-	const string header = "(program (funcDef (type (builtinType int)) main ( ) (block { ";
+	const string header = "(program (funcDef (type (builtinType int)) main ( ) { ";
 	const string expected = "(stmt (varDecl (type (builtinType int)) a ;))";
-	const string footer = " })))";
+	const string footer = " }))";
 
 	EXPECT_EQ(sExpr, header + expected + footer);
 }
