@@ -64,4 +64,8 @@ namespace SymbolTableTests {
 	TEST(SymbolTable, Program_StructDeclaration) {
 		validateProgram("StructDeclaration.bf", "StructDeclaration_expected.txt");
 	}
+
+	TEST(SymbolTable, Program_ResolvePrimaryIdInExpr) {
+		validateProgram("ResolvePrimaryIdInExpr.bf", "ResolvePrimaryIdInExpr_expected.txt");
+	}
 }

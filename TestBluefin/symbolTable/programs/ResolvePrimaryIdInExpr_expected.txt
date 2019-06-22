@@ -1,0 +1,26 @@
+resolve - int - builtinType
+declare - a - var
+resolve - float - builtinType
+declare - b - var
+resolve - void - builtinType
+declare - f - function
+enterScope - Level 1
+resolve - a - var
+resolve - a - var
+resolve - b - var
+exitScope - Level 1
+resolve - bool - builtinType
+declare - g - function
+resolve - float - builtinType
+declare - a - var
+enterScope - Level 1
+resolve - b - var
+resolve - a - var
+exitScope - Level 1
+resolve - int - builtinType
+declare - main - function
+enterScope - Level 1
+resolve - f - function
+resolve - g - function
+resolve - c - UNRESOLVED
+exitScope - Level 1

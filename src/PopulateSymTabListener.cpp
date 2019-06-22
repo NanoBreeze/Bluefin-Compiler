@@ -55,6 +55,11 @@ void PopulateSymTabListener::exitStructDef(bluefinParser::StructDefContext* ctx)
 	symbolTable.exitScope();
 }
 
+void PopulateSymTabListener::enterPrimaryId(bluefinParser::PrimaryIdContext* ctx)
+{
+	symbolTable.resolve(ctx->ID()->getText());
+}
+
 void PopulateSymTabListener::enterBlock(bluefinParser::BlockContext* ctx)
 {
 	symbolTable.enterScope();

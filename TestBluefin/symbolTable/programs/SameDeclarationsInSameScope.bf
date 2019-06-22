@@ -17,5 +17,5 @@ First f(float a) {
 First a;
 string b;
 
-bool f() {}
+bool f(int x, float x) {}
 int First;

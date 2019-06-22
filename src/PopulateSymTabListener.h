@@ -20,6 +20,7 @@ namespace bluefin {
 		void enterStructDef(bluefinParser::StructDefContext*) override;
 		void exitStructDef(bluefinParser::StructDefContext*) override;
 
+		void enterPrimaryId(bluefinParser::PrimaryIdContext*) override;
 
 		void enterBlock(bluefinParser::BlockContext*) override;
 		void exitBlock(bluefinParser::BlockContext*) override;
