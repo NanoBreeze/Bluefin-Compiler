@@ -13,12 +13,16 @@ void PopulateSymTabListener::enterVarDecl(bluefinParser::VarDeclContext* ctx)
 {
 	const string typeName = ctx->type()->getText();
 	Symbol* typeSymbol = symbolTable.resolve(typeName);
-	assert(typeSymbol != nullptr);
+	// assert(typeSymbol != nullptr);
+	// right now, if this fails, we don't want to stop execution
 
-	string varName = ctx->ID()->getText();
-	Symbol* varSym = new VariableSymbol(varName, typeSymbol->getType());
+	// However, we will skip the variable declaration if can't resolve its type
+	if (typeSymbol) {
+		string varName = ctx->ID()->getText();
+		Symbol* varSym = new VariableSymbol(varName, typeSymbol->getType());
 
-	symbolTable.declare(varSym);
+		symbolTable.declare(varSym);
+	}
 }
 
 void PopulateSymTabListener::enterFuncDef(bluefinParser::FuncDefContext* ctx)
@@ -27,13 +31,14 @@ void PopulateSymTabListener::enterFuncDef(bluefinParser::FuncDefContext* ctx)
 	// TODO: Add param list
 	const string retTypeName = ctx->type()->getText();
 	Symbol* retTypeSymbol = symbolTable.resolve(retTypeName);
-	assert(retTypeSymbol != nullptr);
+	// assert(retTypeSymbol != nullptr); if this fails, we don't want to stop execution just right now
 
-	string funcName = ctx->ID()->getText();
-	Symbol* funcSym = new FunctionSymbol(funcName, retTypeSymbol->getType());
+	if (retTypeSymbol) {
+		string funcName = ctx->ID()->getText();
+		Symbol* funcSym = new FunctionSymbol(funcName, retTypeSymbol->getType());
 
-	symbolTable.declare(funcSym);
-
+		symbolTable.declare(funcSym);
+	}
 }
 
 void PopulateSymTabListener::enterStructDef(bluefinParser::StructDefContext* ctx)

@@ -53,5 +53,6 @@ namespace SymbolTableTests {
 		string createDeclareDebugMsg(Symbol*) const;
 		string createRedeclarationDebugMsg(Symbol*) const;
 		string createResolveDebugMsg(Symbol const* resolvedSym) const;
+		string createUnresolvedDebugMsg(string resolvedSym) const;
 	};
 }

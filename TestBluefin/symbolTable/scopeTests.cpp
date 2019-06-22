@@ -258,9 +258,7 @@ namespace SymbolTableTests {
 		symtab.declare(symB);
 
 		symtab.enterScope("Second");
-		Symbol* resC = symtab.resolve("c");
-
-		ASSERT_EQ(resC, nullptr);
+		EXPECT_THROW(symtab.resolve("c"), UnresolvedSymbolException);
 	}
 
 	TEST(SymbolTable, StructResolveMember) {

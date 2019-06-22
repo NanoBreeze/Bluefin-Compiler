@@ -1,6 +1,7 @@
 #include "SymbolTable.h"
 #include "StructSymbol.h"
 #include "BuiltinTypeSymbol.h"
+#include "./Exceptions.h"
 
 using namespace bluefin;
 
@@ -53,5 +54,5 @@ Symbol* SymbolTable::resolve(const string name) {
 		if (sym) { return sym; }
 	} while (scope = scope->getEnclosingScope());
 		
-	return nullptr;
+	throw UnresolvedSymbolException(name);
 }

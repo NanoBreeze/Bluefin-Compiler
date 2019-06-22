@@ -49,6 +49,10 @@ namespace SymbolTableTests {
 	TEST(SymbolTable, Program_FunctionDeclaration) {
 		validateProgram("FunctionDeclaration.bf", "FunctionDeclaration_expected.txt");
 	}
+
+	TEST(SymbolTable, Program_InvalidAndUnresolvedDeclaration) {
+		validateProgram("InvalidAndUnresolvedDeclaration.bf", "InvalidAndUnresolvedDeclaration_expected.txt");
+	}
 	TEST(SymbolTable, Program_MixedDeclaration) {
 		//MixedDeclaration
 		validateProgram("MixedDeclaration.bf", "MixedDeclaration_expected.txt");

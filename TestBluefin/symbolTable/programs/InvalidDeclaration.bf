@@ -1,2 +1,0 @@
-First a;
-void b;

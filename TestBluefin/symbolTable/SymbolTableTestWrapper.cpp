@@ -38,9 +38,18 @@ void SymbolTableTestWrapper::declare(Symbol* symbol) {
 
 Symbol* SymbolTableTestWrapper::resolve(const string name) {
 
-	Symbol* resolvedSym = symbolTable.resolve(name);
-	assert(resolvedSym->getName() == name);
-	output += createResolveDebugMsg(resolvedSym);
+	Symbol* resolvedSym = nullptr;
+	try {
+		resolvedSym = symbolTable.resolve(name);
+		output += createResolveDebugMsg(resolvedSym);
+		assert(resolvedSym->getName() == name);
+	}
+	catch (UnresolvedSymbolException e) {
+		output += createUnresolvedDebugMsg(name);
+	}
+	catch (...) {
+		throw "This kind of exception not expected";
+	}
 
 	return resolvedSym;
 }
@@ -79,4 +88,9 @@ string SymbolTableTestWrapper::createResolveDebugMsg(Symbol const* resolvedSym) 
 	const string symCategory = resolvedSym->getCategoryName();
 
 	return "resolve - " + resolvedSymName + " - " + symCategory + "\n";
+}
+
+string SymbolTableTestWrapper::createUnresolvedDebugMsg(string resolvedSymName) const {
+
+	return "resolve - " + resolvedSymName + " - " "UNRESOLVED\n";
 }

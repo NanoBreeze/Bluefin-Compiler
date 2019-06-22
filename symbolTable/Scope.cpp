@@ -5,7 +5,7 @@ using namespace bluefin;
 
 void Scope::declare(Symbol* symbol)
 {
-	// if definition already exists, throw an exception
+	// if declaration had already occured in this scope, throw an exception
 	if (symbols.count(symbol->getName())) {
 		throw ReclarationException(symbol->getName());
 	}

@@ -1,0 +1,16 @@
+resolve - First - UNRESOLVED
+declare - Another - struct
+enterScope - Level 1
+exitScope - Level 1
+resolve - Another - struct
+declare - b - var
+resolve - void - builtinType
+declare - g - function
+resolve - Second - UNRESOLVED
+declare - b - var
+enterScope - Level 1
+resolve - Third - UNRESOLVED
+exitScope - Level 1
+declare - Third - struct
+enterScope - Level 1
+exitScope - Level 1
