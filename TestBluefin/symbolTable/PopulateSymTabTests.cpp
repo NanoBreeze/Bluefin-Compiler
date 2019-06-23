@@ -1,12 +1,13 @@
 #include "pch.h"
 
 #include "antlr4-runtime.h"
-#include "utils.h"
+#include "../utils.h"
 #include <iostream>
 #include <fstream>
 
-#include "../symbolTable/SymbolTable.h"
-#include "../src/PopulateSymTabListener.h"
+#include "../../symbolTable/SymbolTable.h"
+#include "../../symbolTable/SymbolFactory.h"
+#include "../../src/PopulateSymTabListener.h"
 #include "SymbolTableTestWrapper.h"
 
 namespace SymbolTableTests {
@@ -25,7 +26,8 @@ namespace SymbolTableTests {
 
 		tree::ParseTreeWalker walker;
 		SymbolTableTestWrapper symTab; 
-		PopulateSymTabListener listener(symTab);
+		SymbolFactory symFact;
+		PopulateSymTabListener listener(symTab, symFact);
 
 		walker.walk(&listener, tree);
 

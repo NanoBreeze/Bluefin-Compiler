@@ -1,8 +1,8 @@
 #pragma once
 
 #include <string>
-#include "../symbolTable/SymbolTable.h"
-#include "../symbolTable/Symbol.h"
+#include "../../symbolTable/SymbolTable.h"
+#include "../../symbolTable/Symbol.h"
 
 namespace SymbolTableTests {
 

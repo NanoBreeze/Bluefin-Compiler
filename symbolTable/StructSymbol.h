@@ -29,7 +29,7 @@ Creating a structsymbol and attaching its scope are now two different phases, bu
 		*/
 		void attachScope(Scope*);
 
-		Symbol* resolveMember(const string memberName);
+		virtual Symbol* resolveMember(const string memberName); // virtual to allow testing, so test can write
 
 		inline string getCategoryName() const override { return "struct"; }
 		inline string type2str() const override { return getName(); }

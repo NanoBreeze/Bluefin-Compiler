@@ -1,14 +1,14 @@
 #include "pch.h"
 
 #include <iostream>
-#include "../symbolTable/Exceptions.h"
-#include "../symbolTable/Symbol.h"
-#include "../symbolTable/SymbolTable.h"
-#include "../symbolTable/Scope.h"
-#include "../symbolTable/FunctionSymbol.h"
-#include "../symbolTable/VariableSymbol.h"
-#include "../symbolTable/BuiltinTypeSymbol.h"
-#include "../symbolTable/StructSymbol.h"
+#include "../../symbolTable/Exceptions.h"
+#include "../../symbolTable/Symbol.h"
+#include "../../symbolTable/SymbolTable.h"
+#include "../../symbolTable/Scope.h"
+#include "../../symbolTable/FunctionSymbol.h"
+#include "../../symbolTable/VariableSymbol.h"
+#include "../../symbolTable/BuiltinTypeSymbol.h"
+#include "../../symbolTable/StructSymbol.h"
 
 namespace SymbolTableTests {
 

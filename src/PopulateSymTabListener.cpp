@@ -19,7 +19,7 @@ void PopulateSymTabListener::enterVarDecl(bluefinParser::VarDeclContext* ctx)
 	// However, we will skip the variable declaration if can't resolve its type
 	if (typeSymbol) {
 		string varName = ctx->ID()->getText();
-		Symbol* varSym = new VariableSymbol(varName, typeSymbol->getType());
+		Symbol* varSym =  symbolFactory.createVariableSymbol(varName, typeSymbol->getType());
 
 		symbolTable.declare(varSym);
 	}
@@ -34,7 +34,7 @@ void PopulateSymTabListener::enterFuncDef(bluefinParser::FuncDefContext* ctx)
 
 	if (retTypeSymbol) {
 		string funcName = ctx->ID()->getText();
-		Symbol* funcSym = new FunctionSymbol(funcName, retTypeSymbol->getType());
+		Symbol* funcSym = symbolFactory.createFunctionSymbol(funcName, retTypeSymbol->getType());
 
 		symbolTable.declare(funcSym);
 	}
@@ -51,7 +51,7 @@ void PopulateSymTabListener::enterParam(bluefinParser::ParamContext* ctx)
 
 	if (retTypeSymbol) {
 		string funcName = ctx->ID()->getText();
-		Symbol* funcSym = new VariableSymbol(funcName, retTypeSymbol->getType());
+		Symbol* funcSym = symbolFactory.createVariableSymbol(funcName, retTypeSymbol->getType());
 
 		symbolTable.declare(funcSym);
 	}
@@ -65,7 +65,7 @@ void PopulateSymTabListener::exitFuncDef(bluefinParser::FuncDefContext* ctx)
 void PopulateSymTabListener::enterStructDef(bluefinParser::StructDefContext* ctx)
 {
 	const string structName = ctx->ID()->getText();
-	Symbol* structSym = new StructSymbol(structName);
+	Symbol* structSym = symbolFactory.createStructSymbol(structName);
 	symbolTable.declare(structSym);
 
 	symbolTable.enterScope(); // since structs don't contain "block" elements
@@ -78,8 +78,26 @@ void PopulateSymTabListener::exitStructDef(bluefinParser::StructDefContext* ctx)
 
 void PopulateSymTabListener::enterPrimaryId(bluefinParser::PrimaryIdContext* ctx)
 {
-	symbolTable.resolve(ctx->ID()->getText());
+	Symbol* resolvedSym = symbolTable.resolve(ctx->ID()->getText());
+
+	if (resolvedSym) { // if not resolved, then this is not resolved. Uh oh!
+		if (StructSymbol * s = dynamic_cast<StructSymbol*>(resolvedSym->getType())) {
+			structSymbolStack.push(s); // this Id has the type of a structSymbol. eg, A a; a.b; "a" in "a.b" is the primaryId
+		}
+	}
 }
+
+void PopulateSymTabListener::exitMemberAccess(bluefinParser::MemberAccessContext* ctx)
+{
+	StructSymbol* s = structSymbolStack.top();
+	structSymbolStack.pop();
+
+	Type* res = s->resolveMember(ctx->ID()->getText())->getType();
+	if (StructSymbol* resStruct = dynamic_cast<StructSymbol*>(res)) {
+		structSymbolStack.push(resStruct); // if the resolved member is a struct, it may be used later
+	}
+}
+
 
 void PopulateSymTabListener::enterBlock(bluefinParser::BlockContext* ctx)
 {
