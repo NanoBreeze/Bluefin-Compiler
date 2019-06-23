@@ -108,8 +108,8 @@ namespace SymbolTableTests {
 		SymbolTable symtab;
 		symtab.enterScope("First");
 
-		Symbol* symA = new VariableSymbol("a", BuiltinTypeSymbol(BuiltinTypeSymbol::Possibilities::INT));
-		Symbol* symB = new VariableSymbol("b", BuiltinTypeSymbol(BuiltinTypeSymbol::Possibilities::FLOAT));
+		Symbol* symA = new VariableSymbol("a", new BuiltinTypeSymbol(BuiltinTypeSymbol::Possibilities::INT));
+		Symbol* symB = new VariableSymbol("b", new BuiltinTypeSymbol(BuiltinTypeSymbol::Possibilities::FLOAT));
 		symtab.declare(symA);
 		symtab.declare(symB); 
 
@@ -124,14 +124,14 @@ namespace SymbolTableTests {
 		SymbolTable symtab;
 
 		symtab.enterScope("First");
-		Symbol* symA = new VariableSymbol("a", BuiltinTypeSymbol(BuiltinTypeSymbol::Possibilities::INT));
-		Symbol* symB = new VariableSymbol("b", BuiltinTypeSymbol(BuiltinTypeSymbol::Possibilities::INT));
+		Symbol* symA = new VariableSymbol("a", new BuiltinTypeSymbol(BuiltinTypeSymbol::Possibilities::INT));
+		Symbol* symB = new VariableSymbol("b", new BuiltinTypeSymbol(BuiltinTypeSymbol::Possibilities::INT));
 		symtab.declare(symA);
 		symtab.declare(symB); 
 
 		symtab.enterScope("Second");
-		Symbol* symC = new VariableSymbol("c", BuiltinTypeSymbol(BuiltinTypeSymbol::Possibilities::INT));
-		Symbol* symD = new VariableSymbol("d", BuiltinTypeSymbol(BuiltinTypeSymbol::Possibilities::FLOAT));
+		Symbol* symC = new VariableSymbol("c", new BuiltinTypeSymbol(BuiltinTypeSymbol::Possibilities::INT));
+		Symbol* symD = new VariableSymbol("d", new BuiltinTypeSymbol(BuiltinTypeSymbol::Possibilities::FLOAT));
 		symtab.declare(symC);
 		symtab.declare(symD); 
 
@@ -155,15 +155,15 @@ namespace SymbolTableTests {
 		SymbolTable symtab;
 
 		symtab.enterScope("First");
-		Symbol* symA = new VariableSymbol("a", BuiltinTypeSymbol(BuiltinTypeSymbol::Possibilities::INT));
-		Symbol* symB = new VariableSymbol("b", BuiltinTypeSymbol(BuiltinTypeSymbol::Possibilities::INT));
+		Symbol* symA = new VariableSymbol("a", new BuiltinTypeSymbol(BuiltinTypeSymbol::Possibilities::INT));
+		Symbol* symB = new VariableSymbol("b", new BuiltinTypeSymbol(BuiltinTypeSymbol::Possibilities::INT));
 		symtab.declare(symA);
 		symtab.declare(symB);
 
 		symtab.enterScope("Second");
-		Symbol* symA2 = new VariableSymbol("a", BuiltinTypeSymbol(BuiltinTypeSymbol::Possibilities::INT));
-		Symbol* symB2 = new FunctionSymbol("b", BuiltinTypeSymbol(BuiltinTypeSymbol::Possibilities::FLOAT));
-		Symbol* symD = new VariableSymbol("d", BuiltinTypeSymbol(BuiltinTypeSymbol::Possibilities::INT));
+		Symbol* symA2 = new VariableSymbol("a", new BuiltinTypeSymbol(BuiltinTypeSymbol::Possibilities::INT));
+		Symbol* symB2 = new FunctionSymbol("b", new BuiltinTypeSymbol(BuiltinTypeSymbol::Possibilities::FLOAT));
+		Symbol* symD = new VariableSymbol("d", new BuiltinTypeSymbol(BuiltinTypeSymbol::Possibilities::INT));
 		symtab.declare(symA2);
 		symtab.declare(symB2);
 		symtab.declare(symD);
@@ -197,8 +197,8 @@ namespace SymbolTableTests {
 		SymbolTable symtab;
 
 		symtab.enterScope("First");
-		Symbol* symA = new VariableSymbol("a", BuiltinTypeSymbol(BuiltinTypeSymbol::Possibilities::INT));
-		Symbol* symAFunc = new FunctionSymbol("a", BuiltinTypeSymbol(BuiltinTypeSymbol::Possibilities::FLOAT));
+		Symbol* symA = new VariableSymbol("a", new BuiltinTypeSymbol(BuiltinTypeSymbol::Possibilities::INT));
+		Symbol* symAFunc = new FunctionSymbol("a", new BuiltinTypeSymbol(BuiltinTypeSymbol::Possibilities::FLOAT));
 		symtab.declare(symA);
 
 		ASSERT_THROW(symtab.declare(symAFunc), ReclarationException);
@@ -209,8 +209,8 @@ namespace SymbolTableTests {
 		SymbolTable symtab;
 
 		symtab.enterScope("First");
-		Symbol* symA = new VariableSymbol("a", BuiltinTypeSymbol(BuiltinTypeSymbol::Possibilities::INT));
-		Symbol* symB = new VariableSymbol("b", BuiltinTypeSymbol(BuiltinTypeSymbol::Possibilities::FLOAT));
+		Symbol* symA = new VariableSymbol("a", new BuiltinTypeSymbol(BuiltinTypeSymbol::Possibilities::INT));
+		Symbol* symB = new VariableSymbol("b", new BuiltinTypeSymbol(BuiltinTypeSymbol::Possibilities::FLOAT));
 		symtab.declare(symA);
 		symtab.declare(symB);
 
@@ -228,13 +228,13 @@ namespace SymbolTableTests {
 		SymbolTable symtab;
 
 		symtab.enterScope("First");
-		Symbol* symA = new VariableSymbol("a", BuiltinTypeSymbol(BuiltinTypeSymbol::Possibilities::INT));
-		Symbol* symB = new VariableSymbol("b", BuiltinTypeSymbol(BuiltinTypeSymbol::Possibilities::INT));
+		Symbol* symA = new VariableSymbol("a", new BuiltinTypeSymbol(BuiltinTypeSymbol::Possibilities::INT));
+		Symbol* symB = new VariableSymbol("b", new BuiltinTypeSymbol(BuiltinTypeSymbol::Possibilities::INT));
 		symtab.declare(symA);
 		symtab.declare(symB);
 
 		symtab.enterScope("Second");
-		Symbol* symA2 = new VariableSymbol("a", BuiltinTypeSymbol(BuiltinTypeSymbol::Possibilities::INT));
+		Symbol* symA2 = new VariableSymbol("a", new BuiltinTypeSymbol(BuiltinTypeSymbol::Possibilities::INT));
 		symtab.declare(symA2);
 
 		Symbol* resA2 = symtab.resolve("a");
@@ -252,8 +252,8 @@ namespace SymbolTableTests {
 		SymbolTable symtab;
 
 		symtab.enterScope("First");
-		Symbol* symA = new VariableSymbol("a", BuiltinTypeSymbol(BuiltinTypeSymbol::Possibilities::INT));
-		Symbol* symB = new VariableSymbol("b", BuiltinTypeSymbol(BuiltinTypeSymbol::Possibilities::INT));
+		Symbol* symA = new VariableSymbol("a", new BuiltinTypeSymbol(BuiltinTypeSymbol::Possibilities::INT));
+		Symbol* symB = new VariableSymbol("b", new BuiltinTypeSymbol(BuiltinTypeSymbol::Possibilities::INT));
 		symtab.declare(symA);
 		symtab.declare(symB);
 
@@ -268,14 +268,14 @@ namespace SymbolTableTests {
 		SymbolTable symtab;
 
 		symtab.enterScope("First");
-		Symbol* globalB = new VariableSymbol("b", BuiltinTypeSymbol(BuiltinTypeSymbol::Possibilities::INT));
+		Symbol* globalB = new VariableSymbol("b", new BuiltinTypeSymbol(BuiltinTypeSymbol::Possibilities::INT));
 		symtab.declare(globalB);
 		Symbol* structA = new StructSymbol("A");
 		symtab.declare(structA);
 
 		symtab.enterScope("struct A's definition");
-		Symbol* symB = new VariableSymbol("b", BuiltinTypeSymbol(BuiltinTypeSymbol::Possibilities::INT));
-		Symbol* symC = new VariableSymbol("c", BuiltinTypeSymbol(BuiltinTypeSymbol::Possibilities::STRING));
+		Symbol* symB = new VariableSymbol("b", new BuiltinTypeSymbol(BuiltinTypeSymbol::Possibilities::INT));
+		Symbol* symC = new VariableSymbol("c", new BuiltinTypeSymbol(BuiltinTypeSymbol::Possibilities::STRING));
 		symtab.declare(symB);
 		symtab.declare(symC);
 		symtab.exitScope();
@@ -296,13 +296,13 @@ namespace SymbolTableTests {
 		SymbolTable symtab;
 
 		symtab.enterScope("First");
-		Symbol* globalB = new VariableSymbol("b", BuiltinTypeSymbol(BuiltinTypeSymbol::Possibilities::INT));
+		Symbol* globalB = new VariableSymbol("b", new BuiltinTypeSymbol(BuiltinTypeSymbol::Possibilities::INT));
 		symtab.declare(globalB);
 		Symbol* structA = new StructSymbol("A");
 		symtab.declare(structA);
 
 		symtab.enterScope("struct A's definition");
-		Symbol* symC = new VariableSymbol("c", BuiltinTypeSymbol(BuiltinTypeSymbol::Possibilities::STRING));
+		Symbol* symC = new VariableSymbol("c", new BuiltinTypeSymbol(BuiltinTypeSymbol::Possibilities::STRING));
 		symtab.declare(symC);
 		symtab.exitScope();
 

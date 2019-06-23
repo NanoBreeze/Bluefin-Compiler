@@ -1,15 +1,15 @@
 resolve - First - UNRESOLVED
-declare - Another - struct
+declare - Another - c_struct - t_Another
 enterScope - Level 1
 exitScope - Level 1
-resolve - Another - struct
-declare - b - var
-resolve - void - builtinType
-declare - g - function
+resolve - Another - c_struct - t_Another
+declare - b - c_var - t_Another
+resolve - void - c_builtinType - t_void
+declare - g - c_function - t_void
 enterScope - Level 1
 resolve - Second - UNRESOLVED
 resolve - Third - UNRESOLVED
 exitScope - Level 1
-declare - Third - struct
+declare - Third - c_struct - t_Third
 enterScope - Level 1
 exitScope - Level 1

@@ -19,12 +19,13 @@ namespace SymbolTableTests {
 	The debug msgs for the following functions are:
 	enterScope: "enterScope - Level X", where X is scopeLevel, which increments and decrements appropriately
 	exitScope: "exitScope - Level X"
-	declare: "declare - varName - symCategory", where varName is the variable's identifier, eg, "x", "y"
+	declare: "declare - varName - symCategory - symType", where varName is the variable's identifier, eg, "x", "y"
 		and symCategory can be one of "builtinType", "function", "struct", "var"
-		eg, "declare - x - function"
-	resolve: "resolve - varName - resolvedSymCategory", where varName is the variable and resolvedSymCategory 
-		is the category of the finally resolved variable.
-	
+		symType is the type of the declared variable. eg, "int", "bool", "First". 
+		eg, "declare - x - function - int"
+	resolve: "resolve - varName - resolvedSymCategory - resolvedSymType (and type of this var)", where varName is the variable and resolvedSymCategory 
+		is the category of the finally resolved variable. resolvedSymType is the type of the resolved symbol, and hence the type of this var
+		For builtin-types, eg, "int", the type2str is...drumroll please...also int
 	*/
 	class SymbolTableTestWrapper : public bluefin::SymbolTable
 	{

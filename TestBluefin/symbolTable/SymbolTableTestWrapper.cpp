@@ -73,8 +73,9 @@ string SymbolTableTestWrapper::createExitScopeDebugMsg() {
 string SymbolTableTestWrapper::createDeclareDebugMsg(Symbol* symbol) const {
 	const string symName = symbol->getName();
 	const string symCategory = symbol->getCategoryName();
+	const string symType = symbol->getType()->type2str();
 
-	return "declare - " + symName + " - " + symCategory + "\n";
+	return "declare - " + symName + " - c_" + symCategory + " - t_" + symType + "\n";
 }
 
 string SymbolTableTestWrapper::createRedeclarationDebugMsg(Symbol* symbol) const {
@@ -86,8 +87,9 @@ string SymbolTableTestWrapper::createRedeclarationDebugMsg(Symbol* symbol) const
 string SymbolTableTestWrapper::createResolveDebugMsg(Symbol const* resolvedSym) const {
 	const string resolvedSymName = resolvedSym->getName();
 	const string symCategory = resolvedSym->getCategoryName();
+	const string symType = resolvedSym->getType()->type2str();
 
-	return "resolve - " + resolvedSymName + " - " + symCategory + "\n";
+	return "resolve - " + resolvedSymName + " - c_" + symCategory + " - t_" + symType + "\n";
 }
 
 string SymbolTableTestWrapper::createUnresolvedDebugMsg(string resolvedSymName) const {

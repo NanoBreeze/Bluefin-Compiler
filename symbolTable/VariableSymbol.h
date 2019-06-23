@@ -10,7 +10,7 @@ namespace bluefin {
 	class VariableSymbol : public Symbol {
 
 	public:
-		VariableSymbol(const string& name, const Type type) :
+		VariableSymbol(const string& name, Type* type) :
 			Symbol(name, type) {}
 
 		inline string getCategoryName() const override { return "var"; }

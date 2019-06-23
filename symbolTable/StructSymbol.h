@@ -20,7 +20,7 @@ Creating a structsymbol and attaching its scope are now two different phases, bu
 	class StructSymbol : public Symbol, public Type {
 
 	public:
-		StructSymbol(const string& name) : Symbol(name, *this), scope{ nullptr }
+		StructSymbol(const string& name) : Symbol(name, this), scope{ nullptr }
 		{}
 
 		/*
@@ -32,6 +32,7 @@ Creating a structsymbol and attaching its scope are now two different phases, bu
 		Symbol* resolveMember(const string memberName);
 
 		inline string getCategoryName() const override { return "struct"; }
+		inline string type2str() const override { return getName(); }
 
 	private:
 		Scope* scope;

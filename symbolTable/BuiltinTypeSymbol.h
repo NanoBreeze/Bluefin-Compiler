@@ -12,12 +12,14 @@ namespace bluefin {
 			INT, FLOAT, STRING, BOOL, VOID
 		};
 
-		BuiltinTypeSymbol(const Possibilities type) : Symbol{ convertEnumToString(type), *this } //TODO: use enum for typename?
+		BuiltinTypeSymbol(const Possibilities type) : Symbol{ convertEnumToString(type), this } 
 		{ } 
 
 		inline string getCategoryName() const override { return "builtinType"; }
+		inline string type2str() const override { return getName(); }
 
 	private:
+
 		string convertEnumToString(Possibilities possibility) const {
 			switch (possibility) {
 			case Possibilities::INT:

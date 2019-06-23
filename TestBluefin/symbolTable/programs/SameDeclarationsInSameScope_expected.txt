@@ -1,39 +1,39 @@
-declare - First - struct
+declare - First - c_struct - t_First
 enterScope - Level 1
-resolve - int - builtinType
-declare - b - var
-resolve - int - builtinType
+resolve - int - c_builtinType - t_int
+declare - b - c_var - t_int
+resolve - int - c_builtinType - t_int
 declare - b - REDECLARATION
-resolve - int - builtinType
-declare - c - var
-resolve - float - builtinType
+resolve - int - c_builtinType - t_int
+declare - c - c_var - t_int
+resolve - float - c_builtinType - t_float
 declare - c - REDECLARATION
 exitScope - Level 1
-resolve - First - struct
-declare - f - function
+resolve - First - c_struct - t_First
+declare - f - c_function - t_First
 enterScope - Level 1
-resolve - float - builtinType
-declare - a - var
-resolve - First - struct
+resolve - float - c_builtinType - t_float
+declare - a - c_var - t_float
+resolve - First - c_struct - t_First
 declare - a - REDECLARATION
 enterScope - Level 2
-resolve - int - builtinType
-declare - b - var
-resolve - string - builtinType
+resolve - int - c_builtinType - t_int
+declare - b - c_var - t_int
+resolve - string - c_builtinType - t_string
 declare - b - REDECLARATION
 exitScope - Level 2
 exitScope - Level 1
-resolve - First - struct
-declare - a - var
-resolve - string - builtinType
-declare - b - var
-resolve - bool - builtinType
+resolve - First - c_struct - t_First
+declare - a - c_var - t_First
+resolve - string - c_builtinType - t_string
+declare - b - c_var - t_string
+resolve - bool - c_builtinType - t_bool
 declare - f - REDECLARATION
 enterScope - Level 1
-resolve - int - builtinType
-declare - x - var
-resolve - float - builtinType
+resolve - int - c_builtinType - t_int
+declare - x - c_var - t_int
+resolve - float - c_builtinType - t_float
 declare - x - REDECLARATION
 exitScope - Level 1
-resolve - int - builtinType
+resolve - int - c_builtinType - t_int
 declare - First - REDECLARATION

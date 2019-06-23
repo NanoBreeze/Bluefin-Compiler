@@ -17,7 +17,7 @@ namespace bluefin {
 	class FunctionSymbol : public Symbol {
 	public:
 
-		FunctionSymbol(const string& name, const Type type) :
+		FunctionSymbol(const string& name, Type* type) :
 			Symbol(name, type) 
 		{}
 

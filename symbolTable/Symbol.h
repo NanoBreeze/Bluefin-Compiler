@@ -14,7 +14,7 @@ namespace bluefin {
 
 	public:
 		inline string getName() const { return name; }
-		inline Type getType() const { return type; }
+		inline Type* getType() const { return type; }
 
 		bool operator==(Symbol& rhs);
 
@@ -23,11 +23,11 @@ namespace bluefin {
 
 	protected:
 		// name is the name of the id, eg, a, hello, wow
-		Symbol(const string& name, const Type type) : name{ name }, type{ type } 
+		Symbol(const string& name, Type* type) : name{ name }, type{ type } 
 		{}
 
 	private:
 		const string name;
-		const Type type;
+		Type* type;
 	};
 }
