@@ -89,13 +89,23 @@ void PopulateSymTabListener::enterPrimaryId(bluefinParser::PrimaryIdContext* ctx
 
 void PopulateSymTabListener::exitMemberAccess(bluefinParser::MemberAccessContext* ctx)
 {
-	StructSymbol* s = structSymbolStack.top();
-	structSymbolStack.pop();
+	if (!structSymbolStack.empty()) { 
+		StructSymbol* s = structSymbolStack.top();
+		structSymbolStack.pop();
 
-	Type* res = s->resolveMember(ctx->ID()->getText())->getType();
-	if (StructSymbol* resStruct = dynamic_cast<StructSymbol*>(res)) {
-		structSymbolStack.push(resStruct); // if the resolved member is a struct, it may be used later
+		Symbol* resMemSym = s->resolveMember(ctx->ID()->getText());
+		if (resMemSym) { // if not resolved, no need to check its type
+			if (StructSymbol* resStruct = dynamic_cast<StructSymbol*>(resMemSym->getType())) {
+				structSymbolStack.push(resStruct); // if the resolved member is a struct, it may be used later
+		}
+
+		}
 	}
+
+	// Empty stack is possible if the struct symbol were not resolved, in enterPrimaryId
+	// eg, a.b, if "a" doesn't exist, it wouldn't have been pushed onto the stack
+	// so we can't access it
+	// TODO: Currently fails silent, make unsilent failure, expect to find a struct to be on stack
 }
 
 

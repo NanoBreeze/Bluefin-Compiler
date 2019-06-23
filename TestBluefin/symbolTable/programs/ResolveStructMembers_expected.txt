@@ -1,14 +1,14 @@
 declare - First - c_struct - t_First
 enterScope - Level 1
-resolve - int - builtinType - t_int
+resolve - int - c_builtinType - t_int
 declare - a - c_var - t_int
 resolve - float - c_builtinType - t_float
 declare - b - c_var - t_float
 exitScope - Level 1
 declare - Second - c_struct - t_Second
 enterScope - Level 1
-resolve - int - c_builtinType - t_int
-declare - a - c_var - t_int
+resolve - float - c_builtinType - t_float
+declare - a - c_var - t_float
 resolve - First - c_struct - t_First
 declare - first - c_var - t_First
 exitScope - Level 1
@@ -16,17 +16,21 @@ resolve - int - c_builtinType - t_int
 declare - main - c_function - t_int
 enterScope - Level 1
 resolve - First - c_struct - t_First
-declare - fir - c_var -t_First
-resolve - fir - struct
-
-
-int main() {
-	First fir;
-	fir.a = 1;
-	Second second;
-	second.a = 2;
-	second.first.a = 3;
-	
-	second.oops = 8;
-	second.first.oops = 9;
-}
+declare - fir - c_var - t_First
+resolve - fir - c_var - t_First
+resolve - First::a - c_var - t_int
+resolve - Second - c_struct - t_Second
+declare - second - c_var - t_Second
+resolve - second - c_var - t_Second
+resolve - Second::a - c_var - t_float
+resolve - second - c_var - t_Second
+resolve - Second::first - c_var - t_First
+resolve - First::a - c_var - t_int
+resolve - second - c_var - t_Second
+resolve - Second::oops - UNRESOLVED
+resolve - second - c_var - t_Second
+resolve - Second::oops - UNRESOLVED
+resolve - second - c_var - t_Second
+resolve - Second::first - c_var - t_First
+resolve - First::oops - UNRESOLVED
+exitScope - Level 1

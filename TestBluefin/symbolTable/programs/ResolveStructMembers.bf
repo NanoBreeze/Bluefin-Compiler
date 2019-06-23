@@ -4,7 +4,7 @@ struct First {
 };
 
 struct Second {
-	int a;
+	float a;
 	First first;
 };
 
@@ -16,5 +16,6 @@ int main() {
 	second.first.a = 3;
 	
 	second.oops = 8;
+	second.oops.hi = 8;
 	second.first.oops = 9;
 }

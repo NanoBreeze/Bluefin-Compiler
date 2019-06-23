@@ -31,9 +31,6 @@ void SymbolTableTestWrapper::declare(Symbol* symbol) {
 	catch (ReclarationException e) {
 		output += createRedeclarationDebugMsg(symbol);
 	}
-	catch (...) {
-		throw "This kind of exception not expected";
-	}
 }
 
 Symbol* SymbolTableTestWrapper::resolve(const string name) {

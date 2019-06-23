@@ -31,7 +31,9 @@ namespace SymbolTableTests {
 	{
 	public:
 
-		SymbolTableTestWrapper() : output{ "" }, scopeLevel{ 0 }
+		// the output is the debug message to be written. It is shared with the
+		// symbol wrappers so they all write to it.
+		SymbolTableTestWrapper(string& output) : output{ output }, scopeLevel{ 0 }
 		{}
 
 		void enterScope(const string scopeName = "") override;
@@ -42,11 +44,9 @@ namespace SymbolTableTests {
 
 		Symbol* resolve(const string name) override;
 
-		inline string getOutput() const { return output; }
-
 	private:
 		SymbolTable symbolTable;
-		string output;
+		string& output;
 		unsigned scopeLevel;
 
 		string createEnterScopeDebugMsg();
