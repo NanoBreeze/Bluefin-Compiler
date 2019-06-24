@@ -1,58 +1,56 @@
+
+#include <memory>
 #include "SymbolTable.h"
 #include "StructSymbol.h"
 #include "BuiltinTypeSymbol.h"
 #include "./Exceptions.h"
 
-using namespace bluefin;
 
-SymbolTable::SymbolTable() : currScope{ new Scope(nullptr, "global") } {
+namespace bluefin {
 
-	// Add all built-in types to the global scope
-	declare(new BuiltinTypeSymbol(BuiltinTypeSymbol::Possibilities::BOOL));
-	declare(new BuiltinTypeSymbol(BuiltinTypeSymbol::Possibilities::FLOAT));
-	declare(new BuiltinTypeSymbol(BuiltinTypeSymbol::Possibilities::INT));
-	declare(new BuiltinTypeSymbol(BuiltinTypeSymbol::Possibilities::VOID));
-	declare(new BuiltinTypeSymbol(BuiltinTypeSymbol::Possibilities::STRING));
-}
+	using std::dynamic_pointer_cast;
+	using std::make_shared;
 
-void SymbolTable::enterScope(const string scopeName) {
-	Scope* scope = new Scope(currScope, scopeName); 
+	SymbolTable::SymbolTable() : currScope{ new Scope(nullptr, "global") } {
 
-	if (currScope) { // initially, currScope is nullptr, so can't get its most recent member
-		if (StructSymbol * s = dynamic_cast<StructSymbol*>(currScope->getMostRecentDeclaredSymbol())) {
-			s->attachScope(scope);
-		}
+		// Add all built-in types to the global scope
+		declare(make_shared<BuiltinTypeSymbol>(BuiltinTypeSymbol::Possibilities::BOOL));
+		declare(make_shared<BuiltinTypeSymbol>(BuiltinTypeSymbol::Possibilities::FLOAT));
+		declare(make_shared<BuiltinTypeSymbol>(BuiltinTypeSymbol::Possibilities::INT));
+		declare(make_shared<BuiltinTypeSymbol>(BuiltinTypeSymbol::Possibilities::VOID));
+		declare(make_shared<BuiltinTypeSymbol>(BuiltinTypeSymbol::Possibilities::STRING));
 	}
 
-	currScope = scope;
-}
+	void SymbolTable::enterScope(const string scopeName) {
+		shared_ptr<Scope> scope = make_shared<Scope>(currScope, scopeName);
 
-void SymbolTable::exitScope() {
-	Scope* enclosingScope = currScope->getEnclosingScope(); 
-	// don't delete scope here. What if it's needed by someone else, eg, StructSymbol
-	// would still need to refer to its scope.
-	// TODO: Instead, store all scopes somewhere else for deletion...
-	// Problem: StructSymbol should delete its own scope
-	// To avoid double deletion, we can't just stopre all current scopes and delete them
-	// because that would include the structSymbol's scope, which had already been deleted (double deletion)
-	// Solution? Just use smart pointers
-	//delete currScope;
-	currScope = enclosingScope;
-}
+		if (currScope) { // initially, currScope is nullptr, so can't get its most recent member
+			if (shared_ptr<StructSymbol> s = dynamic_pointer_cast<StructSymbol>(currScope->getMostRecentDeclaredSymbol())) {
+				s->attachScope(scope);
+			}
+		}
 
-void SymbolTable::declare(Symbol* symbol) {
-	currScope->declare(symbol);
-}
+		currScope = scope;
+	}
+
+	void SymbolTable::exitScope() {
+		currScope = currScope->getEnclosingScope();
+	}
+
+	void SymbolTable::declare(shared_ptr<Symbol> symbol) {
+		currScope->declare(symbol);
+	}
 
 
-Symbol* SymbolTable::resolve(const string name) {
+	shared_ptr<Symbol> SymbolTable::resolve(const string name) {
 
-	Scope* scope = currScope;
+		shared_ptr<Scope> scope = currScope;
 
-	do {
-		Symbol* sym = scope->resolve(name);
-		if (sym) { return sym; }
-	} while (scope = scope->getEnclosingScope());
-		
-	throw UnresolvedSymbolException(name);
+		do {
+			shared_ptr<Symbol> sym = scope->resolve(name);
+			if (sym) { return sym; }
+		} while (scope = scope->getEnclosingScope());
+
+		throw UnresolvedSymbolException(name);
+	}
 }

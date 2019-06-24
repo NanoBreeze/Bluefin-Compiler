@@ -1,11 +1,14 @@
 #pragma once
 
+#include <memory>
 #include <string>
 #include "../../symbolTable/SymbolFactory.h"
 
 namespace SymbolTableTests {
 
 	using namespace bluefin;
+	using std::shared_ptr;
+	using std::unique_ptr;
 
 	/*
 	Used to create the test wrappers around symbols. This facilitates testing them, 
@@ -20,10 +23,10 @@ namespace SymbolTableTests {
 		SymbolWrapperFactory(string& output) : output{ output }
 		{}
 
-		 Symbol* createBuiltinTypeSymbol(BuiltinTypeSymbol::Possibilities) override;
-		 Symbol* createFunctionSymbol(const string& name, Type* type) override;
-		 Symbol* createStructSymbol(const string& name) override;
-		 Symbol* createVariableSymbol(const string& name, Type* type) override;
+		 shared_ptr<Symbol> createBuiltinTypeSymbol(BuiltinTypeSymbol::Possibilities) override;
+		 unique_ptr<Symbol> createFunctionSymbol(const string& name, shared_ptr<Type> type) override;
+		 shared_ptr<Symbol> createStructSymbol(const string& name) override;
+		 unique_ptr<Symbol> createVariableSymbol(const string& name, shared_ptr<Type> type) override;
 
 	private:
 		string& output;

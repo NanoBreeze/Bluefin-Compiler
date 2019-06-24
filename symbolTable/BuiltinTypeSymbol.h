@@ -2,9 +2,11 @@
 #include "Type.h"
 #include "Symbol.h"
 
+#include <memory>
+
 namespace bluefin {
 
-	class BuiltinTypeSymbol : public Type, public Symbol
+	class BuiltinTypeSymbol : public Type, public Symbol, public std::enable_shared_from_this<BuiltinTypeSymbol>
 	{
 	public:
 
@@ -12,11 +14,16 @@ namespace bluefin {
 			INT, FLOAT, STRING, BOOL, VOID
 		};
 
-		BuiltinTypeSymbol(const Possibilities type) : Symbol{ convertEnumToString(type), this } 
+
+
+		BuiltinTypeSymbol(const Possibilities type) : Symbol{ convertEnumToString(type) }
 		{ } 
 
 		inline string getCategoryName() const override { return "builtinType"; }
 		inline string type2str() const override { return getName(); }
+
+		shared_ptr<Type> getType()  override { return shared_from_this(); }  // must make sure that this BuiltinTypeSymbol's raw ptr is already
+			// handled by a shared ptr. This means that every use of BuiltinTypeSymbol is within shared_ptr
 
 	private:
 

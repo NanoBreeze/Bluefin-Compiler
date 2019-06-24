@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <memory>
 #include "../../symbolTable/SymbolTable.h"
 #include "../../symbolTable/Symbol.h"
 
@@ -8,6 +9,7 @@ namespace SymbolTableTests {
 
 	using namespace bluefin;
 	using std::string;
+	using std::shared_ptr;
 
 	/**
 	This class is used to test that the four functions (enterScope, exitScope, declare, resolve)
@@ -27,7 +29,7 @@ namespace SymbolTableTests {
 		is the category of the finally resolved variable. resolvedSymType is the type of the resolved symbol, and hence the type of this var
 		For builtin-types, eg, "int", the type2str is...drumroll please...also int
 	*/
-	class SymbolTableTestWrapper : public bluefin::SymbolTable
+	class SymbolTableTestWrapper : public SymbolTable
 	{
 	public:
 
@@ -40,9 +42,9 @@ namespace SymbolTableTests {
 
 		void exitScope() override;
 
-		void declare(Symbol* symbol) override;
+		void declare(shared_ptr<Symbol> symbol) override;
 
-		Symbol* resolve(const string name) override;
+		shared_ptr<Symbol> resolve(const string name) override;
 
 	private:
 		SymbolTable symbolTable;
@@ -51,9 +53,9 @@ namespace SymbolTableTests {
 
 		string createEnterScopeDebugMsg();
 		string createExitScopeDebugMsg();
-		string createDeclareDebugMsg(Symbol*) const;
-		string createRedeclarationDebugMsg(Symbol*) const;
-		string createResolveDebugMsg(Symbol const* resolvedSym) const;
+		string createDeclareDebugMsg(shared_ptr<Symbol>) const;
+		string createRedeclarationDebugMsg(shared_ptr<Symbol>) const;
+		string createResolveDebugMsg(shared_ptr<Symbol> resolvedSym) const;
 		string createUnresolvedDebugMsg(string resolvedSym) const;
 	};
 }

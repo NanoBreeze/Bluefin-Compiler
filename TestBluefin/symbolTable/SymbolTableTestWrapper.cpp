@@ -3,12 +3,14 @@
 #include "SymbolTableTestWrapper.h"
 #include <assert.h>
 #include <string>
+#include <memory>
 #include "../../symbolTable/FunctionSymbol.h"
 #include "../../symbolTable/StructSymbol.h"
 #include "../../symbolTable/VariableSymbol.h"
 #include "../../symbolTable/Exceptions.h"
 
 using namespace SymbolTableTests;
+using std::shared_ptr;
 
 void SymbolTableTestWrapper::enterScope(const string scopeName) {
 
@@ -22,7 +24,7 @@ void SymbolTableTestWrapper::exitScope() {
 	symbolTable.exitScope();
 }
 
-void SymbolTableTestWrapper::declare(Symbol* symbol) {
+void SymbolTableTestWrapper::declare(shared_ptr<Symbol> symbol) {
 
 	try {
 		symbolTable.declare(symbol);
@@ -33,9 +35,9 @@ void SymbolTableTestWrapper::declare(Symbol* symbol) {
 	}
 }
 
-Symbol* SymbolTableTestWrapper::resolve(const string name) {
+shared_ptr<Symbol> SymbolTableTestWrapper::resolve(const string name) {
 
-	Symbol* resolvedSym = nullptr;
+	shared_ptr<Symbol> resolvedSym;
 	try {
 		resolvedSym = symbolTable.resolve(name);
 		output += createResolveDebugMsg(resolvedSym);
@@ -43,9 +45,6 @@ Symbol* SymbolTableTestWrapper::resolve(const string name) {
 	}
 	catch (UnresolvedSymbolException e) {
 		output += createUnresolvedDebugMsg(name);
-	}
-	catch (...) {
-		throw "This kind of exception not expected";
 	}
 
 	return resolvedSym;
@@ -67,7 +66,7 @@ string SymbolTableTestWrapper::createExitScopeDebugMsg() {
 	return "exitScope - " + scopeName + "\n";
 }
 
-string SymbolTableTestWrapper::createDeclareDebugMsg(Symbol* symbol) const {
+string SymbolTableTestWrapper::createDeclareDebugMsg(shared_ptr<Symbol> symbol) const {
 	const string symName = symbol->getName();
 	const string symCategory = symbol->getCategoryName();
 	const string symType = symbol->getType()->type2str();
@@ -75,13 +74,13 @@ string SymbolTableTestWrapper::createDeclareDebugMsg(Symbol* symbol) const {
 	return "declare - " + symName + " - c_" + symCategory + " - t_" + symType + "\n";
 }
 
-string SymbolTableTestWrapper::createRedeclarationDebugMsg(Symbol* symbol) const {
+string SymbolTableTestWrapper::createRedeclarationDebugMsg(shared_ptr<Symbol> symbol) const {
 	const string symName = symbol->getName();
 
 	return "declare - " + symName + " - " + "REDECLARATION\n";
 }
 
-string SymbolTableTestWrapper::createResolveDebugMsg(Symbol const* resolvedSym) const {
+string SymbolTableTestWrapper::createResolveDebugMsg(shared_ptr<Symbol> resolvedSym) const {
 	const string resolvedSymName = resolvedSym->getName();
 	const string symCategory = resolvedSym->getCategoryName();
 	const string symType = resolvedSym->getType()->type2str();

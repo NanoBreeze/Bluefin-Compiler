@@ -20,11 +20,11 @@ namespace SymbolTableTests {
 		or
 		resolve - StructTypeName::member - UNRESOLVED
 		*/
-		 Symbol* resolveMember(const string memberName) override; 
+		 shared_ptr<Symbol> resolveMember(const string memberName) override; 
 
 	private:
 		string& output;
-		string createResolveMemberDebugMsg(Symbol const* resolvedSym) const;
+		string createResolveMemberDebugMsg(shared_ptr<Symbol> resolvedSym) const;
 		string createUnresolvedMemberDebugMsg(string unresolvedMemberName) const;
 	};
 }

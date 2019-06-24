@@ -1,9 +1,14 @@
 #pragma once
 
+#include <memory>
 #include "Scope.h"
 #include "../TestBluefin/utils.h"
 
 namespace bluefin {
+
+	using std::shared_ptr;
+	using std::unique_ptr;;
+	using std::make_shared;
 
 	class SymbolTable
 	{
@@ -14,7 +19,7 @@ namespace bluefin {
 	
 		virtual void exitScope();
 
-		virtual void declare(Symbol* symbol);
+		virtual void declare(shared_ptr<Symbol> symbol);
 
 
 		/*
@@ -22,16 +27,16 @@ namespace bluefin {
 		parent scope, and continue bubbling upwards. 
 		If not found, return nullptr
 		*/
-		virtual Symbol* resolve(const string name);
+		virtual shared_ptr<Symbol> resolve(const string name);
 
 		/* 
 		This method is for testing currScope and the scope chain
 		Having difficulty putting in a friend class.
 		*/
-		inline Scope* getCurrScope() const { return currScope; }
+		inline shared_ptr<Scope> getCurrScope() const { return currScope; }
 
 	private:
-		Scope* currScope;
+		shared_ptr<Scope> currScope; // shared_ptr b/c it can refer to the same scope as a StructSymbol's
 	};
 
 }

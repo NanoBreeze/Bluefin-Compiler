@@ -1,11 +1,15 @@
 #pragma once
 
 #include <iostream>
+#include <memory>
+#include <utility>
 #include "Symbol.h"
 
 namespace bluefin {
 
 	using std::string;
+	using std::shared_ptr;
+	using std::move;
 
 	/* TODO: should this contain its own arguments?
 	 So I imagine a call to SymbolTable::enterScope will occur on method decalaration.
@@ -17,8 +21,8 @@ namespace bluefin {
 	class FunctionSymbol : public Symbol {
 	public:
 
-		FunctionSymbol(const string& name, Type* type) :
-			Symbol(name, type) 
+		FunctionSymbol(const string& name, shared_ptr<Type> type) :
+			Symbol(name, move(type))
 		{}
 
 		inline string getCategoryName() const override { return "function"; }

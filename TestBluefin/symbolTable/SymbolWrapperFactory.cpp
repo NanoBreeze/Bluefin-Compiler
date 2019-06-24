@@ -2,21 +2,25 @@
 #include "SymbolWrapperFactory.h"
 #include "StructSymbolTestWrapper.h"
 
+#include <memory>
+
 using namespace SymbolTableTests;
 using namespace bluefin;
+using std::shared_ptr;
+using std::unique_ptr;
 
-Symbol* SymbolWrapperFactory::createBuiltinTypeSymbol(BuiltinTypeSymbol::Possibilities pos) {
-	return new BuiltinTypeSymbol(pos);
+shared_ptr<Symbol> SymbolWrapperFactory::createBuiltinTypeSymbol(BuiltinTypeSymbol::Possibilities pos) {
+	return shared_ptr<Symbol>(new BuiltinTypeSymbol(pos));
 }
 
-Symbol* SymbolWrapperFactory::createFunctionSymbol(const string& name, Type* type) {
-	return new FunctionSymbol(name, type);
+unique_ptr<Symbol> SymbolWrapperFactory::createFunctionSymbol(const string& name, shared_ptr<Type> type) {
+	return unique_ptr<Symbol>(new FunctionSymbol(name, type));
 }
 
-Symbol* SymbolWrapperFactory::createStructSymbol(const string& name) {
-	return new StructSymbolTestWrapper(name, output);
+shared_ptr<Symbol> SymbolWrapperFactory::createStructSymbol(const string& name) {
+	return shared_ptr<Symbol>(new StructSymbolTestWrapper(name, output));
 }
 
-Symbol* SymbolWrapperFactory::createVariableSymbol(const string& name, Type* type) {
-	return new VariableSymbol(name, type);
+unique_ptr<Symbol> SymbolWrapperFactory::createVariableSymbol(const string& name, shared_ptr<Type> type) {
+	return unique_ptr<Symbol>(new VariableSymbol(name, type));
 }

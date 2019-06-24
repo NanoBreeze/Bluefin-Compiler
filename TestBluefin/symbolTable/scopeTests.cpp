@@ -1,6 +1,8 @@
 #include "pch.h"
 
 #include <iostream>
+#include <memory>
+#include <utility>
 #include "../../symbolTable/Exceptions.h"
 #include "../../symbolTable/Symbol.h"
 #include "../../symbolTable/SymbolTable.h"
@@ -9,26 +11,38 @@
 #include "../../symbolTable/VariableSymbol.h"
 #include "../../symbolTable/BuiltinTypeSymbol.h"
 #include "../../symbolTable/StructSymbol.h"
+#include "SymbolWrapperFactory.h"
+#include "../../symbolTable/SymbolFactory.h"
 
 namespace SymbolTableTests {
 
 	using std::string;
+	using std::shared_ptr;
+	using std::dynamic_pointer_cast;
+	using std::static_pointer_cast;
+	using std::make_shared;
+
 	using namespace bluefin;
 
+	string dummyStr;
+	unique_ptr<SymbolFactory> symFact(new SymbolWrapperFactory(dummyStr));
+
 	TEST(SymbolTable, DefaultState) {
+
 		SymbolTable symtab;
-		Scope* scope = symtab.getCurrScope();
+		shared_ptr<Scope> scope = symtab.getCurrScope();
 		ASSERT_EQ(scope->getName(), "global");
 		ASSERT_EQ(scope->getEnclosingScope(), nullptr);
 
-		unordered_map<string, Symbol*> defaultSymbols = scope->getSymbols();
+		unordered_map<string, shared_ptr<Symbol>> defaultSymbols = scope->getSymbols();
 		ASSERT_EQ(defaultSymbols.size(), 5);
-		ASSERT_TRUE(*dynamic_cast<BuiltinTypeSymbol*>(defaultSymbols.at("int")) == BuiltinTypeSymbol(BuiltinTypeSymbol::Possibilities::INT)); 
+
+		ASSERT_TRUE(*dynamic_pointer_cast<BuiltinTypeSymbol>(defaultSymbols.at("int")) == *symFact->createBuiltinTypeSymbol(BuiltinTypeSymbol::Possibilities::INT));
 		// for some reason ASSERT_EQ isn't working here
-		ASSERT_TRUE(*dynamic_cast<BuiltinTypeSymbol*>(defaultSymbols.at("float")) == BuiltinTypeSymbol(BuiltinTypeSymbol::Possibilities::FLOAT));
-		ASSERT_TRUE(*dynamic_cast<BuiltinTypeSymbol*>(defaultSymbols.at("void")) == BuiltinTypeSymbol(BuiltinTypeSymbol::Possibilities::VOID));
-		ASSERT_TRUE(*dynamic_cast<BuiltinTypeSymbol*>(defaultSymbols.at("bool")) == BuiltinTypeSymbol(BuiltinTypeSymbol::Possibilities::BOOL));
-		ASSERT_TRUE(*dynamic_cast<BuiltinTypeSymbol*>(defaultSymbols.at("string")) == BuiltinTypeSymbol(BuiltinTypeSymbol::Possibilities::STRING));
+		ASSERT_TRUE(*dynamic_pointer_cast<BuiltinTypeSymbol>(defaultSymbols.at("float")) == *symFact->createBuiltinTypeSymbol(BuiltinTypeSymbol::Possibilities::FLOAT));
+		ASSERT_TRUE(*dynamic_pointer_cast<BuiltinTypeSymbol>(defaultSymbols.at("void")) == *symFact->createBuiltinTypeSymbol(BuiltinTypeSymbol::Possibilities::VOID));
+		ASSERT_TRUE(*dynamic_pointer_cast<BuiltinTypeSymbol>(defaultSymbols.at("bool")) == *symFact->createBuiltinTypeSymbol(BuiltinTypeSymbol::Possibilities::BOOL));
+		ASSERT_TRUE(*dynamic_pointer_cast<BuiltinTypeSymbol>(defaultSymbols.at("string")) == *symFact->createBuiltinTypeSymbol(BuiltinTypeSymbol::Possibilities::STRING));
 	}
 
 	TEST(SymbolTable, EnterScope) {
@@ -38,7 +52,7 @@ namespace SymbolTableTests {
 		symtab.enterScope("Level 1");
 		symtab.enterScope("Level 2");
 		
-		Scope* scope = symtab.getCurrScope();
+		shared_ptr<Scope> scope = symtab.getCurrScope();
 		ASSERT_EQ(scope->getName(), "Level 2");
 		scope = scope->getEnclosingScope();
 		ASSERT_EQ(scope->getName(), "Level 1");
@@ -56,7 +70,7 @@ namespace SymbolTableTests {
 		symtab.enterScope("Level 1");
 		symtab.enterScope("Level 2");
 
-		Scope* scope = symtab.getCurrScope();
+		shared_ptr<Scope> scope = symtab.getCurrScope();
 		ASSERT_EQ(scope->getName(), "Level 2");
 
 		symtab.exitScope();
@@ -74,7 +88,6 @@ namespace SymbolTableTests {
 		symtab.exitScope();
 		scope = symtab.getCurrScope();
 		ASSERT_EQ(scope, nullptr);
-
 	}
 
 	TEST(SymbolTable, EnterAndExitScope) {
@@ -108,12 +121,12 @@ namespace SymbolTableTests {
 		SymbolTable symtab;
 		symtab.enterScope("First");
 
-		Symbol* symA = new VariableSymbol("a", new BuiltinTypeSymbol(BuiltinTypeSymbol::Possibilities::INT));
-		Symbol* symB = new VariableSymbol("b", new BuiltinTypeSymbol(BuiltinTypeSymbol::Possibilities::FLOAT));
+		shared_ptr<Symbol> symA = make_shared<VariableSymbol>("a", make_shared<BuiltinTypeSymbol>(BuiltinTypeSymbol::Possibilities::INT));
+		shared_ptr<Symbol> symB = make_shared<VariableSymbol>("b", make_shared<BuiltinTypeSymbol>(BuiltinTypeSymbol::Possibilities::FLOAT));
 		symtab.declare(symA);
 		symtab.declare(symB); 
 
-		unordered_map<string, Symbol*> symbols = symtab.getCurrScope()->getSymbols();
+		unordered_map<string, shared_ptr<Symbol>> symbols = symtab.getCurrScope()->getSymbols();
 		
 		ASSERT_EQ(symbols.size(), 2);
 		ASSERT_EQ(symbols.at("a"), symA);
@@ -124,28 +137,28 @@ namespace SymbolTableTests {
 		SymbolTable symtab;
 
 		symtab.enterScope("First");
-		Symbol* symA = new VariableSymbol("a", new BuiltinTypeSymbol(BuiltinTypeSymbol::Possibilities::INT));
-		Symbol* symB = new VariableSymbol("b", new BuiltinTypeSymbol(BuiltinTypeSymbol::Possibilities::INT));
+		shared_ptr<Symbol> symA = make_shared<VariableSymbol>("a", make_shared<BuiltinTypeSymbol>(BuiltinTypeSymbol::Possibilities::INT));
+		shared_ptr<Symbol> symB = make_shared<VariableSymbol>("b", make_shared<BuiltinTypeSymbol>(BuiltinTypeSymbol::Possibilities::FLOAT));
 		symtab.declare(symA);
 		symtab.declare(symB); 
 
 		symtab.enterScope("Second");
-		Symbol* symC = new VariableSymbol("c", new BuiltinTypeSymbol(BuiltinTypeSymbol::Possibilities::INT));
-		Symbol* symD = new VariableSymbol("d", new BuiltinTypeSymbol(BuiltinTypeSymbol::Possibilities::FLOAT));
+		shared_ptr<Symbol> symC = make_shared<VariableSymbol>("c", make_shared<BuiltinTypeSymbol>(BuiltinTypeSymbol::Possibilities::INT));
+		shared_ptr<Symbol> symD = make_shared<VariableSymbol>("d", make_shared<BuiltinTypeSymbol>(BuiltinTypeSymbol::Possibilities::FLOAT));
 		symtab.declare(symC);
 		symtab.declare(symD); 
 
-		Scope* secondScope = symtab.getCurrScope();
+		shared_ptr<Scope> secondScope = symtab.getCurrScope();
 		ASSERT_EQ(secondScope->getName(), "Second");
-		unordered_map<string, Symbol*> secondScopeSymbols = secondScope->getSymbols();
+		unordered_map<string, shared_ptr<Symbol>> secondScopeSymbols = secondScope->getSymbols();
 		ASSERT_EQ(secondScopeSymbols.size(), 2);
 		ASSERT_EQ(secondScopeSymbols.at("c"), symC);
 		ASSERT_EQ(secondScopeSymbols.at("d"), symD);
 		symtab.exitScope();
 
-		Scope* firstScope = symtab.getCurrScope();
+		shared_ptr<Scope> firstScope = symtab.getCurrScope();
 		ASSERT_EQ(firstScope->getName(), "First");
-		unordered_map<string, Symbol*> firstScopeSymbols = firstScope->getSymbols();
+		unordered_map<string, shared_ptr<Symbol>> firstScopeSymbols = firstScope->getSymbols();
 		ASSERT_EQ(firstScopeSymbols.size(), 2);
 		ASSERT_EQ(firstScopeSymbols.at("a"), symA);
 		ASSERT_EQ(firstScopeSymbols.at("b"), symB);
@@ -155,31 +168,31 @@ namespace SymbolTableTests {
 		SymbolTable symtab;
 
 		symtab.enterScope("First");
-		Symbol* symA = new VariableSymbol("a", new BuiltinTypeSymbol(BuiltinTypeSymbol::Possibilities::INT));
-		Symbol* symB = new VariableSymbol("b", new BuiltinTypeSymbol(BuiltinTypeSymbol::Possibilities::INT));
+		shared_ptr<Symbol> symA = make_shared<VariableSymbol>("a", make_shared<BuiltinTypeSymbol>(BuiltinTypeSymbol::Possibilities::INT));
+		shared_ptr<Symbol> symB = make_shared<VariableSymbol>("b", make_shared<BuiltinTypeSymbol>(BuiltinTypeSymbol::Possibilities::FLOAT));
 		symtab.declare(symA);
 		symtab.declare(symB);
 
 		symtab.enterScope("Second");
-		Symbol* symA2 = new VariableSymbol("a", new BuiltinTypeSymbol(BuiltinTypeSymbol::Possibilities::INT));
-		Symbol* symB2 = new FunctionSymbol("b", new BuiltinTypeSymbol(BuiltinTypeSymbol::Possibilities::FLOAT));
-		Symbol* symD = new VariableSymbol("d", new BuiltinTypeSymbol(BuiltinTypeSymbol::Possibilities::INT));
+		shared_ptr<Symbol> symA2 = make_shared<VariableSymbol>("a", make_shared<BuiltinTypeSymbol>(BuiltinTypeSymbol::Possibilities::INT));
+		shared_ptr<Symbol> symB2 = make_shared<VariableSymbol>("b", make_shared<BuiltinTypeSymbol>(BuiltinTypeSymbol::Possibilities::FLOAT));
+		shared_ptr<Symbol> symD = make_shared<VariableSymbol>("d", make_shared<BuiltinTypeSymbol>(BuiltinTypeSymbol::Possibilities::INT));
 		symtab.declare(symA2);
 		symtab.declare(symB2);
 		symtab.declare(symD);
 
-		Scope* secondScope = symtab.getCurrScope();
+		shared_ptr<Scope> secondScope = symtab.getCurrScope();
 		ASSERT_EQ(secondScope->getName(), "Second");
-		unordered_map<string, Symbol*> secondScopeSymbols = secondScope->getSymbols();
+		unordered_map<string, shared_ptr<Symbol>> secondScopeSymbols = secondScope->getSymbols();
 		ASSERT_EQ(secondScopeSymbols.size(), 3);
 		ASSERT_EQ(secondScopeSymbols.at("a"), symA2);
 		ASSERT_EQ(secondScopeSymbols.at("b"), symB2);
 		ASSERT_EQ(secondScopeSymbols.at("d"), symD);
 		symtab.exitScope();
 
-		Scope* firstScope = symtab.getCurrScope();
+		shared_ptr<Scope> firstScope = symtab.getCurrScope();
 		ASSERT_EQ(firstScope->getName(), "First");
-		unordered_map<string, Symbol*> firstScopeSymbols = firstScope->getSymbols();
+		unordered_map<string, shared_ptr<Symbol>> firstScopeSymbols = firstScope->getSymbols();
 		ASSERT_EQ(firstScopeSymbols.size(), 2);
 		ASSERT_EQ(firstScopeSymbols.at("a"), symA);
 		ASSERT_EQ(firstScopeSymbols.at("b"), symB);
@@ -197,8 +210,8 @@ namespace SymbolTableTests {
 		SymbolTable symtab;
 
 		symtab.enterScope("First");
-		Symbol* symA = new VariableSymbol("a", new BuiltinTypeSymbol(BuiltinTypeSymbol::Possibilities::INT));
-		Symbol* symAFunc = new FunctionSymbol("a", new BuiltinTypeSymbol(BuiltinTypeSymbol::Possibilities::FLOAT));
+		shared_ptr<Symbol> symA = make_shared<VariableSymbol>("a", make_shared<BuiltinTypeSymbol>(BuiltinTypeSymbol::Possibilities::INT));
+		shared_ptr<Symbol> symAFunc = make_shared<FunctionSymbol>("a", make_shared<BuiltinTypeSymbol>(BuiltinTypeSymbol::Possibilities::FLOAT));
 		symtab.declare(symA);
 
 		ASSERT_THROW(symtab.declare(symAFunc), ReclarationException);
@@ -209,14 +222,14 @@ namespace SymbolTableTests {
 		SymbolTable symtab;
 
 		symtab.enterScope("First");
-		Symbol* symA = new VariableSymbol("a", new BuiltinTypeSymbol(BuiltinTypeSymbol::Possibilities::INT));
-		Symbol* symB = new VariableSymbol("b", new BuiltinTypeSymbol(BuiltinTypeSymbol::Possibilities::FLOAT));
+		shared_ptr<Symbol> symA = make_shared<VariableSymbol>("a", make_shared<BuiltinTypeSymbol>(BuiltinTypeSymbol::Possibilities::INT));
+		shared_ptr<Symbol> symB = make_shared<VariableSymbol>("b", make_shared<BuiltinTypeSymbol>(BuiltinTypeSymbol::Possibilities::FLOAT));
 		symtab.declare(symA);
 		symtab.declare(symB);
 
-		Symbol* resA = symtab.resolve("a");
-		Symbol* resA2 = symtab.resolve("a");
-		Symbol* resB = symtab.resolve("b");
+		shared_ptr<Symbol> resA = symtab.resolve("a");
+		shared_ptr<Symbol> resA2 = symtab.resolve("a");
+		shared_ptr<Symbol> resB = symtab.resolve("b");
 
 		ASSERT_EQ(resA, symA);
 		ASSERT_EQ(resA2, symA);
@@ -228,22 +241,22 @@ namespace SymbolTableTests {
 		SymbolTable symtab;
 
 		symtab.enterScope("First");
-		Symbol* symA = new VariableSymbol("a", new BuiltinTypeSymbol(BuiltinTypeSymbol::Possibilities::INT));
-		Symbol* symB = new VariableSymbol("b", new BuiltinTypeSymbol(BuiltinTypeSymbol::Possibilities::INT));
+		shared_ptr<Symbol> symA = make_shared<VariableSymbol>("a", make_shared<BuiltinTypeSymbol>(BuiltinTypeSymbol::Possibilities::INT));
+		shared_ptr<Symbol> symB = make_shared<VariableSymbol>("b", make_shared<BuiltinTypeSymbol>(BuiltinTypeSymbol::Possibilities::FLOAT));
 		symtab.declare(symA);
 		symtab.declare(symB);
 
 		symtab.enterScope("Second");
-		Symbol* symA2 = new VariableSymbol("a", new BuiltinTypeSymbol(BuiltinTypeSymbol::Possibilities::INT));
+		shared_ptr<Symbol> symA2 = make_shared<VariableSymbol>("a", make_shared<BuiltinTypeSymbol>(BuiltinTypeSymbol::Possibilities::INT));
 		symtab.declare(symA2);
 
-		Symbol* resA2 = symtab.resolve("a");
-		Symbol* resB = symtab.resolve("b");
+		shared_ptr<Symbol> resA2 = symtab.resolve("a");
+		shared_ptr<Symbol> resB = symtab.resolve("b");
 		ASSERT_EQ(resA2, symA2);
 		ASSERT_EQ(resB, symB);
 
 		symtab.exitScope();
-		Symbol* resA = symtab.resolve("a");
+		shared_ptr<Symbol> resA = symtab.resolve("a");
 		ASSERT_EQ(resA, symA);
 	}
 
@@ -252,8 +265,8 @@ namespace SymbolTableTests {
 		SymbolTable symtab;
 
 		symtab.enterScope("First");
-		Symbol* symA = new VariableSymbol("a", new BuiltinTypeSymbol(BuiltinTypeSymbol::Possibilities::INT));
-		Symbol* symB = new VariableSymbol("b", new BuiltinTypeSymbol(BuiltinTypeSymbol::Possibilities::INT));
+		shared_ptr<Symbol> symA = make_shared<VariableSymbol>("a", make_shared<BuiltinTypeSymbol>(BuiltinTypeSymbol::Possibilities::INT));
+		shared_ptr<Symbol> symB = make_shared<VariableSymbol>("b", make_shared<BuiltinTypeSymbol>(BuiltinTypeSymbol::Possibilities::INT));
 		symtab.declare(symA);
 		symtab.declare(symB);
 
@@ -268,26 +281,26 @@ namespace SymbolTableTests {
 		SymbolTable symtab;
 
 		symtab.enterScope("First");
-		Symbol* globalB = new VariableSymbol("b", new BuiltinTypeSymbol(BuiltinTypeSymbol::Possibilities::INT));
+		shared_ptr<Symbol> globalB = make_shared<VariableSymbol>("b", make_shared<BuiltinTypeSymbol>(BuiltinTypeSymbol::Possibilities::INT));
 		symtab.declare(globalB);
-		Symbol* structA = new StructSymbol("A");
+		shared_ptr<Symbol> structA = make_shared<StructSymbol>("A"); 
 		symtab.declare(structA);
 
 		symtab.enterScope("struct A's definition");
-		Symbol* symB = new VariableSymbol("b", new BuiltinTypeSymbol(BuiltinTypeSymbol::Possibilities::INT));
-		Symbol* symC = new VariableSymbol("c", new BuiltinTypeSymbol(BuiltinTypeSymbol::Possibilities::STRING));
+		shared_ptr<Symbol> symB = make_shared<VariableSymbol>("b", make_shared<BuiltinTypeSymbol>(BuiltinTypeSymbol::Possibilities::INT));
+		shared_ptr<Symbol> symC = make_shared<VariableSymbol>("c", make_shared<BuiltinTypeSymbol>(BuiltinTypeSymbol::Possibilities::STRING));
 		symtab.declare(symB);
 		symtab.declare(symC);
 		symtab.exitScope();
 
 		// A a;
-		Symbol* resolveA = symtab.resolve("A");
+		shared_ptr<Symbol> resolveA = symtab.resolve("A");
 		ASSERT_EQ(resolveA, structA);
-		Symbol* declarea = new VariableSymbol("a", structA->getType()); 
+		shared_ptr<Symbol> declarea = make_shared<VariableSymbol>("a", structA->getType());
 		symtab.declare(declarea);
 
 		// a.b; a.c
-		StructSymbol* A = static_cast<StructSymbol*>(resolveA);
+		shared_ptr<StructSymbol> A = static_pointer_cast<StructSymbol>(resolveA);
 		ASSERT_EQ(A->resolveMember("b"), symB);
 		ASSERT_EQ(A->resolveMember("c"), symC);
 	}
@@ -296,24 +309,24 @@ namespace SymbolTableTests {
 		SymbolTable symtab;
 
 		symtab.enterScope("First");
-		Symbol* globalB = new VariableSymbol("b", new BuiltinTypeSymbol(BuiltinTypeSymbol::Possibilities::INT));
+		shared_ptr<Symbol> globalB = make_shared<VariableSymbol>("b", make_shared<BuiltinTypeSymbol>(BuiltinTypeSymbol::Possibilities::INT));
 		symtab.declare(globalB);
-		Symbol* structA = new StructSymbol("A");
+		shared_ptr<Symbol> structA = make_shared<StructSymbol>("A");
 		symtab.declare(structA);
 
 		symtab.enterScope("struct A's definition");
-		Symbol* symC = new VariableSymbol("c", new BuiltinTypeSymbol(BuiltinTypeSymbol::Possibilities::STRING));
+		shared_ptr<Symbol> symC = make_shared<VariableSymbol>("c", make_shared<BuiltinTypeSymbol>(BuiltinTypeSymbol::Possibilities::STRING));
 		symtab.declare(symC);
 		symtab.exitScope();
 
 		// A a;
-		Symbol* resolveA = symtab.resolve("A");
+		shared_ptr<Symbol> resolveA = symtab.resolve("A");
 		ASSERT_EQ(resolveA, structA);
-		Symbol* declarea = new VariableSymbol("a", structA->getType());
+		shared_ptr<Symbol> declarea = make_shared<VariableSymbol>("a", structA->getType());
 		symtab.declare(declarea);
 
 		// a.b; a.c
-		StructSymbol* A = static_cast<StructSymbol*>(resolveA);
+		shared_ptr<StructSymbol> A = static_pointer_cast<StructSymbol>(resolveA);
 		ASSERT_EQ(A->resolveMember("b"), nullptr);
 		ASSERT_EQ(A->resolveMember("c"), symC);
 	}

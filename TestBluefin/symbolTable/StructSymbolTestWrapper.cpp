@@ -1,12 +1,15 @@
 #include "pch.h"
 #include "StructSymbolTestWrapper.h"
 
+#include <memory>
+
 using namespace bluefin;
 using namespace SymbolTableTests;
+using std::shared_ptr;
 
-Symbol* StructSymbolTestWrapper::resolveMember(const string memberName)
+shared_ptr<Symbol> StructSymbolTestWrapper::resolveMember(const string memberName)
 {
-	Symbol* resolvedSym = StructSymbol::resolveMember(memberName);
+	shared_ptr<Symbol> resolvedSym = StructSymbol::resolveMember(memberName);
 	if (resolvedSym) {
 		output += createResolveMemberDebugMsg(resolvedSym);
 	}
@@ -16,7 +19,7 @@ Symbol* StructSymbolTestWrapper::resolveMember(const string memberName)
 	return resolvedSym;
 }
 
-string StructSymbolTestWrapper::createResolveMemberDebugMsg(Symbol const* resolvedSym) const
+string StructSymbolTestWrapper::createResolveMemberDebugMsg(shared_ptr<Symbol> resolvedSym) const
 {
 	const string structTypeName = type2str();
 	const string resolvedSymName = resolvedSym->getName();

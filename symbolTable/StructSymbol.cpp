@@ -2,12 +2,12 @@
 
 using namespace bluefin;
 
-void StructSymbol::attachScope(Scope* scope)
+void StructSymbol::attachScope(shared_ptr<Scope> scope)
 {
 	this->scope = scope;
 }
 
-Symbol* StructSymbol::resolveMember(const string memberName)
+shared_ptr<Symbol> StructSymbol::resolveMember(const string memberName)
 {
 	return scope->resolve(memberName);
 }

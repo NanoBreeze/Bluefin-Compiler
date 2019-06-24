@@ -78,7 +78,7 @@ namespace bluefin {
 		If a.b is a struct, then we must should it onto the stack
 		TODO: To Verify. At the end of a stmExpr, we expect that the stack is empty (# of uses = # of resolved)
 		*/
-		stack<StructSymbol*> structSymbolStack;
+		stack<shared_ptr<StructSymbol>> structSymbolStack;
 	};
 
 }

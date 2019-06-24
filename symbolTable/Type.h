@@ -24,7 +24,6 @@ namespace bluefin {
 		virtual ~Type() {}
 
 	protected:
-		// Use instead of pure virtual function
 		Type() {}
 	};
 }
