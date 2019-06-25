@@ -15,19 +15,19 @@ using std::shared_ptr;
 void SymbolTableTestWrapper::enterScope(const string scopeName) {
 
 	output += createEnterScopeDebugMsg(); 
-	symbolTable.enterScope();
+	SymbolTable::enterScope(scopeName);
 }
 
 void SymbolTableTestWrapper::exitScope() {
 
 	output += createExitScopeDebugMsg(); 
-	symbolTable.exitScope();
+	SymbolTable::exitScope();
 }
 
 void SymbolTableTestWrapper::declare(shared_ptr<Symbol> symbol) {
 
 	try {
-		symbolTable.declare(symbol);
+		SymbolTable::declare(symbol);
 		output += createDeclareDebugMsg(symbol); 
 	}
 	catch (ReclarationException e) {
@@ -39,7 +39,7 @@ shared_ptr<Symbol> SymbolTableTestWrapper::resolve(const string name) {
 
 	shared_ptr<Symbol> resolvedSym;
 	try {
-		resolvedSym = symbolTable.resolve(name);
+		resolvedSym = SymbolTable::resolve(name);
 		output += createResolveDebugMsg(resolvedSym);
 		assert(resolvedSym->getName() == name);
 	}

@@ -47,7 +47,6 @@ namespace SymbolTableTests {
 		shared_ptr<Symbol> resolve(const string name) override;
 
 	private:
-		SymbolTable symbolTable;
 		string& output;
 		unsigned scopeLevel;
 
