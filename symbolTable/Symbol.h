@@ -35,8 +35,11 @@ namespace bluefin {
 		// passing a self reference to the ctor isn't a good idea
 		//  with adding smart pointer b/c it would cause double deletion 
 		// when user's sp goes out of scope. Single this is handled by two
-		// groups of shared pointers. Theywould use this ctor
-		Symbol(const string& name) : name{ name }, type{ type }
+		// groups of shared pointers. They would use this ctor, so create custom deleter
+		// that doesn't delete this. 
+		// NOTE: Implementation Hack
+
+		Symbol(const string& name, Type* t) : name{ name }, type{ t, [](Type*) {} }
 		{}
 
 	private:

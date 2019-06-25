@@ -6,7 +6,7 @@
 
 namespace bluefin {
 
-	class BuiltinTypeSymbol : public Type, public Symbol, public std::enable_shared_from_this<BuiltinTypeSymbol>
+	class BuiltinTypeSymbol : public Type, public Symbol
 	{
 	public:
 
@@ -16,14 +16,13 @@ namespace bluefin {
 
 
 
-		BuiltinTypeSymbol(const Possibilities type) : Symbol{ convertEnumToString(type) }
-		{ } 
+		BuiltinTypeSymbol(const Possibilities type) 
+			: Symbol{ convertEnumToString(type), this }
+		{ 
+		} 
 
 		inline string getCategoryName() const override { return "builtinType"; }
 		inline string type2str() const override { return getName(); }
-
-		shared_ptr<Type> getType()  override { return shared_from_this(); }  // must make sure that this BuiltinTypeSymbol's raw ptr is already
-			// handled by a shared ptr. This means that every use of BuiltinTypeSymbol is within shared_ptr
 
 	private:
 

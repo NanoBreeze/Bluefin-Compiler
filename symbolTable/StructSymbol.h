@@ -9,7 +9,6 @@ namespace bluefin {
 
 	using std::string;
 	using std::shared_ptr;
-	using std::enable_shared_from_this;
 
 	/** TODO: Awkward design 
 	How do we actually make a scope? From SymbolTable::enterScope(..). It literally just creates a scope that points to another once. A struct must contain a reference to a scope (aka, composition). Since a Scope is created in enterScope, we want to associate a struct with it (we presume the struct has already been declared into the symbol table. This requires:
@@ -20,10 +19,11 @@ Creating a structsymbol and attaching its scope are now two different phases, bu
 	
 	TODO: too many dangling pointers around. eg, scope. Also, who manages deletion of symbols, the scope or the creator?
 	*/
-	class StructSymbol : public Symbol, public Type, public enable_shared_from_this<StructSymbol> {
+	class StructSymbol : public Symbol, public Type 
+	{
 
 	public:
-		StructSymbol(const string& name) : Symbol(name)
+		StructSymbol(const string& name) : Symbol(name, this)
 		{}
 
 		/*
@@ -36,7 +36,6 @@ Creating a structsymbol and attaching its scope are now two different phases, bu
 
 		inline string getCategoryName() const override { return "struct"; }
 		inline string type2str() const override { return getName(); }
-		shared_ptr<Type> getType()  override { return shared_from_this(); }  // must make sure that this BuiltinTypeSymbol's raw ptr is already
 
 	private:
 		shared_ptr<Scope> scope;
