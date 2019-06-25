@@ -1,0 +1,9 @@
+f - t_First
+f() - t_First
+g - t_void
+5 - t_int
+g(5) - t_void
+h - t_bool
+h() - t_bool
+true - t_bool
+h()&&true - t_bool

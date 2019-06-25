@@ -1,5 +1,6 @@
 #include "PopulateSymTabListener.h"
 
+#include "antlr4-runtime.h"
 #include <iostream>
 #include <memory>
 #include "../symbolTable/Symbol.h"
@@ -11,6 +12,7 @@
 using namespace bluefin;
 using std::shared_ptr;
 using std::dynamic_pointer_cast;
+using std::static_pointer_cast;
 
 void PopulateSymTabListener::enterVarDecl(bluefinParser::VarDeclContext* ctx)  
 {
@@ -42,7 +44,7 @@ void PopulateSymTabListener::enterFuncDef(bluefinParser::FuncDefContext* ctx)
 		symbolTable.declare(funcSym);
 	}
 
-	symbolTable.enterScope();
+	symbolTable.enterScope("function " + ctx->ID()->getText());
 }
 
 void PopulateSymTabListener::enterParam(bluefinParser::ParamContext* ctx)
@@ -84,6 +86,7 @@ void PopulateSymTabListener::enterPrimaryId(bluefinParser::PrimaryIdContext* ctx
 	shared_ptr<Symbol> resolvedSym = symbolTable.resolve(ctx->ID()->getText());
 
 	if (resolvedSym) { // if not resolved, then this is not resolved. Uh oh!
+		scopeOfPrimaryCtxs.put(ctx, symbolTable.getCurrScope()); // will be used in later pass to resolve this ctx name again
 		if (shared_ptr<StructSymbol> s = dynamic_pointer_cast<StructSymbol>(resolvedSym->getType())) {
 			structSymbolStack.push(s); // this Id has the type of a structSymbol. eg, A a; a.b; "a" in "a.b" is the primaryId
 		}
@@ -121,3 +124,4 @@ void PopulateSymTabListener::exitBlock(bluefinParser::BlockContext* ctx)
 {
 	symbolTable.exitScope();
 }
+

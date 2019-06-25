@@ -1,14 +1,44 @@
 #pragma once
 
+#include "antlr4-runtime.h"
 #include <stack>
+#include <memory>
 #include "../generated/bluefin/bluefinBaseListener.h"
 #include "../symbolTable/SymbolTable.h"
 #include "../symbolTable/StructSymbol.h"
 #include "../symbolTable/SymbolFactory.h"
+#include "../symbolTable/Scope.h"
+
+using bluefin::Type;
+using bluefin::Scope;
+using std::shared_ptr;
+
+// TODO: Same reason as with type. Need to think how to link this into Google Test
+template <>
+class antlr4::tree::ParseTreeProperty<shared_ptr<Scope>> {
+
+public:
+	virtual shared_ptr<Scope> get(ParseTree* node) {
+		return _annotations[node];
+	}
+	virtual void put(ParseTree* node, shared_ptr<Scope> value) {
+		_annotations[node] = value;
+	}
+	virtual shared_ptr<Scope> removeFrom(ParseTree* node) {
+		auto value = _annotations[node];
+		_annotations.erase(node);
+		return value;
+	}
+
+protected:
+	std::map<ParseTree*, shared_ptr<Scope>> _annotations;
+};
+
 
 namespace bluefin {
 
 	using std::stack;
+	using antlr4::tree::ParseTreeProperty;
 
 	class PopulateSymTabListener : public bluefinBaseListener
 	{
@@ -38,12 +68,9 @@ namespace bluefin {
 					funcDef : type ID '(' paramList? ')' '{' stmt* '}';
 			- Since exitBlock(..) also won't be called to finish this scope, exitFuncDef(..) will be called.
 		*/
-
 		void enterFuncDef(bluefinParser::FuncDefContext*) override;
-
 		void enterParam(bluefinParser::ParamContext*) override;
 		void exitFuncDef(bluefinParser::FuncDefContext*) override;
-
 
 		void enterStructDef(bluefinParser::StructDefContext*) override;
 		void exitStructDef(bluefinParser::StructDefContext*) override;
@@ -54,10 +81,12 @@ namespace bluefin {
 		void enterBlock(bluefinParser::BlockContext*) override;
 		void exitBlock(bluefinParser::BlockContext*) override;
 
+		inline ParseTreeProperty<shared_ptr<Scope>> getScopeOfPrimaryCtxs() const { return scopeOfPrimaryCtxs; }
+
 	private:
 		SymbolTable& symbolTable;
 		SymbolFactory& symbolFactory;
-
+		ParseTreeProperty<shared_ptr<Scope>> scopeOfPrimaryCtxs;
 
 		/* 
 		The purpose of this stack is to enable resolution of struct members. Since each 
@@ -80,5 +109,4 @@ namespace bluefin {
 		*/
 		stack<shared_ptr<StructSymbol>> structSymbolStack;
 	};
-
 }

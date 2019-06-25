@@ -30,8 +30,9 @@ namespace bluefin {
 		virtual shared_ptr<Symbol> resolve(const string name);
 
 		/* 
-		This method is for testing currScope and the scope chain
-		Having difficulty putting in a friend class.
+		Why might somebody want the current scope?
+		1. Testing
+		2. To map the current context with the current scope 
 		*/
 		inline shared_ptr<Scope> getCurrScope() const { return currScope; }
 

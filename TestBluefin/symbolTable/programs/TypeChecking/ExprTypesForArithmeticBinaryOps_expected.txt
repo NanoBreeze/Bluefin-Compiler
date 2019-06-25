@@ -1,0 +1,12 @@
+a - t_int
+b - t_int
+a+b - t_int
+(a+b) - t_int
+c - t_float
+(a+b)*c - t_int
+a - t_int
+c - t_float
+b - t_int
+-b - t_int
+c/-b - t_float
+a-c/-b - t_int

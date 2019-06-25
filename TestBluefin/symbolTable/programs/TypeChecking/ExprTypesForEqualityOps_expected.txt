@@ -1,0 +1,11 @@
+x - t_int
+y - t_int
+x==y - t_bool
+x - t_int
+y - t_int
+x!=y - t_bool
+x - t_int
+y - t_int
+x==y - t_bool
+z - t_bool
+x==y==z - t_bool

@@ -1,0 +1,9 @@
+f - t_First
+f() - t_First
+5 - t_int
+first - t_First
+first.a - t_int
+5+first.a - t_int
+second - t_Second
+second.one - t_First
+second.one.a - t_int
