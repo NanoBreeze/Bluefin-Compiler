@@ -22,5 +22,7 @@ namespace bluefin {
 		// user-defined type, and the struct as a subtype b/c it contains its own scope for members
 
 		shared_ptr<Type> promotionType; // since only builtin types can be promoted, so no need for actual type object
+		// TODO: some types can't be promoted by language rules (eg, bool), so we should
+		// separate promotable ones into a different kind of type context
 	};
 }

@@ -33,7 +33,7 @@ namespace bluefin {
 	public:
 
 		// For testing, we'll pass in an adapter of a symbol table
-		DecorateExprWithTypes(map<ParseTree*, shared_ptr<Scope>> scopeOfPrimaryIds, SymbolFactory& factory) : 
+		DecorateExprWithTypes(map<ParseTree*, shared_ptr<Scope>> scopeOfPrimaryIds, SymbolFactory& factory) :
 			scopeOfPrimaryIds{ scopeOfPrimaryIds }, symbolFactory{ factory }
 		{}
 
@@ -58,7 +58,7 @@ namespace bluefin {
 		void exitVarDecl(bluefinParser::VarDeclContext*) override;
 		void exitStmtReturn(bluefinParser::StmtReturnContext*) override;
 
-		inline map<ParseTree*, TypeContext> getExprTypeContexts() { return typeContexts; }	
+		inline map<ParseTree*, TypeContext> getExprTypeContexts() { return typeContexts; }
 
 	private:
 		SymbolFactory& symbolFactory;
@@ -73,10 +73,16 @@ namespace bluefin {
 		// ==== How to update type
 		// 1. When we visit a primary, compute its type
 		// 2. When we visit a non-terminal 
-		//      a) For arithmetic expr, compute its own type from its children's type. THen compute its children's promoteTo type
+		//      a) For arithmetic expr, compute its own type from its children's type. Then check whether this expression has compatible types
+		//			THen compute its children's promoteTo type
 		//		b) For equality and relational, compute children's promotTo type and set own type to bool. Same wtih promoteTo type (since that won't change)
 		shared_ptr<Type> getArithmeticExprType(shared_ptr<Type> left, shared_ptr<Type> right);
 		shared_ptr<Type> getPromotionType(shared_ptr<Type> left, shared_ptr<Type> right);
+
+		bool areSameTypes(shared_ptr <Type> left, shared_ptr<Type> right) const;
+		bool areBothBoolType(shared_ptr<Type> left, shared_ptr<Type> right) const;
+		bool areArithmeticallyCompatible(shared_ptr<Type> left, shared_ptr<Type> right) const;
+		bool isAssignmentCompatible(shared_ptr<Type> left, shared_ptr<Type> right) const;
 
 		// can't use pair with unordered_map here b/c pair doesn't have a hash key
 		const map<pair<TP, TP>, shared_ptr<Type>> arithmeticExprType{ 
