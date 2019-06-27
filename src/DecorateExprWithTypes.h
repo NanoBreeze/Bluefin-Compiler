@@ -57,6 +57,8 @@ namespace bluefin {
 		void exitMemberAccess(bluefinParser::MemberAccessContext*) override;
 		void exitVarDecl(bluefinParser::VarDeclContext*) override;
 		void exitStmtReturn(bluefinParser::StmtReturnContext*) override;
+		void exitStmtIf(bluefinParser::StmtIfContext*) override;
+		void exitStmtWhile(bluefinParser::StmtWhileContext*) override;
 
 		inline map<ParseTree*, TypeContext> getExprTypeContexts() { return typeContexts; }
 

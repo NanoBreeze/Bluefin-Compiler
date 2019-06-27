@@ -62,8 +62,20 @@ void DecorateExprWithTypes::exitPrimaryParenth(bluefinParser::PrimaryParenthCont
 }
 
 void DecorateExprWithTypes::exitFuncCall(bluefinParser::FuncCallContext* ctx) {
-	shared_ptr<Type> subExprType = typeContexts.at(ctx->expr()).getEvalType();
-	typeContexts.emplace(ctx, TypeContext { subExprType });
+
+	// make sure that for f(), f really is a function symbol and not, say, an int
+	bluefinParser::ExprContext* primaryIdCtx = ctx->expr();
+	shared_ptr<Scope> scope = scopeOfPrimaryIds.at(primaryIdCtx);
+
+	if (shared_ptr<FunctionSymbol> fSym = 
+		dynamic_pointer_cast<FunctionSymbol>(scope->resolve(primaryIdCtx->getText()))) {
+		
+		shared_ptr<Type> subExprType = typeContexts.at(ctx->expr()).getEvalType();
+		typeContexts.emplace(ctx, TypeContext { subExprType });
+	}
+	else {
+		cerr << "func call must be a function type. Eg, for f(1,2), f must be a FunctionSymbol" << endl;
+	}
 }
 
 void DecorateExprWithTypes::exitUnaryExpr(bluefinParser::UnaryExprContext* ctx) {
@@ -75,7 +87,7 @@ void DecorateExprWithTypes::exitUnaryExpr(bluefinParser::UnaryExprContext* ctx) 
 		}
 	}
 	else { // - (negative)
-		if (subExprType->getTypePossibility() != TP::BOOL || subExprType->getTypePossibility() != TP::FLOAT) { // TODO, how about just comparing type instead of TP
+		if (subExprType->getTypePossibility() != TP::BOOL && subExprType->getTypePossibility() != TP::FLOAT) { // TODO, how about just comparing type instead of TP
 			cerr << "Bad unary - operand type" << endl;
 		}
 	}
@@ -224,10 +236,15 @@ void DecorateExprWithTypes::exitSimpleAssignExpr(bluefinParser::SimpleAssignExpr
 void DecorateExprWithTypes::exitMemberAccess(bluefinParser::MemberAccessContext* ctx) {
 	// put type of member. Eg, first.a could have type int
 	TypeContext& typeContext = typeContexts.at(ctx->expr());
+	if (shared_ptr<StructSymbol> structType =
+		dynamic_pointer_cast<StructSymbol>(typeContext.getEvalType())) {
 
-	shared_ptr<StructSymbol> structType = static_pointer_cast<StructSymbol>(typeContext.getEvalType());
-	shared_ptr<Type> memberType = structType->resolveMember(ctx->ID()->getText())->getType();
-	typeContexts.emplace(ctx, TypeContext { memberType });
+		shared_ptr<Type> memberType = structType->resolveMember(ctx->ID()->getText())->getType();
+		typeContexts.emplace(ctx, TypeContext { memberType });
+	}
+	else {
+		cerr << "id must be a struct type. Eg, x.y, x must be a struct type" << endl;
+	}
 }
 
 // It doesn't make sense for a var declaration to have a type (the varsymbol can though)
@@ -272,6 +289,20 @@ void DecorateExprWithTypes::exitStmtReturn(bluefinParser::StmtReturnContext* ctx
 	}
 	*/
 }
+
+
+void DecorateExprWithTypes::exitStmtIf(bluefinParser::StmtIfContext* ctx) {
+	if (typeContexts.at(ctx->expr()).getEvalType()->getTypePossibility() != TP::BOOL) {
+		cerr << "if (expr) ... should be bool" << endl;
+	}
+}
+
+void DecorateExprWithTypes::exitStmtWhile(bluefinParser::StmtWhileContext* ctx) {
+	if (typeContexts.at(ctx->expr()).getEvalType()->getTypePossibility() != TP::BOOL) {
+		cerr << "if (expr) ... should be bool" << endl;
+	}
+}
+
 
 
 shared_ptr<Symbol> DecorateExprWithTypes::resolve(const string name, shared_ptr<Scope> startScope) {
