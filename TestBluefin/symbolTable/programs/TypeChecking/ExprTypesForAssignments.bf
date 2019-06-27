@@ -1,5 +1,5 @@
 struct First {
-	int a;
+	float a;
 };
 
 struct Second {
@@ -12,7 +12,7 @@ First f() {}
 int main() {
 	First first = f();
 	
-	int x = 5+first.a;
+	float x = 5+first.a;
 	
 	Second second;
 	int y = second.one.a;

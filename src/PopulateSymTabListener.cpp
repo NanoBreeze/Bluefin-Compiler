@@ -86,7 +86,7 @@ void PopulateSymTabListener::enterPrimaryId(bluefinParser::PrimaryIdContext* ctx
 	shared_ptr<Symbol> resolvedSym = symbolTable.resolve(ctx->ID()->getText());
 
 	if (resolvedSym) { // if not resolved, then this is not resolved. Uh oh!
-		scopeOfPrimaryCtxs.put(ctx, symbolTable.getCurrScope()); // will be used in later pass to resolve this ctx name again
+		scopeOfPrimaryCtxs.emplace(ctx, symbolTable.getCurrScope()); // will be used in later pass to resolve this ctx name again
 		if (shared_ptr<StructSymbol> s = dynamic_pointer_cast<StructSymbol>(resolvedSym->getType())) {
 			structSymbolStack.push(s); // this Id has the type of a structSymbol. eg, A a; a.b; "a" in "a.b" is the primaryId
 		}

@@ -1,7 +1,7 @@
-a - t_int
-b - t_bool
-c - t_float
-d - t_string
-f - t_int
-true - t_bool
-false - t_bool
+a - t_int - t_int
+b - t_bool - t_bool
+c - t_float - t_float
+d - t_string - t_string
+f - t_int - t_int
+true - t_bool - t_bool
+false - t_bool - t_bool

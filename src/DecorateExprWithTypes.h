@@ -2,53 +2,39 @@
 
 #include "antlr4-runtime.h"
 #include <memory>
+#include <array>
+#include <map>
 #include "../generated/bluefin/bluefinBaseListener.h"
 #include "../symbolTable/SymbolTable.h"
 #include "../symbolTable/SymbolFactory.h"
 #include "../symbolTable/Exceptions.h"
 #include "../symbolTable/Scope.h"
+#include "../symbolTable/TypeContext.h"
 
-using bluefin::Type;
-using bluefin::Scope;
-using std::shared_ptr;
+using bluefin::TypeContext;
 
 // TODO: Adding this specialization here mostly so that Testbluefin can link to this. 
 // Wtihout this, it complains that the ParseTreeProperty<...> implementation can't be found,
 // This is b/c it's not linked to the implementation, as the implementation of
 // templates are generated elsewhere, it seems
 
-template <>
-class antlr4::tree::ParseTreeProperty<shared_ptr<Type>> {
-
-  public:
-    virtual shared_ptr<Type> get(ParseTree *node) {
-      return _annotations[node];
-    }
-    virtual void put(ParseTree *node, shared_ptr<Type> value) {
-      _annotations[node] = value;
-    }
-    virtual shared_ptr<Type> removeFrom(ParseTree *node) {
-      auto value = _annotations[node];
-      _annotations.erase(node);
-      return value;
-    }
-
-  protected:
-    std::map<ParseTree*, shared_ptr<Type>> _annotations;
-};
-
 
 namespace bluefin {
 
-	using antlr4::tree::ParseTreeProperty;
+	using antlr4::tree::ParseTree;
+	using std::map;
+	using std::pair;
+	using std::dynamic_pointer_cast;
+	using std::shared_ptr;
+	using TP = Type::Possibility;
 
 	class DecorateExprWithTypes : public bluefinBaseListener
 	{
 	public:
 
 		// For testing, we'll pass in an adapter of a symbol table
-		DecorateExprWithTypes(ParseTreeProperty<shared_ptr<Scope>> scopeOfPrimaryIds, SymbolFactory& factory)
-			: scopeOfPrimaryIds{ scopeOfPrimaryIds }, symbolFactory{ factory }
+		DecorateExprWithTypes(map<ParseTree*, shared_ptr<Scope>> scopeOfPrimaryIds, SymbolFactory& factory) : 
+			scopeOfPrimaryIds{ scopeOfPrimaryIds }, symbolFactory{ factory }
 		{}
 
 		//===== listener methods for obtaining/evaluating expression types
@@ -70,16 +56,41 @@ namespace bluefin {
 		void exitSimpleAssignExpr(bluefinParser::SimpleAssignExprContext*) override;
 		void exitMemberAccess(bluefinParser::MemberAccessContext*) override;
 
-		antlr4::tree::ParseTreeProperty<shared_ptr<Type>> getExprTypes() { return exprTypes; }	// stores the type associated for expressions. Enables type checking
+		inline map<ParseTree*, TypeContext> getExprTypeContexts() { return exprTypeContexts; }	// stores the type associated for expressions. Enables type checking
 
 	private:
 		SymbolFactory& symbolFactory;
 
-		ParseTreeProperty<shared_ptr<Scope>> scopeOfPrimaryIds;
+		map<ParseTree*, shared_ptr<Scope>> scopeOfPrimaryIds;
 
 		// stores the type associated for expressions. Enables type checking
-		ParseTreeProperty<shared_ptr<Type>> exprTypes;
+		map<ParseTree*, TypeContext> exprTypeContexts;
+		map<ParseTree*, int> hi;
 
 		shared_ptr<Symbol> resolve(const string name, shared_ptr<Scope> startScope);
+
+		// ==== How to update type
+		// 1. When we visit a primary, compute its type
+		// 2. When we visit a non-terminal 
+		//      a) For arithmetic expr, compute its own type from its children's type. THen compute its children's promoteTo type
+		//		b) For equality and relational, compute children's promotTo type and set own type to bool. Same wtih promoteTo type (since that won't change)
+		shared_ptr<Type> getArithmeticExprType(shared_ptr<Type> left, shared_ptr<Type> right);
+		shared_ptr<Type> getPromotionType(shared_ptr<Type> left, shared_ptr<Type> right);
+
+		// can't use pair with unordered_map here b/c pair doesn't have a hash key
+		const map<pair<TP, TP>, shared_ptr<Type>> arithmeticExprType{ 
+			{{TP::INT, TP::INT}, dynamic_pointer_cast<BuiltinTypeSymbol>(shared_ptr<Symbol>(move(symbolFactory.createBuiltinTypeSymbol(BuiltinTypeSymbol::BuiltinType::INT))))},
+			{{TP::INT, TP::FLOAT}, dynamic_pointer_cast<BuiltinTypeSymbol>(shared_ptr<Symbol>(move(symbolFactory.createBuiltinTypeSymbol(BuiltinTypeSymbol::BuiltinType::FLOAT))))},
+			{{TP::FLOAT, TP::INT}, dynamic_pointer_cast<BuiltinTypeSymbol>(shared_ptr<Symbol>(move(symbolFactory.createBuiltinTypeSymbol(BuiltinTypeSymbol::BuiltinType::FLOAT))))},
+			{{TP::FLOAT, TP::FLOAT}, dynamic_pointer_cast<BuiltinTypeSymbol>(shared_ptr<Symbol>(move(symbolFactory.createBuiltinTypeSymbol(BuiltinTypeSymbol::BuiltinType::FLOAT))))}
+		};
+
+		const map<pair<TP, TP>, shared_ptr<Type>> promotionFromTo{
+			{{TP::BOOL, TP::BOOL}, dynamic_pointer_cast<BuiltinTypeSymbol>(shared_ptr<Symbol>(move(symbolFactory.createBuiltinTypeSymbol(BuiltinTypeSymbol::BuiltinType::BOOL))))},
+			{{TP::INT, TP::FLOAT}, dynamic_pointer_cast<BuiltinTypeSymbol>(shared_ptr<Symbol>(move(symbolFactory.createBuiltinTypeSymbol(BuiltinTypeSymbol::BuiltinType::FLOAT))))},
+			{{TP::INT, TP::INT}, dynamic_pointer_cast<BuiltinTypeSymbol>(shared_ptr<Symbol>(move(symbolFactory.createBuiltinTypeSymbol(BuiltinTypeSymbol::BuiltinType::INT))))},
+			{{TP::FLOAT, TP::INT}, dynamic_pointer_cast<BuiltinTypeSymbol>(shared_ptr<Symbol>(move(symbolFactory.createBuiltinTypeSymbol(BuiltinTypeSymbol::BuiltinType::FLOAT))))},
+			{{TP::FLOAT, TP::FLOAT}, dynamic_pointer_cast<BuiltinTypeSymbol>(shared_ptr<Symbol>(move(symbolFactory.createBuiltinTypeSymbol(BuiltinTypeSymbol::BuiltinType::FLOAT))))}
+		};
 	};
 }

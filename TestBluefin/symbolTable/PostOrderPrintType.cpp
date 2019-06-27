@@ -8,9 +8,14 @@ using namespace SymbolTableTests;
 
 using namespace std;
 
+/*
+For type tests, the printed order will be:
+varName - t_type - t_promotedType
+*/
 void PostOrderPrintType::exitEveryRule(antlr4::ParserRuleContext* ctx)  {
-	if (exprTypes.get(ctx)) { // has side effect, will end up populating map with each context
-		string typeStr = exprTypes.get(ctx)->type2str();
-		output += ctx->getText() + " - t_" + typeStr + "\n";
+	if (exprTypeContexts.find(ctx) != exprTypeContexts.end()) {
+		string typeStr = exprTypeContexts.at(ctx).getEvalType()->type2str();
+		string promoteTypeStr = exprTypeContexts.at(ctx).getPromotionType()->type2str();
+		output += ctx->getText() + " - t_" + typeStr + " - t_" + promoteTypeStr + "\n";
 	}
 }

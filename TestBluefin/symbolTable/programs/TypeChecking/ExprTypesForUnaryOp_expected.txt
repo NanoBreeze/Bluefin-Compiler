@@ -1,4 +1,4 @@
-a - t_int
--a - t_int
-b - t_bool
-!b - t_bool
+a - t_int - t_int
+-a - t_int - t_int
+b - t_bool - t_bool
+!b - t_bool - t_bool

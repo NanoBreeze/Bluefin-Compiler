@@ -4,6 +4,7 @@
 #include "../utils.h"
 #include <iostream>
 #include <fstream>
+#include <map>
 
 #include "../../symbolTable/SymbolTable.h"
 #include "../../symbolTable/SymbolFactory.h"
@@ -18,6 +19,9 @@ namespace SymbolTableTests {
 
 	using std::string;
 	using std::ifstream;
+	using antlr4::tree::ParseTree;
+	using antlr4::tree::ParseTreeWalker;
+	using std::map;
 	using namespace bluefin;
 	using namespace antlr4;
 
@@ -26,9 +30,9 @@ namespace SymbolTableTests {
 		string pathPrefix = "../TestBluefin/symbolTable/programs/TypeChecking/";
 
 		ifstream file(pathPrefix + programFile);
-		tree::ParseTree* tree = createParseTree(file);
+		ParseTree* tree = createParseTree(file);
 
-		tree::ParseTreeWalker walker;
+		ParseTreeWalker walker;
 
 		string dummy;
 		SymbolTableTestWrapper symTab(dummy);
@@ -37,12 +41,12 @@ namespace SymbolTableTests {
 		PopulateSymTabListener populateSymtabListener(symTab, symFact);
 		walker.walk(&populateSymtabListener, tree);
 
-		ParseTreeProperty<shared_ptr<Scope>> scopes = populateSymtabListener.getScopeOfPrimaryCtxs();
+		map<ParseTree*, shared_ptr<Scope>> scopes = populateSymtabListener.getScopeOfPrimaryCtxs();
 		DecorateExprWithTypes decorateExprListener(populateSymtabListener.getScopeOfPrimaryCtxs(), symFact);
 		walker.walk(&decorateExprListener, tree);
 
 		string symbolTypesStr;
-		PostOrderPrintType printTypeListener(symbolTypesStr, decorateExprListener.getExprTypes());
+		PostOrderPrintType printTypeListener(symbolTypesStr, decorateExprListener.getExprTypeContexts());
 		walker.walk(&printTypeListener, tree);
 
 		string expectedOutput = readFile(pathPrefix + expectedOutputFile);
@@ -89,7 +93,16 @@ namespace SymbolTableTests {
 		validateTypeChecking("ExprTypesForAssignments.bf", "ExprTypesForAssignments_expected.txt");
 	}
 
+	TEST(Types, Program_PromotionTypeForVarDecl) {
+		validateTypeChecking("PromotionTypeForVarDecl.bf", "PromotionTypeForVarDecl_expected.txt");
+	}
 
+	TEST(Types, Program_PromotionTypeForFuncCallArgs) {
+		validateTypeChecking("PromotionTypeForFuncCallArgs.bf", "PromotionTypeForFuncCallArgs_expected.txt");
+	}
 
+	TEST(Types, Program_ExprTypesForReturnStmt) {
+		validateTypeChecking("ExprTypesForReturnStmt.bf", "ExprTypesForReturnStmt_expected.txt");
+	}
 
 }

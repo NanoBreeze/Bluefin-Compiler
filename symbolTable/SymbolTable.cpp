@@ -14,11 +14,11 @@ namespace bluefin {
 	SymbolTable::SymbolTable() : currScope{ new Scope(nullptr, "global") } {
 
 		// Add all built-in types to the global scope
-		declare(make_shared<BuiltinTypeSymbol>(BuiltinTypeSymbol::Possibilities::BOOL));
-		declare(make_shared<BuiltinTypeSymbol>(BuiltinTypeSymbol::Possibilities::FLOAT));
-		declare(make_shared<BuiltinTypeSymbol>(BuiltinTypeSymbol::Possibilities::INT));
-		declare(make_shared<BuiltinTypeSymbol>(BuiltinTypeSymbol::Possibilities::VOID));
-		declare(make_shared<BuiltinTypeSymbol>(BuiltinTypeSymbol::Possibilities::STRING));
+		declare(make_shared<BuiltinTypeSymbol>(BuiltinTypeSymbol::BuiltinType::BOOL));
+		declare(make_shared<BuiltinTypeSymbol>(BuiltinTypeSymbol::BuiltinType::FLOAT));
+		declare(make_shared<BuiltinTypeSymbol>(BuiltinTypeSymbol::BuiltinType::INT));
+		declare(make_shared<BuiltinTypeSymbol>(BuiltinTypeSymbol::BuiltinType::VOID));
+		declare(make_shared<BuiltinTypeSymbol>(BuiltinTypeSymbol::BuiltinType::STRING));
 	}
 
 	void SymbolTable::enterScope(const string scopeName) {

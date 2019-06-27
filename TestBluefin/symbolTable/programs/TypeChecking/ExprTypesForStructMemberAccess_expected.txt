@@ -1,11 +1,17 @@
-first - t_First
-first.a - t_int
-5 - t_int
-first.a+5 - t_int
-first - t_First
-first.b - t_bool
-second - t_Second
-second.one - t_First
-second - t_Second
-second.one - t_First
-second.one.b - t_bool
+first - t_First - t_First
+first.a - t_int - t_float
+5.2 - t_float - t_float
+first.a+5.2 - t_float - t_float
+first - t_First - t_First
+first.b - t_bool - t_bool
+second - t_Second - t_Second
+second.one - t_First - t_First
+second - t_Second - t_Second
+second.one - t_First - t_First
+second.one.b - t_bool - t_bool
+second - t_Second - t_Second
+second.one - t_First - t_First
+second.one.a - t_int - t_float
+second - t_Second - t_Second
+second.two - t_float - t_float
+second.one.a*second.two - t_float - t_float

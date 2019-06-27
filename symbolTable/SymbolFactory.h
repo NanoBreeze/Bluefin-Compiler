@@ -15,9 +15,9 @@ namespace bluefin {
 	class SymbolFactory
 	{
 	public:
-		virtual shared_ptr<Symbol> createBuiltinTypeSymbol(BuiltinTypeSymbol::Possibilities);
+		virtual unique_ptr<Symbol> createBuiltinTypeSymbol(BuiltinTypeSymbol::BuiltinType);
 		virtual unique_ptr<Symbol> createFunctionSymbol(const string& name, shared_ptr<Type> type);
-		virtual shared_ptr<Symbol> createStructSymbol(const string& name);
+		virtual unique_ptr<Symbol> createStructSymbol(const string& name);
 		virtual unique_ptr<Symbol> createVariableSymbol(const string& name, shared_ptr<Type> type);
 	};
 

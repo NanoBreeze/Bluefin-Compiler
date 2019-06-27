@@ -16,15 +16,23 @@ namespace bluefin {
 	class Type
 	{
 	public:
-		
+	
+		enum class Possibility {
+			INT, FLOAT, STRING, BOOL, VOID, USER_DEFINED, UNDEFINED
+		};
+
 		// use PVF rather than take in typename in ctor since it will be the same as the 
 		// Symbol's name, so symbol can just return it easily. Also, more suitable
 		// for expressing type is just a "tag"
 		virtual string type2str() const = 0; 
 		virtual ~Type() {}
+		Possibility getTypePossibility() const { return possibility; } // what a wierd name
 
 	protected:
-		Type() {}
+		Type(Possibility pos) : possibility{ pos }
+		{}
+
+		Possibility possibility;
 	};
 }
 

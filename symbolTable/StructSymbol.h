@@ -23,7 +23,8 @@ Creating a structsymbol and attaching its scope are now two different phases, bu
 	{
 
 	public:
-		StructSymbol(const string& name) : Symbol(name, this)
+		StructSymbol(const string& name) : 
+			Type{ Type::Possibility::USER_DEFINED }, Symbol(name, this)
 		{}
 
 		/*

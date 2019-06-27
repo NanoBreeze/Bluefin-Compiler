@@ -1,13 +1,12 @@
-a - t_float
-c - t_int
-a>c - t_bool
-b - t_float
-c - t_int
-b>=c - t_bool
-a - t_float
-b - t_float
-a<b - t_bool
-c - t_int
-a<b<=c - t_bool
-d - t_int
-a<b<=c>d - t_bool
+a - t_float - t_float
+c - t_int - t_float
+a>c - t_bool - t_bool
+b - t_float - t_float
+c - t_int - t_float
+b>=c - t_bool - t_bool
+a - t_float - t_float
+b - t_float - t_float
+a<b - t_bool - t_bool
+c - t_int - t_float
+b - t_float - t_float
+c>b - t_bool - t_bool

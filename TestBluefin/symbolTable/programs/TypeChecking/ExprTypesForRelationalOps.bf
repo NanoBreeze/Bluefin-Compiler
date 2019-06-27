@@ -6,5 +6,6 @@ int main(float a) {
 	
 	a > c;
 	b >= c;
-	a < b <= c > d;
+	a < b;
+	c > b;
 }

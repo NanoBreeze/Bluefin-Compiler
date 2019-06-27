@@ -3,6 +3,7 @@
 #include "antlr4-runtime.h"
 #include <stack>
 #include <memory>
+#include <map>
 #include "../generated/bluefin/bluefinBaseListener.h"
 #include "../symbolTable/SymbolTable.h"
 #include "../symbolTable/StructSymbol.h"
@@ -13,32 +14,11 @@ using bluefin::Type;
 using bluefin::Scope;
 using std::shared_ptr;
 
-// TODO: Same reason as with type. Need to think how to link this into Google Test
-template <>
-class antlr4::tree::ParseTreeProperty<shared_ptr<Scope>> {
-
-public:
-	virtual shared_ptr<Scope> get(ParseTree* node) {
-		return _annotations[node];
-	}
-	virtual void put(ParseTree* node, shared_ptr<Scope> value) {
-		_annotations[node] = value;
-	}
-	virtual shared_ptr<Scope> removeFrom(ParseTree* node) {
-		auto value = _annotations[node];
-		_annotations.erase(node);
-		return value;
-	}
-
-protected:
-	std::map<ParseTree*, shared_ptr<Scope>> _annotations;
-};
-
-
 namespace bluefin {
 
 	using std::stack;
-	using antlr4::tree::ParseTreeProperty;
+	using antlr4::tree::ParseTree;
+	using std::map;
 
 	class PopulateSymTabListener : public bluefinBaseListener
 	{
@@ -81,12 +61,13 @@ namespace bluefin {
 		void enterBlock(bluefinParser::BlockContext*) override;
 		void exitBlock(bluefinParser::BlockContext*) override;
 
-		inline ParseTreeProperty<shared_ptr<Scope>> getScopeOfPrimaryCtxs() const { return scopeOfPrimaryCtxs; }
+		inline map<ParseTree*, shared_ptr<Scope>> getScopeOfPrimaryCtxs() const { return scopeOfPrimaryCtxs; }
 
 	private:
 		SymbolTable& symbolTable;
 		SymbolFactory& symbolFactory;
-		ParseTreeProperty<shared_ptr<Scope>> scopeOfPrimaryCtxs;
+		// use map instead of ParseTreeProperty b/c it is made with map but has lots of restrictions
+		map<ParseTree*, shared_ptr<Scope>> scopeOfPrimaryCtxs; 
 
 		/* 
 		The purpose of this stack is to enable resolution of struct members. Since each 

@@ -1,6 +1,6 @@
 int x;
 int main() {
-	int y;
+	float  y;
 	if (x==y) {	}
 	else { x != y; }
 	bool z;

@@ -10,34 +10,51 @@ namespace bluefin {
 	{
 	public:
 
-		enum class Possibilities {
+		enum class BuiltinType {
 			INT, FLOAT, STRING, BOOL, VOID
 		};
 
 
 
-		BuiltinTypeSymbol(const Possibilities type) 
-			: Symbol{ convertEnumToString(type), this }
-		{ 
-		} 
+		BuiltinTypeSymbol(const BuiltinType type) :
+			Type{ convertBuiltinEnumToTypeEnum(type) }, 
+			Symbol { convertEnumToString(type), this }
+		{ } 
 
 		inline string getCategoryName() const override { return "builtinType"; }
 		inline string type2str() const override { return getName(); }
 
 	private:
 
-		string convertEnumToString(Possibilities possibility) const {
+		string convertEnumToString(BuiltinType possibility) const {
 			switch (possibility) {
-			case Possibilities::INT:
+			case BuiltinType::INT:
 				return "int";
-			case Possibilities::FLOAT:
+			case BuiltinType::FLOAT:
 				return "float";
-			case Possibilities::STRING:
+			case BuiltinType::STRING:
 				return "string";
-			case Possibilities::BOOL:
+			case BuiltinType::BOOL:
 				return "bool";
-			case Possibilities::VOID:
+			case BuiltinType::VOID:
 				return "void";
+			default:
+				throw "oh no! No other conversions possible";
+			}
+		}
+		
+		Type::Possibility convertBuiltinEnumToTypeEnum(BuiltinType builtinType) const {
+			switch (builtinType) {
+			case BuiltinType::INT:
+				return Type::Possibility::INT;
+			case BuiltinType::FLOAT:
+				return Type::Possibility::FLOAT;
+			case BuiltinType::STRING:
+				return Type::Possibility::STRING;
+			case BuiltinType::BOOL:
+				return Type::Possibility::BOOL;
+			case BuiltinType::VOID:
+				return Type::Possibility::VOID;
 			default:
 				throw "oh no! No other conversions possible";
 			}

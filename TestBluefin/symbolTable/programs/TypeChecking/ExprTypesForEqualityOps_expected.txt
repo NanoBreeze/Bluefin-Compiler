@@ -1,11 +1,11 @@
-x - t_int
-y - t_int
-x==y - t_bool
-x - t_int
-y - t_int
-x!=y - t_bool
-x - t_int
-y - t_int
-x==y - t_bool
-z - t_bool
-x==y==z - t_bool
+x - t_int - t_float
+y - t_float - t_float
+x==y - t_bool - t_bool
+x - t_int - t_float
+y - t_float - t_float
+x!=y - t_bool - t_bool
+x - t_int - t_float
+y - t_float - t_float
+x==y - t_bool - t_bool
+z - t_bool - t_bool
+x==y==z - t_bool - t_bool
