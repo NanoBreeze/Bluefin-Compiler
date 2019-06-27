@@ -53,7 +53,7 @@ expr : INT                                  # primaryInt
      | '(' expr ')'                         # primaryParenth
      | expr '(' argList? ')'                # funcCall
      | expr '.' ID                          # memberAccess
-     | ('-' | '!') expr                     # unaryExpr
+     | op=('-' | '!') expr                  # unaryExpr
      | expr ('*' | '/') expr                # multiExpr
      | expr ('+' | '-') expr                # addExpr
      | expr ('<' | '<=' | '>' | '>=') expr  # relExpr

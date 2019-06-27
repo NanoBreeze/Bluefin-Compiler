@@ -1922,11 +1922,12 @@ bluefinParser::ExprContext* bluefinParser::expr(int precedence) {
         _ctx = _localctx;
         previousContext = _localctx;
         setState(155);
+        dynamic_cast<UnaryExprContext *>(_localctx)->op = _input->LT(1);
         _la = _input->LA(1);
         if (!(_la == bluefinParser::T__15
 
         || _la == bluefinParser::T__16)) {
-        _errHandler->recoverInline(this);
+          dynamic_cast<UnaryExprContext *>(_localctx)->op = _errHandler->recoverInline(this);
         }
         else {
           _errHandler->reportMatch(this);
