@@ -61,13 +61,16 @@ namespace bluefin {
 		void enterBlock(bluefinParser::BlockContext*) override;
 		void exitBlock(bluefinParser::BlockContext*) override;
 
-		inline map<ParseTree*, shared_ptr<Scope>> getScopeOfPrimaryCtxs() const { return scopeOfPrimaryCtxs; }
+		inline map<ParseTree*, shared_ptr<Scope>> getScopeOfPrimaryCtxs() const { return scopes; }
 
 	private:
 		SymbolTable& symbolTable;
 		SymbolFactory& symbolFactory;
 		// use map instead of ParseTreeProperty b/c it is made with map but has lots of restrictions
-		map<ParseTree*, shared_ptr<Scope>> scopeOfPrimaryCtxs; 
+		// stores the scope associated with the ParseTree nodes of primary ids so that
+		// in future listener passes, we can use and resolve them for other semantic checks (eg, types)
+		// Also stores scope of vardecl to allow type promotion in vardecl. Eg, float a = 34;
+		map<ParseTree*, shared_ptr<Scope>> scopes; 
 
 		/* 
 		The purpose of this stack is to enable resolution of struct members. Since each 

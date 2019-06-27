@@ -55,17 +55,18 @@ namespace bluefin {
 		void exitLogicalORExpr(bluefinParser::LogicalORExprContext*) override;
 		void exitSimpleAssignExpr(bluefinParser::SimpleAssignExprContext*) override;
 		void exitMemberAccess(bluefinParser::MemberAccessContext*) override;
+		void exitVarDecl(bluefinParser::VarDeclContext*) override;
+		void exitStmtReturn(bluefinParser::StmtReturnContext*) override;
 
-		inline map<ParseTree*, TypeContext> getExprTypeContexts() { return exprTypeContexts; }	// stores the type associated for expressions. Enables type checking
+		inline map<ParseTree*, TypeContext> getExprTypeContexts() { return typeContexts; }	
 
 	private:
 		SymbolFactory& symbolFactory;
 
 		map<ParseTree*, shared_ptr<Scope>> scopeOfPrimaryIds;
 
-		// stores the type associated for expressions. Enables type checking
-		map<ParseTree*, TypeContext> exprTypeContexts;
-		map<ParseTree*, int> hi;
+		// stores the type associated with expressions. Enables type checking
+		map<ParseTree*, TypeContext> typeContexts;
 
 		shared_ptr<Symbol> resolve(const string name, shared_ptr<Scope> startScope);
 

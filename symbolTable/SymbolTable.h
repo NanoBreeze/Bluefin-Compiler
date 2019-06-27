@@ -32,7 +32,7 @@ namespace bluefin {
 		/* 
 		Why might somebody want the current scope?
 		1. Testing
-		2. To map the current context with the current scope 
+		2. To map the current context with the current scope, passing the symbols for future listener passes
 		*/
 		inline shared_ptr<Scope> getCurrScope() const { return currScope; }
 

@@ -1,0 +1,9 @@
+45 - t_int - t_int
+9 - t_int - t_int
+a - t_int - t_int
+1 - t_int - t_int
+a - t_int - t_float
+first - t_First - t_First
+first.one - t_int - t_int
+9 - t_int - t_int
+first.one+9 - t_int - t_float
