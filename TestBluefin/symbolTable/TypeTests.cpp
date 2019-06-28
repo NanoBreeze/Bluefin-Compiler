@@ -41,12 +41,12 @@ namespace SymbolTableTests {
 		PopulateSymTabListener populateSymtabListener(symTab, symFact);
 		walker.walk(&populateSymtabListener, tree);
 
-		map<ParseTree*, shared_ptr<Scope>> scopes = populateSymtabListener.getScopeOfPrimaryCtxs();
-		DecorateExprWithTypes decorateExprListener(populateSymtabListener.getScopeOfPrimaryCtxs(), symFact);
+		map<ParseTree*, shared_ptr<Scope>> scopes = populateSymtabListener.getScopeOfPrimaryAndFuncDefCtxs();
+		DecorateExprWithTypes decorateExprListener(populateSymtabListener.getScopeOfPrimaryAndFuncDefCtxs(), symFact);
 		walker.walk(&decorateExprListener, tree);
 
 		string symbolTypesStr;
-		PostOrderPrintType printTypeListener(symbolTypesStr, decorateExprListener.getExprTypeContexts());
+		PostOrderPrintType printTypeListener(symbolTypesStr, decorateExprListener.getTypeContexts());
 		walker.walk(&printTypeListener, tree);
 
 		string expectedOutput = readFile(pathPrefix + expectedOutputFile);

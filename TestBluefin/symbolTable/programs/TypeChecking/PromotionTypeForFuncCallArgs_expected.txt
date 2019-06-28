@@ -1,0 +1,14 @@
+1 - t_int - t_int
+2 - t_int - t_float
+f - t_int - t_int
+5 - t_int - t_int
+f(5) - t_int - t_int
+g - t_float - t_float
+6 - t_int - t_float
+g(6) - t_float - t_float
+h - t_void - t_void
+1 - t_int - t_int
+2 - t_int - t_int
+3 - t_int - t_int
+-3 - t_int - t_float
+h(1,2,-3) - t_void - t_void

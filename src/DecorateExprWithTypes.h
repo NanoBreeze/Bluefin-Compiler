@@ -34,7 +34,7 @@ namespace bluefin {
 
 		// For testing, we'll pass in an adapter of a symbol table
 		DecorateExprWithTypes(map<ParseTree*, shared_ptr<Scope>> scopeOfPrimaryIds, SymbolFactory& factory) :
-			scopeOfPrimaryIds{ scopeOfPrimaryIds }, symbolFactory{ factory }
+			scopeOfPrimaryIdsVarDeclAndFuncDefs{ scopeOfPrimaryIds }, symbolFactory{ factory }, currFuncDefCtx{ nullptr }
 		{}
 
 		//===== listener methods for obtaining/evaluating expression types
@@ -60,15 +60,18 @@ namespace bluefin {
 		void exitStmtIf(bluefinParser::StmtIfContext*) override;
 		void exitStmtWhile(bluefinParser::StmtWhileContext*) override;
 
-		inline map<ParseTree*, TypeContext> getExprTypeContexts() { return typeContexts; }
+		// used to setting the current funcDefContext so that a return expr can compare its type with its enclosing function's type
+		void enterFuncDef(bluefinParser::FuncDefContext*) override;
+		void exitFuncDef(bluefinParser::FuncDefContext*) override;
+
+		inline map<ParseTree*, TypeContext> getTypeContexts() { return typeContexts; }
 
 	private:
 		SymbolFactory& symbolFactory;
+		map<ParseTree*, shared_ptr<Scope>> scopeOfPrimaryIdsVarDeclAndFuncDefs;
 
-		map<ParseTree*, shared_ptr<Scope>> scopeOfPrimaryIds;
-
-		// stores the type associated with expressions. Enables type checking
-		map<ParseTree*, TypeContext> typeContexts;
+		map<ParseTree*, TypeContext> typeContexts; // stores the type associated with expressions and functions. Enables type checking
+		bluefinParser::FuncDefContext* currFuncDefCtx;
 
 		shared_ptr<Symbol> resolve(const string name, shared_ptr<Scope> startScope);
 

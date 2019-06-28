@@ -3,6 +3,7 @@
 #include <iostream>
 #include <memory>
 #include <utility>
+#include <vector>
 #include "Symbol.h"
 
 namespace bluefin {
@@ -10,6 +11,7 @@ namespace bluefin {
 	using std::string;
 	using std::shared_ptr;
 	using std::move;
+	using std::vector;
 
 	/* TODO: should this contain its own arguments?
 	 So I imagine a call to SymbolTable::enterScope will occur on method decalaration.
@@ -25,6 +27,12 @@ namespace bluefin {
 			Symbol(name, move(type))
 		{}
 
+		void attachParam(shared_ptr<Symbol>); 
+
+		inline vector<shared_ptr<Symbol>> getParams() const { return params; }
 		inline string getCategoryName() const override { return "function"; }
+
+	private:
+		vector<shared_ptr<Symbol>> params;
 	};
 }

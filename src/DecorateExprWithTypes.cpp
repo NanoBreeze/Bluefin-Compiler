@@ -47,7 +47,7 @@ void DecorateExprWithTypes::exitPrimaryBool(bluefinParser::PrimaryBoolContext* c
 }
 
 void DecorateExprWithTypes::exitPrimaryId(bluefinParser::PrimaryIdContext* ctx) {
-	shared_ptr<Scope> scope = scopeOfPrimaryIds.at(ctx);
+	shared_ptr<Scope> scope = scopeOfPrimaryIdsVarDeclAndFuncDefs.at(ctx);
 	shared_ptr<Symbol> resolvedSym = resolve(ctx->ID()->getText(), scope);
 
 	if (resolvedSym) // maybe the symbol is unresolved?
@@ -65,13 +65,38 @@ void DecorateExprWithTypes::exitFuncCall(bluefinParser::FuncCallContext* ctx) {
 
 	// make sure that for f(), f really is a function symbol and not, say, an int
 	bluefinParser::ExprContext* primaryIdCtx = ctx->expr();
-	shared_ptr<Scope> scope = scopeOfPrimaryIds.at(primaryIdCtx);
+	shared_ptr<Scope> scope = scopeOfPrimaryIdsVarDeclAndFuncDefs.at(primaryIdCtx);
 
 	if (shared_ptr<FunctionSymbol> fSym = 
-		dynamic_pointer_cast<FunctionSymbol>(scope->resolve(primaryIdCtx->getText()))) {
+		dynamic_pointer_cast<FunctionSymbol>(resolve(primaryIdCtx->getText(), scope))) {
 		
 		shared_ptr<Type> subExprType = typeContexts.at(ctx->expr()).getEvalType();
+		assert(fSym->getType() == subExprType);
 		typeContexts.emplace(ctx, TypeContext { subExprType });
+
+		// check that the number of arguments matches the number of params
+		vector<shared_ptr<Symbol>> params = fSym->getParams();
+		size_t numArgs = ctx->argList() ? ctx->argList()->expr().size() : 0;
+
+		if (numArgs == params.size()) {
+			// now check that all args can be promoted to the right type (implicity assignment)
+			for (int i = 0; i < params.size(); i++) {
+				shared_ptr<Type> curParamType = params[i]->getType();
+				ParseTree* curArgCtx = ctx->argList()->expr(i);
+				TypeContext& curArgTypeCxt = typeContexts.at(curArgCtx);
+
+				if (isAssignmentCompatible(curParamType, curArgTypeCxt.getEvalType())) {
+					curArgTypeCxt.setPromotionType(
+						getPromotionType(curParamType, curArgTypeCxt.getEvalType()));
+				}
+				else {
+					cerr << "Argument and param must have compatible types" << endl;
+				}
+			}
+		}
+		else {
+			cerr << "Function call " << ctx->expr()->getText() << " doesn't have same number of args as function param" << endl;
+		}
 	}
 	else {
 		cerr << "func call must be a function type. Eg, for f(1,2), f must be a FunctionSymbol" << endl;
@@ -87,7 +112,7 @@ void DecorateExprWithTypes::exitUnaryExpr(bluefinParser::UnaryExprContext* ctx) 
 		}
 	}
 	else { // - (negative)
-		if (subExprType->getTypePossibility() != TP::BOOL && subExprType->getTypePossibility() != TP::FLOAT) { // TODO, how about just comparing type instead of TP
+		if (subExprType->getTypePossibility() != TP::INT && subExprType->getTypePossibility() != TP::FLOAT) { // TODO, how about just comparing type instead of TP
 			cerr << "Bad unary - operand type" << endl;
 		}
 	}
@@ -255,7 +280,7 @@ void DecorateExprWithTypes::exitVarDecl(bluefinParser::VarDeclContext* ctx) {
 	if (ctx->expr()) {
 
 		// find type of the variable
-		shared_ptr<Scope> scope = scopeOfPrimaryIds.at(ctx);
+		shared_ptr<Scope> scope = scopeOfPrimaryIdsVarDeclAndFuncDefs.at(ctx);
 		shared_ptr<Symbol> resolvedSym = resolve(ctx->ID()->getText(), scope);
 
 		TypeContext& rightTypeContext = typeContexts.at(ctx->expr());
@@ -275,19 +300,33 @@ void DecorateExprWithTypes::exitVarDecl(bluefinParser::VarDeclContext* ctx) {
 	}
 }
 
+// sets and unsets the current funcDefContext so that a return expr can compare its type with its enclosing function's type
+void DecorateExprWithTypes::enterFuncDef(bluefinParser::FuncDefContext* ctx) {
+	currFuncDefCtx = ctx;
+}
+
+void DecorateExprWithTypes::exitFuncDef(bluefinParser::FuncDefContext* ctx) {
+	currFuncDefCtx = nullptr;
+}
+
 /* We're assuming a return statement will only occur within a function*/
 void DecorateExprWithTypes::exitStmtReturn(bluefinParser::StmtReturnContext* ctx)  { 
 	// match expr type with the function's return type
 
-	/* How do we get a stmtReturn's enclosing function?
+	// How do we get a stmtReturn's enclosing function?
 	if (ctx->expr()) {
 		TypeContext& retTypeCtx = typeContexts.at(ctx->expr());
+		shared_ptr<Symbol> enclosingFuncSym = 
+			resolve(currFuncDefCtx->ID()->getText(), scopeOfPrimaryIdsVarDeclAndFuncDefs.at(currFuncDefCtx)); // wow, this is long
+		shared_ptr<Type> funcRetType = enclosingFuncSym->getType();
 
-		retTypeCtx.setPromotionType(
-			getPromotionType(funcRetType, retTypeCtx.getEvalType());
-		)
+		if (isAssignmentCompatible(funcRetType, retTypeCtx.getEvalType())) {
+			retTypeCtx.setPromotionType(getPromotionType(funcRetType, retTypeCtx.getEvalType()));
+		}
+		else {
+			cerr << "Function return type and return expression's type must match" << endl;
+		}
 	}
-	*/
 }
 
 

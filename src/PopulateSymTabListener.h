@@ -29,8 +29,6 @@ namespace bluefin {
 			: symbolTable{ symbolTable }, symbolFactory{ factory }
 		{}
 
-		void enterVarDecl(bluefinParser::VarDeclContext*) override;
-
 		/* Design decision for function scopes
 		Unlike C, in Bluefin, function params and the function body are NOT different scopes; they're the same scope
 		As a result, the following funcDef is illegal b/c of redefinition of variable a:
@@ -47,10 +45,19 @@ namespace bluefin {
 				to: 
 					funcDef : type ID '(' paramList? ')' '{' stmt* '}';
 			- Since exitBlock(..) also won't be called to finish this scope, exitFuncDef(..) will be called.
+
+		Design decision for function params:
+			A FunctionSymbol must store its parameters (as Symbols) somewhere so that when they are called,
+			we can check the type and the number of arguments match. However, once we are in enterParam, there's 
+			no way to refer to its FunctionSymbol. As a result, we must store the FunctionSymbol as a member variable
+			and remember to set it upon entering the function, attach params to it, and then remove the refernce 
+			upon exiting the function definition
 		*/
 		void enterFuncDef(bluefinParser::FuncDefContext*) override;
 		void enterParam(bluefinParser::ParamContext*) override;
 		void exitFuncDef(bluefinParser::FuncDefContext*) override;
+
+		void enterVarDecl(bluefinParser::VarDeclContext*) override;
 
 		void enterStructDef(bluefinParser::StructDefContext*) override;
 		void exitStructDef(bluefinParser::StructDefContext*) override;
@@ -61,7 +68,7 @@ namespace bluefin {
 		void enterBlock(bluefinParser::BlockContext*) override;
 		void exitBlock(bluefinParser::BlockContext*) override;
 
-		inline map<ParseTree*, shared_ptr<Scope>> getScopeOfPrimaryCtxs() const { return scopes; }
+		inline map<ParseTree*, shared_ptr<Scope>> getScopeOfPrimaryAndFuncDefCtxs() const { return scopes; }
 
 	private:
 		SymbolTable& symbolTable;
@@ -92,5 +99,8 @@ namespace bluefin {
 		TODO: To Verify. At the end of a stmExpr, we expect that the stack is empty (# of uses = # of resolved)
 		*/
 		stack<shared_ptr<StructSymbol>> structSymbolStack;
+
+		// to share a functionSymbol with its associated params
+		shared_ptr<FunctionSymbol> functionSymbol;
 	};
 }

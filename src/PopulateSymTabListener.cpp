@@ -43,6 +43,8 @@ void PopulateSymTabListener::enterFuncDef(bluefinParser::FuncDefContext* ctx)
 		shared_ptr<Symbol> funcSym = symbolFactory.createFunctionSymbol(funcName, retTypeSymbol->getType());
 
 		symbolTable.declare(funcSym);
+		functionSymbol = dynamic_pointer_cast<FunctionSymbol>(funcSym);
+		scopes.emplace(ctx, symbolTable.getCurrScope());
 	}
 
 	symbolTable.enterScope("function " + ctx->ID()->getText());
@@ -57,15 +59,17 @@ void PopulateSymTabListener::enterParam(bluefinParser::ParamContext* ctx)
 
 	if (retTypeSymbol) {
 		string funcName = ctx->ID()->getText();
-		shared_ptr<Symbol> funcSym = symbolFactory.createVariableSymbol(funcName, retTypeSymbol->getType());
+		shared_ptr<Symbol> paramSym = symbolFactory.createVariableSymbol(funcName, retTypeSymbol->getType());
 
-		symbolTable.declare(funcSym);
+		symbolTable.declare(paramSym);
+		functionSymbol->attachParam(paramSym);
 	}
 }
 
 void PopulateSymTabListener::exitFuncDef(bluefinParser::FuncDefContext* ctx)
 {
 	symbolTable.exitScope();
+	functionSymbol = nullptr;
 }
 
 void PopulateSymTabListener::enterStructDef(bluefinParser::StructDefContext* ctx)

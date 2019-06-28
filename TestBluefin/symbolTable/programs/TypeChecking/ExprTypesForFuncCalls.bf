@@ -2,7 +2,7 @@
 struct First {};
 
 First f() {}
-void g(float x) {}
+void g(int x) {}
 bool h() {}
 int i() {}
 float j() {}
