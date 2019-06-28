@@ -11,28 +11,25 @@ namespace bluefin {
 	They already have names, eg, "int", "float", "First", 
 	This "Type" is mostly used as a tag. However, it does 
 	contain a toString method, which returns the same as the Symbol's name,
-	in order to print the type. Used mostly for testing
+	in order to print the type. Used mostly for type checking testing
+
+	There are 5 default types: int, float, string, bool void
+	Any other types would be user defined (via structs)
 	*/
 	class Type
 	{
 	public:
-	
-		enum class Possibility {
-			INT, FLOAT, STRING, BOOL, VOID, USER_DEFINED, UNDEFINED
-		};
 
-		// use PVF rather than take in typename in ctor since it will be the same as the 
-		// Symbol's name, so symbol can just return it easily. Also, more suitable
-		// for expressing type is just a "tag"
 		virtual string type2str() const = 0; 
+
+		inline bool operator==(const Type& rhs) {
+			return this->type2str() == rhs.type2str();
+		}
+
 		virtual ~Type() {}
-		Possibility getTypePossibility() const { return possibility; } // what a wierd name
 
 	protected:
-		Type(Possibility pos) : possibility{ pos }
-		{}
-
-		Possibility possibility;
+		Type() {}
 	};
 }
 

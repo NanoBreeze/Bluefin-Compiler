@@ -8,10 +8,21 @@ using std::shared_ptr;
 
 using namespace bluefin;
 
-// we return a shared_ptr instead of a unique_ptr b/c BuiltinTypeSymbol::getType() uses shared_from_this, so 
-// returning a shared_ptr guarantees it will work
-unique_ptr<Symbol> SymbolFactory::createBuiltinTypeSymbol(BuiltinTypeSymbol::BuiltinType pos) {
-	return unique_ptr<Symbol>(new BuiltinTypeSymbol(pos));
+shared_ptr<Symbol> SymbolFactory::createBuiltinTypeSymbol(Builtin builtin) {
+	switch (builtin) {
+	case Builtin::BOOL:
+		return BuiltinTypeSymbol::BOOL();
+	case Builtin::INT:
+		return BuiltinTypeSymbol::INT();
+	case Builtin::FLOAT:
+		return BuiltinTypeSymbol::FLOAT();
+	case Builtin::STRING:
+		return BuiltinTypeSymbol::STRING();
+	case Builtin::VOID:
+		return BuiltinTypeSymbol::VOID();
+	default:
+		throw "not a valid selection";
+	}
 }
 
 unique_ptr<Symbol> SymbolFactory::createFunctionSymbol(const string& name, shared_ptr<Type> type) {

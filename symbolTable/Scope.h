@@ -40,10 +40,10 @@ namespace bluefin {
 		inline unordered_map<string, shared_ptr<Symbol>> getSymbols() const { return symbols; }
 
 	private:
-		shared_ptr<Scope> enclosingScope;
-		unordered_map<string, shared_ptr<Symbol>> symbols;
+		shared_ptr<Scope> enclosingScope; // TODO: circular reference. outer scope contains StructSymbol, which contains this scope, which points to its parent, the outer scope
 		const string name;
-
+		
+		unordered_map<string, shared_ptr<Symbol>> symbols;
 		shared_ptr<Symbol> mostRecentDeclaredSymbol; // Why would we need to know the most recently
 		// declared symbol? If we want to do something with it (eg, SymbolTable 
 		// needs it. if StructSymbol, attach scope)

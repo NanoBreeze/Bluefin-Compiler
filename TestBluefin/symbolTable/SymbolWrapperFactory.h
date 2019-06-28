@@ -23,10 +23,7 @@ namespace SymbolTableTests {
 		SymbolWrapperFactory(string& output) : output{ output }
 		{}
 
-		 unique_ptr<Symbol> createBuiltinTypeSymbol(BuiltinTypeSymbol::BuiltinType) override;
-		 unique_ptr<Symbol> createFunctionSymbol(const string& name, shared_ptr<Type> type) override;
 		 unique_ptr<Symbol> createStructSymbol(const string& name) override;
-		 unique_ptr<Symbol> createVariableSymbol(const string& name, shared_ptr<Type> type) override;
 
 	private:
 		string& output;

@@ -26,7 +26,7 @@ namespace bluefin {
 	using std::pair;
 	using std::dynamic_pointer_cast;
 	using std::shared_ptr;
-	using TP = Type::Possibility;
+	using BTS = BuiltinTypeSymbol;
 
 	class DecorateExprWithTypes : public bluefinBaseListener
 	{
@@ -84,25 +84,25 @@ namespace bluefin {
 		shared_ptr<Type> getArithmeticExprType(shared_ptr<Type> left, shared_ptr<Type> right);
 		shared_ptr<Type> getPromotionType(shared_ptr<Type> left, shared_ptr<Type> right);
 
-		bool areSameTypes(shared_ptr <Type> left, shared_ptr<Type> right) const;
 		bool areBothBoolType(shared_ptr<Type> left, shared_ptr<Type> right) const;
 		bool areArithmeticallyCompatible(shared_ptr<Type> left, shared_ptr<Type> right) const;
 		bool isAssignmentCompatible(shared_ptr<Type> left, shared_ptr<Type> right) const;
 
+
 		// can't use pair with unordered_map here b/c pair doesn't have a hash key
-		const map<pair<TP, TP>, shared_ptr<Type>> arithmeticExprType{ 
-			{{TP::INT, TP::INT}, dynamic_pointer_cast<BuiltinTypeSymbol>(shared_ptr<Symbol>(move(symbolFactory.createBuiltinTypeSymbol(BuiltinTypeSymbol::BuiltinType::INT))))},
-			{{TP::INT, TP::FLOAT}, dynamic_pointer_cast<BuiltinTypeSymbol>(shared_ptr<Symbol>(move(symbolFactory.createBuiltinTypeSymbol(BuiltinTypeSymbol::BuiltinType::FLOAT))))},
-			{{TP::FLOAT, TP::INT}, dynamic_pointer_cast<BuiltinTypeSymbol>(shared_ptr<Symbol>(move(symbolFactory.createBuiltinTypeSymbol(BuiltinTypeSymbol::BuiltinType::FLOAT))))},
-			{{TP::FLOAT, TP::FLOAT}, dynamic_pointer_cast<BuiltinTypeSymbol>(shared_ptr<Symbol>(move(symbolFactory.createBuiltinTypeSymbol(BuiltinTypeSymbol::BuiltinType::FLOAT))))}
+		const map<pair<shared_ptr<Type>, shared_ptr<Type>>, shared_ptr<Type>> arithmeticExprType{
+			{{BTS::INT(), BTS::INT()}, BTS::INT()},
+			{{BTS::INT(), BTS::FLOAT()}, BTS::FLOAT()},
+			{{BTS::FLOAT(), BTS::INT()}, BTS::FLOAT()},
+			{{BTS::FLOAT(), BTS::FLOAT()}, BTS::FLOAT()}
 		};
 
-		const map<pair<TP, TP>, shared_ptr<Type>> promotionFromTo{
-			{{TP::BOOL, TP::BOOL}, dynamic_pointer_cast<BuiltinTypeSymbol>(shared_ptr<Symbol>(move(symbolFactory.createBuiltinTypeSymbol(BuiltinTypeSymbol::BuiltinType::BOOL))))},
-			{{TP::INT, TP::FLOAT}, dynamic_pointer_cast<BuiltinTypeSymbol>(shared_ptr<Symbol>(move(symbolFactory.createBuiltinTypeSymbol(BuiltinTypeSymbol::BuiltinType::FLOAT))))},
-			{{TP::INT, TP::INT}, dynamic_pointer_cast<BuiltinTypeSymbol>(shared_ptr<Symbol>(move(symbolFactory.createBuiltinTypeSymbol(BuiltinTypeSymbol::BuiltinType::INT))))},
-			{{TP::FLOAT, TP::INT}, dynamic_pointer_cast<BuiltinTypeSymbol>(shared_ptr<Symbol>(move(symbolFactory.createBuiltinTypeSymbol(BuiltinTypeSymbol::BuiltinType::FLOAT))))},
-			{{TP::FLOAT, TP::FLOAT}, dynamic_pointer_cast<BuiltinTypeSymbol>(shared_ptr<Symbol>(move(symbolFactory.createBuiltinTypeSymbol(BuiltinTypeSymbol::BuiltinType::FLOAT))))}
+		const map<pair<shared_ptr<Type>, shared_ptr<Type>>, shared_ptr<Type>> promotionFromTo{
+			{{BTS::BOOL(), BTS::BOOL()}, BTS::BOOL()},
+			{{BTS::INT(), BTS::FLOAT()}, BTS::FLOAT()},
+			{{BTS::INT(), BTS::INT()}, BTS::INT()},
+			{{BTS::FLOAT(), BTS::INT()}, BTS::FLOAT()},
+			{{BTS::FLOAT(), BTS::FLOAT()}, BTS::FLOAT()}
 		};
 	};
 }

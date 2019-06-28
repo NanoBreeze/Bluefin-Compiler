@@ -9,5 +9,5 @@ bool Symbol::operator==(Symbol& rhs)
 	shared_ptr<Type> thisType = this->getType();
 	shared_ptr<Type> rhsType = rhs.getType();
 	return this->name == rhs.name
-		&& this->type->type2str() == rhs.type->type2str();
+		&& this->type == rhs.type;
 }
