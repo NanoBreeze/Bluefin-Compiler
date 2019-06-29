@@ -23,7 +23,7 @@ namespace SymbolTableTests {
 		SymbolWrapperFactory(string& output) : output{ output }
 		{}
 
-		 unique_ptr<Symbol> createStructSymbol(const string& name) override;
+		 unique_ptr<Symbol> createStructSymbol(const string& name, shared_ptr<Scope> enclosingScope) override;
 
 	private:
 		string& output;

@@ -29,8 +29,8 @@ unique_ptr<Symbol> SymbolFactory::createFunctionSymbol(const string& name, share
 	return unique_ptr<Symbol>(new FunctionSymbol(name, type));
 }
 
-unique_ptr<Symbol> SymbolFactory::createStructSymbol(const string& name) {
-	return unique_ptr<Symbol>(new StructSymbol(name));
+unique_ptr<Symbol> SymbolFactory::createStructSymbol(const string& name, shared_ptr<Scope> enclosingScope) {
+	return unique_ptr<Symbol>(new StructSymbol(name, enclosingScope));
 }
 
 unique_ptr<Symbol> SymbolFactory::createVariableSymbol(const string& name, shared_ptr<Type> type) {

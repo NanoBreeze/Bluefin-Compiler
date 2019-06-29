@@ -2,11 +2,14 @@
 
 #include <iostream>
 #include <istream>
+#include <memory>
 #include "../generated/bluefin/bluefinParser.h"
+#include "../../symbolTable/Symbol.h"
 
 #include "antlr4-runtime.h"
 
 using std::string;
+using std::shared_ptr;
 
 /* \brief Returns the S-expression corresponding to the AST of the program argument
 */
@@ -30,4 +33,7 @@ namespace SymbolTableTests {
 	antlr4::tree::ParseTree* createParseTree(std::istream&);
 
 	string readFile(const string filePath);
+
+	// eg, function, var, struct, and builtinType
+	string getSymbolCategory(shared_ptr<bluefin::Symbol> symbol);
 }

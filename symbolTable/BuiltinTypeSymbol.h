@@ -11,7 +11,6 @@ namespace bluefin {
 	class BuiltinTypeSymbol : public Type, public Symbol
 	{
 	public:
-
 		static shared_ptr<BuiltinTypeSymbol> INT() {
 			static shared_ptr<BuiltinTypeSymbol> builtinInt(new BuiltinTypeSymbol("int"));
 			return builtinInt;
@@ -36,7 +35,6 @@ namespace bluefin {
 		}
 
 
-		inline string getCategoryName() const override { return "builtinType"; }
 		inline string type2str() const override { return getName(); }
 
 	private:

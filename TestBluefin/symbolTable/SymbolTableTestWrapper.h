@@ -40,6 +40,8 @@ namespace SymbolTableTests {
 
 		void enterScope(const string scopeName = "") override;
 
+		void setCurrentScope(shared_ptr<Scope> newCurrScope) override;
+
 		void exitScope() override;
 
 		void declare(shared_ptr<Symbol> symbol) override;
@@ -51,6 +53,7 @@ namespace SymbolTableTests {
 		unsigned scopeLevel;
 
 		string createEnterScopeDebugMsg();
+		string createSetCurrentScopeDebugMsg();
 		string createExitScopeDebugMsg();
 		string createDeclareDebugMsg(shared_ptr<Symbol>) const;
 		string createRedeclarationDebugMsg(shared_ptr<Symbol>) const;

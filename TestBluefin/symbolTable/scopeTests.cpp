@@ -284,10 +284,10 @@ namespace SymbolTableTests {
 		symtab.enterScope("First");
 		shared_ptr<Symbol> globalB = make_shared<VariableSymbol>("b", dynamic_pointer_cast<Type>(symFact->createBuiltinTypeSymbol(SFB::INT)));
 		symtab.declare(globalB);
-		shared_ptr<Symbol> structA = make_shared<StructSymbol>("A"); 
+		shared_ptr<Symbol> structA = make_shared<StructSymbol>("A", symtab.getCurrScope()); 
 		symtab.declare(structA);
 
-		symtab.enterScope("struct A's definition");
+		symtab.setCurrentScope(dynamic_pointer_cast<Scope>(structA));
 		shared_ptr<Symbol> symB = make_shared<VariableSymbol>("b", dynamic_pointer_cast<Type>(symFact->createBuiltinTypeSymbol(SFB::INT)));
 		shared_ptr<Symbol> symC = make_shared<VariableSymbol>("c", dynamic_pointer_cast<Type>(symFact->createBuiltinTypeSymbol(SFB::STRING)));
 		symtab.declare(symB);
@@ -302,8 +302,8 @@ namespace SymbolTableTests {
 
 		// a.b; a.c
 		shared_ptr<StructSymbol> A = static_pointer_cast<StructSymbol>(resolveA);
-		ASSERT_EQ(A->resolveMember("b"), symB);
-		ASSERT_EQ(A->resolveMember("c"), symC);
+		ASSERT_EQ(A->resolve("b"), symB);
+		ASSERT_EQ(A->resolve("c"), symC);
 	}
 
 	TEST(SymbolTable, StructMissingResolutionMember) {
@@ -312,10 +312,10 @@ namespace SymbolTableTests {
 		symtab.enterScope("First");
 		shared_ptr<Symbol> globalB = make_shared<VariableSymbol>("b", dynamic_pointer_cast<Type>(symFact->createBuiltinTypeSymbol(SFB::INT)));
 		symtab.declare(globalB);
-		shared_ptr<Symbol> structA = make_shared<StructSymbol>("A");
+		shared_ptr<Symbol> structA = make_shared<StructSymbol>("A", symtab.getCurrScope());
 		symtab.declare(structA);
 
-		symtab.enterScope("struct A's definition");
+		symtab.setCurrentScope(dynamic_pointer_cast<Scope>(structA));
 		shared_ptr<Symbol> symC = make_shared<VariableSymbol>("c", dynamic_pointer_cast<Type>(symFact->createBuiltinTypeSymbol(SFB::STRING)));
 		symtab.declare(symC);
 		symtab.exitScope();
@@ -328,8 +328,8 @@ namespace SymbolTableTests {
 
 		// a.b; a.c
 		shared_ptr<StructSymbol> A = static_pointer_cast<StructSymbol>(resolveA);
-		ASSERT_EQ(A->resolveMember("b"), nullptr);
-		ASSERT_EQ(A->resolveMember("c"), symC);
+		ASSERT_EQ(A->resolve("b"), nullptr);
+		ASSERT_EQ(A->resolve("c"), symC);
 	}
 }
 

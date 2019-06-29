@@ -16,6 +16,8 @@ namespace bluefin {
 		SymbolTable(); 
 		
 		virtual void enterScope(const string scopeName="");
+
+		virtual void setCurrentScope(shared_ptr<Scope>);
 	
 		virtual void exitScope();
 

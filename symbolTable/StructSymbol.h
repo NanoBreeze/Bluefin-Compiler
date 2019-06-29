@@ -19,26 +19,26 @@ Creating a structsymbol and attaching its scope are now two different phases, bu
 	
 	TODO: too many dangling pointers around. eg, scope. Also, who manages deletion of symbols, the scope or the creator?
 	*/
-	class StructSymbol : public Symbol, public Type 
+	class StructSymbol : public Symbol, public Type, public Scope
 	{
 
 	public:
-		StructSymbol(const string& name) : Symbol(name, this)
+		StructSymbol(const string& name, shared_ptr<Scope> enclosingScope) : 
+			Symbol(name, this), Scope {enclosingScope, name}
 		{}
 
 		/*
-		This function should always be called b/c it doesn't make sense for a struct definition
-		not to contain a scope. Otherwise
+		TODO: Technically, this is not needed
+		but if we use resolve, then structSymbolTestWrapper's resolve
+		message will also be rpinted when symbol table searches
+		So this is used to temporarily not mess up other tests
 		*/
-		void attachScope(shared_ptr<Scope>);
+		virtual shared_ptr<Symbol> resolveMember(const string memberName) {// virtual to allow testing, so test can write
+			return this->resolve(memberName);
+		}
 
-		virtual shared_ptr<Symbol> resolveMember(const string memberName); // virtual to allow testing, so test can write
+		inline string type2str() const override { return Symbol::getName(); }
 
-		inline string getCategoryName() const override { return "struct"; }
-		inline string type2str() const override { return getName(); }
-
-	private:
-		shared_ptr<Scope> scope;
 	};
 
 }

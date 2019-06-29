@@ -15,14 +15,11 @@ namespace bluefin {
 	class Symbol {
 
 	public:
-		inline string getName() const { return name; }
-		 virtual shared_ptr<Type> getType()  { 
-			return type; 
-		}
-
 		bool operator==(Symbol& rhs);
 
-		virtual string getCategoryName() const = 0; //eg, function, struct, builtin, var
+		inline string getName() const { return name; }
+		inline shared_ptr<Type> getType()  { return type; }
+
 		virtual ~Symbol() {}
 
 	protected:
@@ -38,7 +35,6 @@ namespace bluefin {
 		// groups of shared pointers. They would use this ctor, so create custom deleter
 		// that doesn't delete this. 
 		// NOTE: Implementation Hack
-
 		Symbol(const string& name, Type* t) : name{ name }, type{ t, [](Type*) {} }
 		{}
 

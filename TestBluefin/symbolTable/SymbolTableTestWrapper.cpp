@@ -18,6 +18,11 @@ void SymbolTableTestWrapper::enterScope(const string scopeName) {
 	SymbolTable::enterScope(scopeName);
 }
 
+void SymbolTableTestWrapper::setCurrentScope(shared_ptr<Scope> newCurrScope) {
+	output += createSetCurrentScopeDebugMsg();
+	SymbolTable::setCurrentScope(newCurrScope);
+}
+
 void SymbolTableTestWrapper::exitScope() {
 
 	output += createExitScopeDebugMsg(); 
@@ -58,6 +63,14 @@ string SymbolTableTestWrapper::createEnterScopeDebugMsg() {
 	return "enterScope - " + scopeName + "\n";
 }
 
+string SymbolTableTestWrapper::createSetCurrentScopeDebugMsg() {
+
+	scopeLevel++; // increment b/c when we exit the scope, it decrements and we want to pair the two up
+	const string scopeName = "Level " + std::to_string(scopeLevel);
+
+	return "setCurrentScope - " + scopeName + "\n";
+}
+
 string SymbolTableTestWrapper::createExitScopeDebugMsg() {
 
 	const string scopeName = "Level " + std::to_string(scopeLevel);
@@ -68,7 +81,7 @@ string SymbolTableTestWrapper::createExitScopeDebugMsg() {
 
 string SymbolTableTestWrapper::createDeclareDebugMsg(shared_ptr<Symbol> symbol) const {
 	const string symName = symbol->getName();
-	const string symCategory = symbol->getCategoryName();
+	const string symCategory = getSymbolCategory(symbol);
 	const string symType = symbol->getType()->type2str();
 
 	return "declare - " + symName + " - c_" + symCategory + " - t_" + symType + "\n";
@@ -82,7 +95,7 @@ string SymbolTableTestWrapper::createRedeclarationDebugMsg(shared_ptr<Symbol> sy
 
 string SymbolTableTestWrapper::createResolveDebugMsg(shared_ptr<Symbol> resolvedSym) const {
 	const string resolvedSymName = resolvedSym->getName();
-	const string symCategory = resolvedSym->getCategoryName();
+	const string symCategory = getSymbolCategory(resolvedSym);
 	const string symType = resolvedSym->getType()->type2str();
 
 	return "resolve - " + resolvedSymName + " - c_" + symCategory + " - t_" + symType + "\n";

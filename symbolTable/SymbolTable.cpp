@@ -23,12 +23,16 @@ namespace bluefin {
 
 	void SymbolTable::enterScope(const string scopeName) {
 		shared_ptr<Scope> scope = make_shared<Scope>(currScope, scopeName);
+		currScope = scope;
+	}
 
-		if (currScope) { // initially, currScope is nullptr, so can't get its most recent member
-			if (shared_ptr<StructSymbol> s = dynamic_pointer_cast<StructSymbol>(currScope->getMostRecentDeclaredSymbol())) {
-				s->attachScope(scope);
-			}
-		}
+	/*
+	Sets the passed in scope as the current scope so all declares and resolves
+	come from there. Right now, this is used only by StructScope to simplify its declaration logic.
+	*/
+	void SymbolTable::setCurrentScope(shared_ptr<Scope> scope)
+	{
+		assert(scope->getEnclosingScope() == currScope);
 
 		currScope = scope;
 	}

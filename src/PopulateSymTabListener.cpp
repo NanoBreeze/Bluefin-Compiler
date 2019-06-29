@@ -75,10 +75,10 @@ void PopulateSymTabListener::exitFuncDef(bluefinParser::FuncDefContext* ctx)
 void PopulateSymTabListener::enterStructDef(bluefinParser::StructDefContext* ctx)
 {
 	const string structName = ctx->ID()->getText();
-	shared_ptr<Symbol> structSym = symbolFactory.createStructSymbol(structName);
-	symbolTable.declare(structSym);
+	shared_ptr<Symbol> structSym = symbolFactory.createStructSymbol(structName, symbolTable.getCurrScope());
 
-	symbolTable.enterScope(); // since structs don't contain "block" elements
+	symbolTable.declare(structSym);
+	symbolTable.setCurrentScope(dynamic_pointer_cast<Scope>(structSym));
 }
 
 void PopulateSymTabListener::exitStructDef(bluefinParser::StructDefContext* ctx)
@@ -108,8 +108,7 @@ void PopulateSymTabListener::exitMemberAccess(bluefinParser::MemberAccessContext
 		if (resMemSym) { // if not resolved, no need to check its type
 			if (shared_ptr<StructSymbol> resStruct = dynamic_pointer_cast<StructSymbol>(resMemSym->getType())) {
 				structSymbolStack.push(resStruct); // if the resolved member is a struct, it may be used later
-		}
-
+			}
 		}
 	}
 

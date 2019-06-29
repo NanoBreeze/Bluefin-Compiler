@@ -30,7 +30,6 @@ namespace bluefin {
 		void attachParam(shared_ptr<Symbol>); 
 
 		inline vector<shared_ptr<Symbol>> getParams() const { return params; }
-		inline string getCategoryName() const override { return "function"; }
 
 	private:
 		vector<shared_ptr<Symbol>> params;

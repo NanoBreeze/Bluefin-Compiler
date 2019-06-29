@@ -5,6 +5,10 @@
 #include "utils.h"
 #include "../generated/bluefin/bluefinLexer.h"
 #include "../generated/bluefin/bluefinParser.h"
+#include "../../symbolTable/BuiltinTypeSymbol.h"
+#include "../../symbolTable/VariableSymbol.h"
+#include "../../symbolTable/FunctionSymbol.h"
+#include "../../symbolTable/StructSymbol.h"
 
 using namespace antlr4;
 using namespace std;
@@ -58,5 +62,21 @@ namespace SymbolTableTests {
 		std::stringstream buffer;
 		buffer << file.rdbuf();
 		return buffer.str();
+	}
+
+	string getSymbolCategory(shared_ptr<Symbol> symbol)
+	{
+		if (dynamic_pointer_cast<BuiltinTypeSymbol>(symbol)) {
+			return "builtinType";
+		}
+		else if (dynamic_pointer_cast<VariableSymbol>(symbol)) {
+			return "var";
+		}
+		else if (dynamic_pointer_cast<FunctionSymbol>(symbol)) {
+			return "function";
+		}
+		else { //struct
+			return "struct";
+		}
 	}
 }

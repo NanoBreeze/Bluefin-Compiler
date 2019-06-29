@@ -1,12 +1,12 @@
 declare - First - c_struct - t_First
-enterScope - Level 1
+setCurrentScope - Level 1
 resolve - int - c_builtinType - t_int
 declare - a - c_var - t_int
 resolve - float - c_builtinType - t_float
 declare - b - c_var - t_float
 exitScope - Level 1
 declare - Second - c_struct - t_Second
-enterScope - Level 1
+setCurrentScope - Level 1
 resolve - float - c_builtinType - t_float
 declare - a - c_var - t_float
 resolve - First - c_struct - t_First

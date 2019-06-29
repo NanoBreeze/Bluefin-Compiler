@@ -21,7 +21,7 @@ namespace bluefin {
 
 		virtual shared_ptr<Symbol> createBuiltinTypeSymbol(Builtin builtin);
 		virtual unique_ptr<Symbol> createFunctionSymbol(const string& name, shared_ptr<Type> type);
-		virtual unique_ptr<Symbol> createStructSymbol(const string& name);
+		virtual unique_ptr<Symbol> createStructSymbol(const string& name, shared_ptr<Scope> enclosingScope);
 		virtual unique_ptr<Symbol> createVariableSymbol(const string& name, shared_ptr<Type> type);
 	};
 

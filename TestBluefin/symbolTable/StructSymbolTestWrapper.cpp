@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "StructSymbolTestWrapper.h"
+#include "utils.h"
 
 #include <memory>
 
@@ -23,7 +24,7 @@ string StructSymbolTestWrapper::createResolveMemberDebugMsg(shared_ptr<Symbol> r
 {
 	const string structTypeName = type2str();
 	const string resolvedSymName = resolvedSym->getName();
-	const string symCategory = resolvedSym->getCategoryName();
+	const string symCategory = getSymbolCategory(resolvedSym);;
 	const string symType = resolvedSym->getType()->type2str();
 
 	return "resolve - " + structTypeName + "::" + resolvedSymName + " - c_" + symCategory + " - t_" + symType + "\n";

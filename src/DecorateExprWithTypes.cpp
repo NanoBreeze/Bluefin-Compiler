@@ -266,7 +266,7 @@ void DecorateExprWithTypes::exitMemberAccess(bluefinParser::MemberAccessContext*
 	if (shared_ptr<StructSymbol> structType =
 		dynamic_pointer_cast<StructSymbol>(typeContext.getEvalType())) {
 
-		shared_ptr<Type> memberType = structType->resolveMember(ctx->ID()->getText())->getType();
+		shared_ptr<Type> memberType = structType->resolve(ctx->ID()->getText())->getType();
 		typeContexts.emplace(ctx, TypeContext { memberType });
 	}
 	else {

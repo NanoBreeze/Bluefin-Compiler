@@ -1,5 +1,5 @@
 declare - First - c_struct - t_First
-enterScope - Level 1
+setCurrentScope - Level 1
 resolve - int - c_builtinType - t_int
 declare - b - c_var - t_int
 resolve - int - c_builtinType - t_int

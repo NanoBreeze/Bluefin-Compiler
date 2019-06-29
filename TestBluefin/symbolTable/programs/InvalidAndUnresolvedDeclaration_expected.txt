@@ -1,6 +1,6 @@
 resolve - First - UNRESOLVED
 declare - Another - c_struct - t_Another
-enterScope - Level 1
+setCurrentScope - Level 1
 exitScope - Level 1
 resolve - Another - c_struct - t_Another
 declare - b - c_var - t_Another
@@ -11,5 +11,5 @@ resolve - Second - UNRESOLVED
 resolve - Third - UNRESOLVED
 exitScope - Level 1
 declare - Third - c_struct - t_Third
-enterScope - Level 1
+setCurrentScope - Level 1
 exitScope - Level 1

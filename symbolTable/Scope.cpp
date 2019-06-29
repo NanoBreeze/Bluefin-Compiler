@@ -11,7 +11,6 @@ void Scope::declare(shared_ptr<Symbol> symbol)
 	}
 
 	symbols.emplace(symbol->getName(), symbol);
-	mostRecentDeclaredSymbol = symbol;
 }
 
 shared_ptr<Symbol> Scope::resolve(const string name) const

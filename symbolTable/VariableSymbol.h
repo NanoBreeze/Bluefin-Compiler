@@ -16,7 +16,5 @@ namespace bluefin {
 	public:
 		VariableSymbol(const string& name, shared_ptr<Type> type) :
 			Symbol(name, move(type)) {}
-
-		inline string getCategoryName() const override { return "var"; }
 	};
 }

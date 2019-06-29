@@ -10,8 +10,8 @@ namespace SymbolTableTests {
 	class StructSymbolTestWrapper : public StructSymbol
 	{
 	public:
-		StructSymbolTestWrapper(const string& name, string& output) :
-			StructSymbol(name), output{ output }
+		StructSymbolTestWrapper(const string& name, string& output, shared_ptr<Scope> enclosingScope) :
+			StructSymbol(name, enclosingScope), output{ output }
 		{}
 
 		/*
@@ -20,7 +20,7 @@ namespace SymbolTableTests {
 		or
 		resolve - StructTypeName::member - UNRESOLVED
 		*/
-		 shared_ptr<Symbol> resolveMember(const string memberName) override; 
+		 shared_ptr<Symbol> resolveMember(const string memberName)  override; 
 
 	private:
 		string& output;
