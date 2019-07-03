@@ -36,7 +36,9 @@ stmtContinue : 'continue' ';' ;
 
 stmtExpr : expr ';' ;
 
-structDef : 'struct' ID '{' varDecl* '}' ';' ;
+structDef : 'struct' ID '{' (varDecl | funcDef)* '}' ';' ;
+// A varDecl in a struct is known as a 'field'
+// A funcDef in a struct is known as a 'method'
 
 varDecl : type ID ('=' expr)? ';' ;
 

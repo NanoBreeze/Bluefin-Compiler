@@ -212,7 +212,9 @@ Declarations in Bluefin are much simpler than in other languages.
 ### 4.2 Struct Definition
 
 **Syntax**: <br />
-*structDef* -> struct *identifier* { *varDecl* * }; <br />
+*structDef* -> struct *identifier* { *(varDecl | funcDef)* * }; <br />
+
+**Note**: A struct in Bluefin is equivalent to a class in other languages. TODO: change 'struct' to 'class' 
 
 **Constraints**: Definition must occur with declaration. Currently, initialization with `s = {...}` isn't allowed.
 
