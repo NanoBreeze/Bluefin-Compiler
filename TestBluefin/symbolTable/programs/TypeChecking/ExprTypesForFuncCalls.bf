@@ -8,6 +8,7 @@ int i() {}
 float j() {}
 
 int main() {
+	First first;
 	f();
 	g(5);
 	0.5 + i();

@@ -1,6 +1,7 @@
 struct A {
 	int a;
 	int b;
+	void f() {}
 	int c;
 } ;
 

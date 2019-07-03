@@ -230,7 +230,7 @@ TEST(Statement, FunctionCallWithNoArg) {
 	const string sExpr = getSExpression(prog);
 
 	const string header = "(program (funcDef (type (builtinType int)) main ( ) { ";
-	const string expected = "(stmt (stmtExpr (expr (expr f) ( )) ;))";
+	const string expected = "(stmt (stmtExpr (expr f ( )) ;))";
 	const string footer = " }))";
 
 	EXPECT_EQ(sExpr, header + expected + footer);
@@ -248,7 +248,7 @@ TEST(Statement, FunctionCallWithOneArg) {
 	const string sExpr = getSExpression(prog);
 
 	const string header = "(program (funcDef (type (builtinType int)) main ( ) { ";
-	const string expected = "(stmt (stmtExpr (expr (expr f) ( (argList (expr (expr a) + (expr b))) )) ;))";
+	const string expected = "(stmt (stmtExpr (expr f ( (argList (expr (expr a) + (expr b))) )) ;))";
 	const string footer = " }))";
 
 	EXPECT_EQ(sExpr, header + expected + footer);
@@ -266,7 +266,7 @@ TEST(Statement, FunctionCallWithTwoArgs) {
 	const string sExpr = getSExpression(prog);
 
 	const string header = "(program (funcDef (type (builtinType int)) main ( ) { ";
-	const string expected = "(stmt (stmtExpr (expr (expr f) ( (argList (expr 5) , (expr (expr g) ( ))) )) ;))";
+	const string expected = "(stmt (stmtExpr (expr f ( (argList (expr 5) , (expr g ( ))) )) ;))";
 	const string footer = " }))";
 
 	EXPECT_EQ(sExpr, header + expected + footer);

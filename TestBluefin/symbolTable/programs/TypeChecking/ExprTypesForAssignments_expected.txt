@@ -1,4 +1,3 @@
-f - t_First - t_First
 f() - t_First - t_First
 5 - t_int - t_float
 first - t_First - t_First

@@ -114,6 +114,9 @@ public:
   virtual void enterEqualityExpr(bluefinParser::EqualityExprContext * /*ctx*/) override { }
   virtual void exitEqualityExpr(bluefinParser::EqualityExprContext * /*ctx*/) override { }
 
+  virtual void enterMethodCall(bluefinParser::MethodCallContext * /*ctx*/) override { }
+  virtual void exitMethodCall(bluefinParser::MethodCallContext * /*ctx*/) override { }
+
   virtual void enterArgList(bluefinParser::ArgListContext * /*ctx*/) override { }
   virtual void exitArgList(bluefinParser::ArgListContext * /*ctx*/) override { }
 

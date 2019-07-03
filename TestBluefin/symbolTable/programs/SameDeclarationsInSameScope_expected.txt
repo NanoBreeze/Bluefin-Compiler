@@ -8,6 +8,12 @@ resolve - int - c_builtinType - t_int
 declare - c - c_var - t_int
 resolve - float - c_builtinType - t_float
 declare - c - REDECLARATION
+resolve - bool - c_builtinType - t_bool
+declare - d - c_function - t_bool
+enterScope - Level 2
+exitScope - Level 2
+resolve - void - c_builtinType - t_void
+declare - d - REDECLARATION
 exitScope - Level 1
 resolve - First - c_struct - t_First
 declare - f - c_function - t_First

@@ -53,7 +53,8 @@ expr : INT                                  # primaryInt
      | ID                                   # primaryId
      | BOOL                                 # primaryBool
      | '(' expr ')'                         # primaryParenth
-     | expr '(' argList? ')'                # funcCall
+     | ID '(' argList? ')'                  # funcCall
+     | expr '.' ID '(' argList? ')'         # methodCall
      | expr '.' ID                          # memberAccess
      | op=('-' | '!') expr                  # unaryExpr
      | expr ('*' | '/') expr                # multiExpr

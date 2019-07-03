@@ -1,7 +1,4 @@
-f - t_int - t_int
 f() - t_int - t_int
-f - t_int - t_int
 f() - t_int - t_float
-g - t_float - t_float
 g() - t_float - t_float
 8 - t_int - t_float

@@ -1,3 +1,5 @@
+a - t_int - t_int
+x - t_float - t_float
 first - t_First - t_First
 first.a - t_int - t_float
 5.2 - t_float - t_float
@@ -15,3 +17,10 @@ second.one.a - t_int - t_float
 second - t_Second - t_Second
 second.two - t_float - t_float
 second.one.a*second.two - t_float - t_float
+second - t_Second - t_Second
+second.one - t_First - t_First
+second.one.f() - t_int - t_float
+second - t_Second - t_Second
+5 - t_int - t_float
+second.g(5) - t_float - t_float
+second.one.f()-second.g(5) - t_float - t_float

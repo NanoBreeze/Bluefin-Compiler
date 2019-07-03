@@ -84,6 +84,8 @@ public:
 
     virtual antlrcpp::Any visitEqualityExpr(bluefinParser::EqualityExprContext *context) = 0;
 
+    virtual antlrcpp::Any visitMethodCall(bluefinParser::MethodCallContext *context) = 0;
+
     virtual antlrcpp::Any visitArgList(bluefinParser::ArgListContext *context) = 0;
 
 

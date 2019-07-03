@@ -145,6 +145,10 @@ public:
     return visitChildren(ctx);
   }
 
+  virtual antlrcpp::Any visitMethodCall(bluefinParser::MethodCallContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
   virtual antlrcpp::Any visitArgList(bluefinParser::ArgListContext *ctx) override {
     return visitChildren(ctx);
   }

@@ -65,6 +65,9 @@ namespace bluefin {
 		void enterPrimaryId(bluefinParser::PrimaryIdContext*) override;
 		void exitMemberAccess(bluefinParser::MemberAccessContext*) override;
 
+		void enterFuncCall(bluefinParser::FuncCallContext*) override;
+		void exitMethodCall(bluefinParser::MethodCallContext*) override;
+
 		void enterBlock(bluefinParser::BlockContext*) override;
 		void exitBlock(bluefinParser::BlockContext*) override;
 
@@ -77,6 +80,8 @@ namespace bluefin {
 		// stores the scope associated with the ParseTree nodes of primary ids so that
 		// in future listener passes, we can use and resolve them for other semantic checks (eg, types)
 		// Also stores scope of vardecl to allow type promotion in vardecl. Eg, float a = 34;
+		// And funcDefs
+		// And member access for cases like: structName.f(), in which funcCall's expr is the struct, whose scope we need to do type checking on f()
 		map<ParseTree*, shared_ptr<Scope>> scopes; 
 
 		/* 

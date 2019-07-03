@@ -112,6 +112,9 @@ public:
   virtual void enterEqualityExpr(bluefinParser::EqualityExprContext *ctx) = 0;
   virtual void exitEqualityExpr(bluefinParser::EqualityExprContext *ctx) = 0;
 
+  virtual void enterMethodCall(bluefinParser::MethodCallContext *ctx) = 0;
+  virtual void exitMethodCall(bluefinParser::MethodCallContext *ctx) = 0;
+
   virtual void enterArgList(bluefinParser::ArgListContext *ctx) = 0;
   virtual void exitArgList(bluefinParser::ArgListContext *ctx) = 0;
 

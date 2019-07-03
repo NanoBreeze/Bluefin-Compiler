@@ -42,7 +42,7 @@ namespace SymbolTableTests {
 		walker.walk(&populateSymtabListener, tree);
 
 		map<ParseTree*, shared_ptr<Scope>> scopes = populateSymtabListener.getScopeOfPrimaryAndFuncDefCtxs();
-		DecorateExprWithTypes decorateExprListener(populateSymtabListener.getScopeOfPrimaryAndFuncDefCtxs(), symFact);
+		DecorateExprWithTypes decorateExprListener(scopes, symFact);
 		walker.walk(&decorateExprListener, tree);
 
 		string symbolTypesStr;
@@ -85,8 +85,8 @@ namespace SymbolTableTests {
 		validateTypeChecking("ExprTypesForFuncCalls.bf", "ExprTypesForFuncCalls_expected.txt");
 	}
 
-	TEST(Types, Program_ExprTypesForStructMemberAccess) {
-		validateTypeChecking("ExprTypesForStructMemberAccess.bf", "ExprTypesForStructMemberAccess_expected.txt");
+	TEST(Types, Program_ExprTypesForStructMembers) {
+		validateTypeChecking("ExprTypesForStructMembers.bf", "ExprTypesForStructMembers_expected.txt");
 	}
 
 	TEST(Types, Program_ExprTypesForAssignments) {

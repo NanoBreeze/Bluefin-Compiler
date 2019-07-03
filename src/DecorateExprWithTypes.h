@@ -46,6 +46,7 @@ namespace bluefin {
 		void exitPrimaryId(bluefinParser::PrimaryIdContext*) override;
 		void exitPrimaryParenth(bluefinParser::PrimaryParenthContext*) override;
 		void exitFuncCall(bluefinParser::FuncCallContext*) override;
+		void exitMethodCall(bluefinParser::MethodCallContext*) override;
 		void exitUnaryExpr(bluefinParser::UnaryExprContext*) override;
 		void exitMultiExpr(bluefinParser::MultiExprContext*) override;
 		void exitAddExpr(bluefinParser::AddExprContext*) override;

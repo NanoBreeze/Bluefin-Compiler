@@ -3,6 +3,8 @@ struct First {
 	int b ;
 	int c;
 	float c;
+	bool d() {}
+	void d;
 } ;
 
 First f(float a) {

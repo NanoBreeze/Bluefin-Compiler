@@ -118,6 +118,36 @@ void PopulateSymTabListener::exitMemberAccess(bluefinParser::MemberAccessContext
 	// TODO: Currently fails silent, make unsilent failure, expect to find a struct to be on stack
 }
 
+void bluefin::PopulateSymTabListener::enterFuncCall(bluefinParser::FuncCallContext* ctx)
+{
+	shared_ptr<Symbol> resolvedSym = symbolTable.resolve(ctx->ID()->getText());
+
+	if (resolvedSym) { // if not resolved, then this is not resolved. Uh oh!
+		scopes.emplace(ctx, symbolTable.getCurrScope()); // will be used in later pass to resolve this ctx name again
+	}
+}
+
+// eg, a.b(), 'a' must be a struct type. In non-chained cased, we can easily resolve 'a'. No memberAccess involved
+// but if chained, eg, a.b.c(), we need to pass the struct to each other with the structSymbolStack, memberAccess involved
+void bluefin::PopulateSymTabListener::exitMethodCall(bluefinParser::MethodCallContext* ctx)
+{
+	shared_ptr<StructSymbol> structSym;
+
+	if (structSymbolStack.empty())
+	{
+		structSym = dynamic_pointer_cast<StructSymbol>(symbolTable.resolve(ctx->expr()->getText()));
+	}
+	else {
+
+		structSym = structSymbolStack.top();
+		structSymbolStack.pop();
+	}
+
+	// TODO: Define what happens if symbol not resolved or no struct symbol on stack.
+	shared_ptr<Symbol> methodSym = structSym->resolveMember(ctx->ID()->getText()); // method
+
+}
+
 
 void PopulateSymTabListener::enterBlock(bluefinParser::BlockContext* ctx)
 {

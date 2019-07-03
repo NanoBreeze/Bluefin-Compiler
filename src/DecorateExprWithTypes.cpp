@@ -66,15 +66,12 @@ void DecorateExprWithTypes::exitPrimaryParenth(bluefinParser::PrimaryParenthCont
 void DecorateExprWithTypes::exitFuncCall(bluefinParser::FuncCallContext* ctx) {
 
 	// make sure that for f(), f really is a function symbol and not, say, an int
-	bluefinParser::ExprContext* primaryIdCtx = ctx->expr();
-	shared_ptr<Scope> scope = scopeOfPrimaryIdsVarDeclAndFuncDefs.at(primaryIdCtx);
+	shared_ptr<Scope> scope = scopeOfPrimaryIdsVarDeclAndFuncDefs.at(ctx);
 
 	if (shared_ptr<FunctionSymbol> fSym = 
-		dynamic_pointer_cast<FunctionSymbol>(resolve(primaryIdCtx->getText(), scope))) {
+		dynamic_pointer_cast<FunctionSymbol>(resolve(ctx->ID()->getText(), scope))) {
 		
-		shared_ptr<Type> subExprType = typeContexts.at(ctx->expr()).getEvalType();
-		assert(fSym->getType() == subExprType);
-		typeContexts.emplace(ctx, TypeContext { subExprType });
+		typeContexts.emplace(ctx, TypeContext { fSym->getType() });
 
 		// check that the number of arguments matches the number of params
 		vector<shared_ptr<Symbol>> params = fSym->getParams();
@@ -97,12 +94,63 @@ void DecorateExprWithTypes::exitFuncCall(bluefinParser::FuncCallContext* ctx) {
 			}
 		}
 		else {
-			cerr << "Function call " << ctx->expr()->getText() << " doesn't have same number of args as function param" << endl;
+			cerr << "Function call " << ctx->ID()->getText() << " doesn't have same number of args as function param" << endl;
 		}
 	}
 	else {
 		cerr << "func call must be a function type. Eg, for f(1,2), f must be a FunctionSymbol" << endl;
 	}
+}
+
+void bluefin::DecorateExprWithTypes::exitMethodCall(bluefinParser::MethodCallContext* ctx)
+{
+	TypeContext& structMemberTypeContext = typeContexts.at(ctx->expr());
+
+	if (shared_ptr<StructSymbol> structType =
+		dynamic_pointer_cast<StructSymbol>(structMemberTypeContext.getEvalType())) { //almost identical to functionCall
+
+		if (shared_ptr<FunctionSymbol> methodSym =
+			dynamic_pointer_cast<FunctionSymbol>(structType->resolveMember(ctx->ID()->getText()))) {
+
+			typeContexts.emplace(ctx, TypeContext{ methodSym->getType() });
+
+			// check that the number of arguments matches the number of params
+			vector<shared_ptr<Symbol>> params = methodSym->getParams();
+			size_t numArgs = ctx->argList() ? ctx->argList()->expr().size() : 0;
+
+			if (numArgs == params.size()) {
+				// now check that all args can be promoted to the right type (implicity assignment)
+				for (size_t i = 0; i < params.size(); i++) {
+					shared_ptr<Type> curParamType = params[i]->getType();
+					ParseTree* curArgCtx = ctx->argList()->expr(i);
+					TypeContext& curArgTypeCxt = typeContexts.at(curArgCtx);
+
+					if (isAssignmentCompatible(curParamType, curArgTypeCxt.getEvalType())) {
+						curArgTypeCxt.setPromotionType(
+							getPromotionType(curParamType, curArgTypeCxt.getEvalType()));
+
+						typeContexts.emplace(ctx, TypeContext{ methodSym->getType() });
+					}
+					else {
+						cerr << "Argument and param must have compatible types" << endl;
+					}
+				}
+			}
+			else {
+				cerr << "Method call " << ctx->ID()->getText() << " doesn't have same number of args as function param" << endl;
+			}
+		}
+		else {
+			cerr << "method call must be a function type. Eg, for f(1,2), f must be a FunctionSymbol" << endl;
+		}
+	}
+	else {
+		cerr << "id must be a struct type. Eg, x.y, x must be a struct type" << endl;
+	}
+
+
+
+	
 }
 
 void DecorateExprWithTypes::exitUnaryExpr(bluefinParser::UnaryExprContext* ctx) {
@@ -260,13 +308,14 @@ void DecorateExprWithTypes::exitSimpleAssignExpr(bluefinParser::SimpleAssignExpr
 	}
 }
 
+
 void DecorateExprWithTypes::exitMemberAccess(bluefinParser::MemberAccessContext* ctx) {
 	// put type of member. Eg, first.a could have type int
 	TypeContext& typeContext = typeContexts.at(ctx->expr());
 	if (shared_ptr<StructSymbol> structType =
 		dynamic_pointer_cast<StructSymbol>(typeContext.getEvalType())) {
 
-		shared_ptr<Type> memberType = structType->resolve(ctx->ID()->getText())->getType();
+		shared_ptr<Type> memberType = structType->resolveMember(ctx->ID()->getText())->getType();
 		typeContexts.emplace(ctx, TypeContext { memberType });
 	}
 	else {
