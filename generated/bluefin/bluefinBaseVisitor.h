@@ -77,6 +77,10 @@ public:
     return visitChildren(ctx);
   }
 
+  virtual antlrcpp::Any visitSuperClass(bluefinParser::SuperClassContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
   virtual antlrcpp::Any visitVarDecl(bluefinParser::VarDeclContext *ctx) override {
     return visitChildren(ctx);
   }

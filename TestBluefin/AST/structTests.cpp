@@ -64,6 +64,16 @@ TEST(Struct, FieldsAndMethods) {
 	EXPECT_EQ(sExpr, expected);
 }
 
+TEST(Struct, ExtendsFromParentStruct) {
+
+	const string prog = "struct x extends y {};";
+
+	const string sExpr = getSExpression(prog);
+
+	const string expected = "(program (structDef struct x (superClass extends y) { } ;))";
+	EXPECT_EQ(sExpr, expected);
+}
+
 /****************************************
 ************* Negative Tests ************
 *****************************************/
@@ -110,6 +120,11 @@ TEST(Struct, NestedStructDefinition) {
 
 TEST(Struct, NestedBlock) {
 	const string prog = "struct A { { } };";
+	EXPECT_THROW(improperSyntax(prog), ParseCancellationException);
+}
+
+TEST(Struct, DoubleParents) {
+	const string prog = "struct A extends B, C {};";
 	EXPECT_THROW(improperSyntax(prog), ParseCancellationException);
 }
 

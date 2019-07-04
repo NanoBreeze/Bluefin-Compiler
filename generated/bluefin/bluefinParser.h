@@ -17,16 +17,17 @@ public:
     T__7 = 8, T__8 = 9, T__9 = 10, T__10 = 11, T__11 = 12, T__12 = 13, T__13 = 14, 
     T__14 = 15, T__15 = 16, T__16 = 17, T__17 = 18, T__18 = 19, T__19 = 20, 
     T__20 = 21, T__21 = 22, T__22 = 23, T__23 = 24, T__24 = 25, T__25 = 26, 
-    T__26 = 27, T__27 = 28, TInt = 29, TFloat = 30, TString = 31, TBool = 32, 
-    TVoid = 33, FLOAT = 34, BOOL = 35, STRING = 36, ID = 37, INT = 38, WS = 39
+    T__26 = 27, T__27 = 28, T__28 = 29, TInt = 30, TFloat = 31, TString = 32, 
+    TBool = 33, TVoid = 34, FLOAT = 35, BOOL = 36, STRING = 37, ID = 38, 
+    INT = 39, WS = 40
   };
 
   enum {
     RuleProgram = 0, RuleFuncDef = 1, RuleType = 2, RuleBuiltinType = 3, 
     RuleParamList = 4, RuleParam = 5, RuleBlock = 6, RuleStmt = 7, RuleStmtIf = 8, 
     RuleStmtWhile = 9, RuleStmtReturn = 10, RuleStmtBreak = 11, RuleStmtContinue = 12, 
-    RuleStmtExpr = 13, RuleStructDef = 14, RuleVarDecl = 15, RuleExpr = 16, 
-    RuleArgList = 17
+    RuleStmtExpr = 13, RuleStructDef = 14, RuleSuperClass = 15, RuleVarDecl = 16, 
+    RuleExpr = 17, RuleArgList = 18
   };
 
   bluefinParser(antlr4::TokenStream *input);
@@ -54,6 +55,7 @@ public:
   class StmtContinueContext;
   class StmtExprContext;
   class StructDefContext;
+  class SuperClassContext;
   class VarDeclContext;
   class ExprContext;
   class ArgListContext; 
@@ -298,6 +300,7 @@ public:
     StructDefContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
     antlr4::tree::TerminalNode *ID();
+    SuperClassContext *superClass();
     std::vector<VarDeclContext *> varDecl();
     VarDeclContext* varDecl(size_t i);
     std::vector<FuncDefContext *> funcDef();
@@ -311,6 +314,21 @@ public:
   };
 
   StructDefContext* structDef();
+
+  class  SuperClassContext : public antlr4::ParserRuleContext {
+  public:
+    SuperClassContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+    virtual size_t getRuleIndex() const override;
+    antlr4::tree::TerminalNode *ID();
+
+    virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
+    virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
+
+    virtual antlrcpp::Any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
+   
+  };
+
+  SuperClassContext* superClass();
 
   class  VarDeclContext : public antlr4::ParserRuleContext {
   public:

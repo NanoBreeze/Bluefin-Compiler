@@ -212,11 +212,15 @@ Declarations in Bluefin are much simpler than in other languages.
 ### 4.2 Struct Definition
 
 **Syntax**: <br />
-*structDef* -> struct *identifier* { *(varDecl | funcDef)* * }; <br />
+*structDef* -> struct *identifier*  (extends parentStruct) ? { *(varDecl | funcDef)* * }; <br />
 
 **Note**: A struct in Bluefin is equivalent to a class in other languages. TODO: change 'struct' to 'class' 
+A struct can inherit from a single parent struct, in which it is able to use all the parent's and grandparent's fields and methods
+Name hiding occurs when a derived struct has members with the same name as the parent struct and references will
+refer to the member in the derived struct.
 
 **Constraints**: Definition must occur with declaration. Currently, initialization with `s = {...}` isn't allowed.
+A struct can inherit from at most one other struct.
 
 ### 4.3 Variables Declaration and Definition
 

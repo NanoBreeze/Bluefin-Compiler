@@ -36,9 +36,11 @@ stmtContinue : 'continue' ';' ;
 
 stmtExpr : expr ';' ;
 
-structDef : 'struct' ID '{' (varDecl | funcDef)* '}' ';' ;
+structDef : 'struct' ID  (superClass)? '{' (varDecl | funcDef)* '}' ';' ;
 // A varDecl in a struct is known as a 'field'
 // A funcDef in a struct is known as a 'method'
+
+superClass : 'extends' ID;
 
 varDecl : type ID ('=' expr)? ';' ;
 

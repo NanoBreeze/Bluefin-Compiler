@@ -63,6 +63,9 @@ public:
   virtual void enterStructDef(bluefinParser::StructDefContext * /*ctx*/) override { }
   virtual void exitStructDef(bluefinParser::StructDefContext * /*ctx*/) override { }
 
+  virtual void enterSuperClass(bluefinParser::SuperClassContext * /*ctx*/) override { }
+  virtual void exitSuperClass(bluefinParser::SuperClassContext * /*ctx*/) override { }
+
   virtual void enterVarDecl(bluefinParser::VarDeclContext * /*ctx*/) override { }
   virtual void exitVarDecl(bluefinParser::VarDeclContext * /*ctx*/) override { }
 

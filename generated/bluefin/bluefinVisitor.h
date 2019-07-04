@@ -50,6 +50,8 @@ public:
 
     virtual antlrcpp::Any visitStructDef(bluefinParser::StructDefContext *context) = 0;
 
+    virtual antlrcpp::Any visitSuperClass(bluefinParser::SuperClassContext *context) = 0;
+
     virtual antlrcpp::Any visitVarDecl(bluefinParser::VarDeclContext *context) = 0;
 
     virtual antlrcpp::Any visitMemberAccess(bluefinParser::MemberAccessContext *context) = 0;

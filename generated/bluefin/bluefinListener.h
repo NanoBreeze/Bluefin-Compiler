@@ -61,6 +61,9 @@ public:
   virtual void enterStructDef(bluefinParser::StructDefContext *ctx) = 0;
   virtual void exitStructDef(bluefinParser::StructDefContext *ctx) = 0;
 
+  virtual void enterSuperClass(bluefinParser::SuperClassContext *ctx) = 0;
+  virtual void exitSuperClass(bluefinParser::SuperClassContext *ctx) = 0;
+
   virtual void enterVarDecl(bluefinParser::VarDeclContext *ctx) = 0;
   virtual void exitVarDecl(bluefinParser::VarDeclContext *ctx) = 0;
 
