@@ -1,0 +1,132 @@
+#include "Resolution.h"
+
+#include "../symbolTable/Exceptions.h"
+
+using namespace bluefin;
+using std::dynamic_pointer_cast;
+
+void Resolution::enterPrimaryId(bluefinParser::PrimaryIdContext* ctx)
+{
+	// TODO: temp fix for unresolved msg
+	if (scopes.find(ctx) == scopes.end()) {
+		output += createUnresolvedDebugMsg(ctx->ID()->getText());
+	}
+	else {
+		shared_ptr<Symbol> resolvedSym = resolve(ctx->ID()->getText(), scopes.at(ctx));
+
+		if (resolvedSym) { // TODO: if not resolved, not good!
+			if (shared_ptr<StructSymbol> s = dynamic_pointer_cast<StructSymbol>(resolvedSym->getType())) {
+				structSymbolStack.push(s); // this Id has the type of a structSymbol. eg, A a; a.b; "a" in "a.b" is the primaryId
+			}
+		}
+	}
+}
+
+void Resolution::exitMemberAccess(bluefinParser::MemberAccessContext* ctx)
+{
+	if (!structSymbolStack.empty()) {
+		shared_ptr<StructSymbol> s = structSymbolStack.top();
+		structSymbolStack.pop();
+
+		shared_ptr<Symbol> resMemSym = s->resolveMember(ctx->ID()->getText());
+		if (resMemSym) { // if not resolved, no need to check its type
+			if (shared_ptr<StructSymbol> resStruct = dynamic_pointer_cast<StructSymbol>(resMemSym->getType())) {
+				structSymbolStack.push(resStruct); // if the resolved member is a struct, it may be used later
+			}
+		}
+	}
+
+	// Empty stack is possible if the struct symbol were not resolved, in enterPrimaryId
+	// eg, a.b, if "a" doesn't exist, it wouldn't have been pushed onto the stack
+	// so we can't access it
+	// TODO: Currently fails silent, make unsilent failure, expect to find a struct to be on stack
+}
+
+void Resolution::enterFuncCall(bluefinParser::FuncCallContext* ctx)
+{
+	shared_ptr<Symbol> resolvedSym = resolve(ctx->ID()->getText(), scopes.at(ctx));
+}
+
+// eg, a.b(), 'a' must be a struct type. In non-chained cased, we can easily resolve 'a'. No memberAccess involved
+// but if chained, eg, a.b.c(), we need to pass the struct to each other with the structSymbolStack, memberAccess involved
+void Resolution::exitMethodCall(bluefinParser::MethodCallContext* ctx)
+{
+	shared_ptr<StructSymbol> structSym;
+
+	if (structSymbolStack.empty())
+	{
+		structSym = dynamic_pointer_cast<StructSymbol>(resolve(ctx->expr()->getText(), scopes.at(ctx->expr())));
+	}
+	else {
+
+		structSym = structSymbolStack.top();
+		structSymbolStack.pop();
+	}
+
+	// TODO: Define what happens if symbol not resolved or no struct symbol on stack.
+	shared_ptr<Symbol> methodSym = structSym->resolveMember(ctx->ID()->getText()); // method
+
+}
+
+// TODO: refactor, right now, this is identical to SymbolTableTestWrapper::resolve
+shared_ptr<Symbol> Resolution::resolve(const string name, shared_ptr<Scope> startScope) {
+
+	shared_ptr<Symbol> resolvedSym;
+
+
+	try {
+		resolvedSym = resolveImpl(name, startScope);
+		output += createResolveDebugMsg(resolvedSym);
+		assert(resolvedSym->getName() == name);
+	}
+	catch (UnresolvedSymbolException e) {
+		output += createUnresolvedDebugMsg(name);
+	}
+
+	return resolvedSym;
+}
+
+
+string Resolution::createResolveDebugMsg(shared_ptr<Symbol> resolvedSym) const {
+	const string resolvedSymName = resolvedSym->getName();
+	const string symCategory = getSymbolCategory(resolvedSym);
+	const string symType = resolvedSym->getType()->type2str();
+
+	return "resolve - " + resolvedSymName + " - c_" + symCategory + " - t_" + symType + "\n";
+}
+
+string Resolution::createUnresolvedDebugMsg(string resolvedSymName) const {
+
+	return "resolve - " + resolvedSymName + " - " "UNRESOLVED\n";
+}
+
+#include "../symbolTable/BuiltinTypeSymbol.h"
+#include "../symbolTable/VariableSymbol.h"
+#include "../symbolTable/FunctionSymbol.h"
+string Resolution::getSymbolCategory(shared_ptr<Symbol> symbol) const
+{
+	if (dynamic_pointer_cast<BuiltinTypeSymbol>(symbol)) {
+		return "builtinType";
+	}
+	else if (dynamic_pointer_cast<VariableSymbol>(symbol)) {
+		return "var";
+	}
+	else if (dynamic_pointer_cast<FunctionSymbol>(symbol)) {
+		return "function";
+	}
+	else { //struct
+		return "struct";
+	}
+}
+
+shared_ptr<Symbol> Resolution::resolveImpl(const string name, shared_ptr<Scope> startScope) {
+	shared_ptr<Scope> scope = startScope;
+
+	do {
+		shared_ptr<Symbol> sym = scope->resolve(name);
+		if (sym) { return sym; }
+	} while (scope = scope->getEnclosingScope());
+
+	throw UnresolvedSymbolException(name);
+}
+

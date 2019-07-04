@@ -8,8 +8,9 @@
 
 #include "../../symbolTable/SymbolTable.h"
 #include "../../symbolTable/SymbolFactory.h"
-#include "../../src/PopulateSymTabListener.h"
-#include "../../src/DecorateExprWithTypes.h"
+#include "../../listeners/Declaration.h"
+#include "../../listeners/Resolution.h"
+#include "../../listeners/DecorateExprWithTypes.h"
 
 #include "PostOrderPrintType.h"
 #include "SymbolTableTestWrapper.h"
@@ -38,10 +39,13 @@ namespace SymbolTableTests {
 		SymbolTableTestWrapper symTab(dummy);
 		SymbolWrapperFactory symFact(dummy);
 
-		PopulateSymTabListener populateSymtabListener(symTab, symFact);
-		walker.walk(&populateSymtabListener, tree);
+		Declaration declarationListener(symTab, symFact);
+		walker.walk(&declarationListener, tree);
 
-		map<ParseTree*, shared_ptr<Scope>> scopes = populateSymtabListener.getScopeOfPrimaryAndFuncDefCtxs();
+		Resolution resolutionListener(declarationListener.getScopes(), dummy);
+		walker.walk(&resolutionListener, tree);
+
+		map<ParseTree*, shared_ptr<Scope>> scopes = declarationListener.getScopes(); 
 		DecorateExprWithTypes decorateExprListener(scopes, symFact);
 		walker.walk(&decorateExprListener, tree);
 
@@ -50,10 +54,6 @@ namespace SymbolTableTests {
 		walker.walk(&printTypeListener, tree);
 
 		string expectedOutput = readFile(pathPrefix + expectedOutputFile);
-		//std::cout << "OUTPUT:" << std::endl;
-		//std::cout << symbolTypesStr << std::endl;
-		//std::cout << "EXPECTED:" << std::endl;
-		//std::cout << expectedOutput << std::endl;
 		ASSERT_EQ(symbolTypesStr, expectedOutput);
 	}
 

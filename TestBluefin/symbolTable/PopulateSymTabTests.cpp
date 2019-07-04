@@ -7,7 +7,8 @@
 
 #include "../../symbolTable/SymbolTable.h"
 #include "../../symbolTable/SymbolFactory.h"
-#include "../../src/PopulateSymTabListener.h"
+#include "../../listeners/Declaration.h"
+#include "../../listeners/Resolution.h"
 #include "SymbolTableTestWrapper.h"
 #include "SymbolWrapperFactory.h"
 
@@ -30,9 +31,12 @@ namespace SymbolTableTests {
 
 		SymbolTableTestWrapper symTab(output); 
 		SymbolWrapperFactory symFact(output);
-		PopulateSymTabListener listener(symTab, symFact);
 
-		walker.walk(&listener, tree);
+		Declaration declarationListener(symTab, symFact);
+		walker.walk(&declarationListener, tree);
+
+		Resolution resolutionListener(declarationListener.getScopes(), output);
+		walker.walk(&resolutionListener, tree);
 
 		string expectedOutput = readFile(pathPrefix + expectedOutputFile);
 		std::cout << "OUTPUT:" << std::endl;

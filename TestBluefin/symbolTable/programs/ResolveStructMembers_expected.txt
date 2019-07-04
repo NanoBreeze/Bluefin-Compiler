@@ -18,7 +18,6 @@ declare - f - c_function - t_float
 enterScope - Level 2
 resolve - float - c_builtinType - t_float
 declare - x - c_var - t_float
-resolve - a - c_var - t_float
 exitScope - Level 2
 resolve - First - c_struct - t_First
 declare - first - c_var - t_First
@@ -28,12 +27,14 @@ declare - main - c_function - t_int
 enterScope - Level 1
 resolve - First - c_struct - t_First
 declare - fir - c_var - t_First
+resolve - Second - c_struct - t_Second
+declare - second - c_var - t_Second
+exitScope - Level 1
+resolve - a - c_var - t_float
 resolve - fir - c_var - t_First
 resolve - First::f - c_function - t_bool
 resolve - fir - c_var - t_First
 resolve - First::a - c_var - t_int
-resolve - Second - c_struct - t_Second
-declare - second - c_var - t_Second
 resolve - second - c_var - t_Second
 resolve - Second::a - c_var - t_float
 resolve - second - c_var - t_Second
@@ -56,4 +57,3 @@ resolve - Second::oops - UNRESOLVED
 resolve - second - c_var - t_Second
 resolve - Second::first - c_var - t_First
 resolve - First::oops - UNRESOLVED
-exitScope - Level 1

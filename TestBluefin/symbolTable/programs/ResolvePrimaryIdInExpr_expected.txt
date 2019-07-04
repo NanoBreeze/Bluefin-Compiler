@@ -5,22 +5,22 @@ declare - b - c_var - t_float
 resolve - void - c_builtinType - t_void
 declare - f - c_function - t_void
 enterScope - Level 1
-resolve - a - c_var - t_int
-resolve - a - c_var - t_int
-resolve - b - c_var - t_float
 exitScope - Level 1
 resolve - bool - c_builtinType - t_bool
 declare - g - c_function - t_bool
 enterScope - Level 1
 resolve - float - c_builtinType - t_float
 declare - a - c_var - t_float
-resolve - b - c_var - t_float
-resolve - a - c_var - t_float
 exitScope - Level 1
 resolve - int - c_builtinType - t_int
 declare - main - c_function - t_int
 enterScope - Level 1
+exitScope - Level 1
+resolve - a - c_var - t_int
+resolve - a - c_var - t_int
+resolve - b - c_var - t_float
+resolve - b - c_var - t_float
+resolve - a - c_var - t_float
 resolve - f - c_function - t_void
 resolve - g - c_function - t_bool
 resolve - c - UNRESOLVED
-exitScope - Level 1
