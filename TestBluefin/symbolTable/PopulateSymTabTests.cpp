@@ -75,4 +75,12 @@ namespace SymbolTableTests {
 	TEST(SymbolTable, Program_ResolveStructMembers) {
 		validateProgram("ResolveStructMembers.bf","ResolveStructMembers_expected.txt");
 	}
+
+	TEST(SymbolTable, Program_ResolveStructMembersForwardReference) {
+		validateProgram("ResolveStructMembersForwardReference.bf","ResolveStructMembersForwardReference_expected.txt");
+	}
+
+	TEST(SymbolTable, Program_InvalidForwardReferences) {
+		validateProgram("InvalidForwardReferences.bf", "InvalidForwardReferences_expected.txt");
+	}
 }

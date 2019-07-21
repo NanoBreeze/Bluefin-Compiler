@@ -1,6 +1,13 @@
 resolve - First - UNRESOLVED
 declare - Another - c_struct - t_Another
 setCurrentScope - Level 1
+resolve - Second - UNRESOLVED
+resolve - int - c_builtinType - t_int
+declare - a - c_var - t_int
+resolve - void - c_builtinType - t_void
+declare - f - c_function - t_void
+enterScope - Level 2
+exitScope - Level 2
 exitScope - Level 1
 resolve - Another - c_struct - t_Another
 declare - b - c_var - t_Another
@@ -13,3 +20,6 @@ exitScope - Level 1
 declare - Third - c_struct - t_Third
 setCurrentScope - Level 1
 exitScope - Level 1
+resolve - a - c_var - t_int
+resolve - b - c_var - t_Another
+resolve - b - ILLEGAL_FORWARD_REFERENCE

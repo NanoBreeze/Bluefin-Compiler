@@ -199,7 +199,8 @@ There are several kinds of expressions:
 
 ## 4 Declarations & Definitions
 
-Declarations in Bluefin are much simpler than in other languages. 
+Declarations in Bluefin are much simpler than in other languages. Declaration and definition
+must occur before usage. The only exception is in structs, which allows forward references.
 
 ### 4.1 Function Definition
 
@@ -207,7 +208,7 @@ Declarations in Bluefin are much simpler than in other languages.
 *funcDef* -> *type* *identifier* ( *paramList? ) *block* <br />
 *paramList* -> *type* *identifier* (, *paramList*) *
 
-**Constraints**: Function definition must occur with the prototype. Declarations aren't allowed
+**Constraints**: Function definition must occur with the prototype. Declarations alone aren't allowed.
 
 ### 4.2 Struct Definition
 
@@ -218,6 +219,10 @@ Declarations in Bluefin are much simpler than in other languages.
 A struct can inherit from a single parent struct, in which it is able to use all the parent's and grandparent's fields and methods
 Name hiding occurs when a derived struct has members with the same name as the parent struct and references will
 refer to the member in the derived struct.
+
+In addition, a struct's members and methods allow forward referencing. Eg, a method may contain reference
+to a member variable that's declared later in the struct. However, if the referred variable isn't a struct member 
+(eg, a local variable), then the forward reference is illegal.
 
 **Constraints**: Definition must occur with declaration. Currently, initialization with `s = {...}` isn't allowed.
 A struct can inherit from at most one other struct.

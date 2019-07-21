@@ -12,10 +12,22 @@ void Resolution::enterPrimaryId(bluefinParser::PrimaryIdContext* ctx)
 		output += createUnresolvedDebugMsg(ctx->ID()->getText());
 	}
 	else {
-		shared_ptr<Symbol> resolvedSym = resolve(ctx->ID()->getText(), scopes.at(ctx));
+		pair<shared_ptr<Symbol>, shared_ptr<Scope>> resolvedSymAndScope = resolve(ctx->ID()->getText(), scopes.at(ctx));
+		shared_ptr<Symbol> resolvedSym = resolvedSymAndScope.first;
+		shared_ptr<Scope> scope = resolvedSymAndScope.second;
+
 
 		if (resolvedSym) { // TODO: if not resolved, not good!
-			if (shared_ptr<StructSymbol> s = dynamic_pointer_cast<StructSymbol>(resolvedSym->getType())) {
+
+			// remove illegal forward referencing. Allow forward referencing only if the resolved symbol is also inside the struct. 
+			// Otherwise, compare ctx position with resolved sym's location
+			// B/c symbols don't store references to hack resolve(..) to return not just the symbol but also its scope
+			if (!dynamic_pointer_cast<StructSymbol>(scope) && ctx->getStart()->getTokenIndex() < resolvedSym->getTokenIndex()) {
+				output += createIllegalForwardRefDebugMsg(ctx->ID()->getText());
+				return;
+			}
+
+			if (shared_ptr<StructSymbol> s = dynamic_pointer_cast<StructSymbol>(resolvedSymAndScope.first->getType())) {
 				structSymbolStack.push(s); // this Id has the type of a structSymbol. eg, A a; a.b; "a" in "a.b" is the primaryId
 			}
 		}
@@ -44,7 +56,13 @@ void Resolution::exitMemberAccess(bluefinParser::MemberAccessContext* ctx)
 
 void Resolution::enterFuncCall(bluefinParser::FuncCallContext* ctx)
 {
-	shared_ptr<Symbol> resolvedSym = resolve(ctx->ID()->getText(), scopes.at(ctx));
+	pair<shared_ptr<Symbol>, shared_ptr<Scope>> resolvedSymAndScope = resolve(ctx->ID()->getText(), scopes.at(ctx));
+	shared_ptr<Symbol> resolvedSym = resolvedSymAndScope.first;
+	shared_ptr<Scope> scope = resolvedSymAndScope.second;
+
+	if (!dynamic_pointer_cast<StructSymbol>(scope) && ctx->getStart()->getTokenIndex() < resolvedSym->getTokenIndex()) {
+		output += createIllegalForwardRefDebugMsg(ctx->ID()->getText());
+	}
 }
 
 // eg, a.b(), 'a' must be a struct type. In non-chained cased, we can easily resolve 'a'. No memberAccess involved
@@ -55,7 +73,7 @@ void Resolution::exitMethodCall(bluefinParser::MethodCallContext* ctx)
 
 	if (structSymbolStack.empty())
 	{
-		structSym = dynamic_pointer_cast<StructSymbol>(resolve(ctx->expr()->getText(), scopes.at(ctx->expr())));
+		structSym = dynamic_pointer_cast<StructSymbol>(resolve(ctx->expr()->getText(), scopes.at(ctx->expr())).first);
 	}
 	else {
 
@@ -68,22 +86,22 @@ void Resolution::exitMethodCall(bluefinParser::MethodCallContext* ctx)
 
 }
 
+
 // TODO: refactor, right now, this is identical to SymbolTableTestWrapper::resolve
-shared_ptr<Symbol> Resolution::resolve(const string name, shared_ptr<Scope> startScope) {
+pair<shared_ptr<Symbol>, shared_ptr<Scope>> Resolution::resolve(const string name, shared_ptr<Scope> startScope) {
 
-	shared_ptr<Symbol> resolvedSym;
-
+	pair<shared_ptr<Symbol>, shared_ptr<Scope>> resolvedSymAndScope;
 
 	try {
-		resolvedSym = resolveImpl(name, startScope);
-		output += createResolveDebugMsg(resolvedSym);
-		assert(resolvedSym->getName() == name);
+		resolvedSymAndScope = resolveImpl(name, startScope);
+		output += createResolveDebugMsg(resolvedSymAndScope.first);
+		assert(resolvedSymAndScope.first->getName() == name);
 	}
 	catch (UnresolvedSymbolException e) {
 		output += createUnresolvedDebugMsg(name);
 	}
 
-	return resolvedSym;
+	return resolvedSymAndScope;
 }
 
 
@@ -96,8 +114,11 @@ string Resolution::createResolveDebugMsg(shared_ptr<Symbol> resolvedSym) const {
 }
 
 string Resolution::createUnresolvedDebugMsg(string resolvedSymName) const {
-
 	return "resolve - " + resolvedSymName + " - " "UNRESOLVED\n";
+}
+
+string Resolution::createIllegalForwardRefDebugMsg(string resolvedSymName) const {
+	return "resolve - " + resolvedSymName + " - " "ILLEGAL_FORWARD_REFERENCE\n";
 }
 
 #include "../symbolTable/BuiltinTypeSymbol.h"
@@ -119,12 +140,14 @@ string Resolution::getSymbolCategory(shared_ptr<Symbol> symbol) const
 	}
 }
 
-shared_ptr<Symbol> Resolution::resolveImpl(const string name, shared_ptr<Scope> startScope) {
+pair<shared_ptr<Symbol>, shared_ptr<Scope>> Resolution::resolveImpl(const string name, shared_ptr<Scope> startScope) {
 	shared_ptr<Scope> scope = startScope;
 
 	do {
 		shared_ptr<Symbol> sym = scope->resolve(name);
-		if (sym) { return sym; }
+		if (sym) { 
+			return { sym, scope }; 
+		}
 	} while (scope = scope->getEnclosingScope());
 
 	throw UnresolvedSymbolException(name);

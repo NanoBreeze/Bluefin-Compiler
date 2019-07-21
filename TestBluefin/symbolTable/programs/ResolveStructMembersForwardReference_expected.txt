@@ -1,0 +1,28 @@
+declare - First - c_struct - t_First
+setCurrentScope - Level 1
+resolve - int - c_builtinType - t_int
+declare - a - c_var - t_int
+resolve - void - c_builtinType - t_void
+declare - f - c_function - t_void
+enterScope - Level 2
+resolve - int - c_builtinType - t_int
+declare - a - c_var - t_int
+resolve - int - c_builtinType - t_int
+declare - x - c_var - t_int
+resolve - bool - c_builtinType - t_bool
+declare - b - c_var - t_bool
+exitScope - Level 2
+resolve - int - c_builtinType - t_int
+declare - g - c_function - t_int
+enterScope - Level 2
+exitScope - Level 2
+resolve - bool - c_builtinType - t_bool
+declare - h - c_function - t_bool
+enterScope - Level 2
+exitScope - Level 2
+resolve - bool - c_builtinType - t_bool
+declare - b - c_var - t_bool
+exitScope - Level 1
+resolve - g - c_function - t_int
+resolve - h - c_function - t_bool
+resolve - b - c_var - t_bool

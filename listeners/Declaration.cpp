@@ -15,7 +15,7 @@ void Declaration::enterVarDecl(bluefinParser::VarDeclContext* ctx) {
 	// However, we will skip the variable declaration if can't resolve its type
 	if (typeSymbol) {
 		string varName = ctx->ID()->getText();
-		shared_ptr<Symbol> varSym =  symbolFactory.createVariableSymbol(varName, typeSymbol->getType());
+		shared_ptr<Symbol> varSym =  symbolFactory.createVariableSymbol(varName, typeSymbol->getType(), ctx->getStart()->getTokenIndex());
 
 		symbolTable.declare(varSym);
 		scopes.emplace(ctx, symbolTable.getCurrScope());
@@ -30,7 +30,7 @@ void Declaration::enterFuncDef(bluefinParser::FuncDefContext* ctx) {
 
 	if (retTypeSymbol) {
 		string funcName = ctx->ID()->getText();
-		shared_ptr<Symbol> funcSym = symbolFactory.createFunctionSymbol(funcName, retTypeSymbol->getType());
+		shared_ptr<Symbol> funcSym = symbolFactory.createFunctionSymbol(funcName, retTypeSymbol->getType(), ctx->getStart()->getTokenIndex());
 
 		symbolTable.declare(funcSym);
 		functionSymbol = dynamic_pointer_cast<FunctionSymbol>(funcSym);
@@ -54,7 +54,7 @@ void Declaration::enterParam(bluefinParser::ParamContext* ctx) {
 
 		if (retTypeSymbol) {
 			string funcName = ctx->ID()->getText();
-			shared_ptr<Symbol> paramSym = symbolFactory.createVariableSymbol(funcName, retTypeSymbol->getType());
+			shared_ptr<Symbol> paramSym = symbolFactory.createVariableSymbol(funcName, retTypeSymbol->getType(), ctx->getStart()->getTokenIndex());
 
 			symbolTable.declare(paramSym);
 			functionSymbol->attachParam(paramSym);
@@ -63,7 +63,7 @@ void Declaration::enterParam(bluefinParser::ParamContext* ctx) {
 
 void Declaration::enterStructDef(bluefinParser::StructDefContext* ctx) {
 	const string structName = ctx->ID()->getText();
-	shared_ptr<Symbol> structSym = symbolFactory.createStructSymbol(structName, symbolTable.getCurrScope());
+	shared_ptr<Symbol> structSym = symbolFactory.createStructSymbol(structName, symbolTable.getCurrScope(), ctx->getStart()->getTokenIndex());
 
 	symbolTable.declare(structSym);
 	symbolTable.setCurrentScope(dynamic_pointer_cast<Scope>(structSym));

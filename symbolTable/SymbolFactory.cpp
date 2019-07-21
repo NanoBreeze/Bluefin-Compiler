@@ -25,14 +25,14 @@ shared_ptr<Symbol> SymbolFactory::createBuiltinTypeSymbol(Builtin builtin) {
 	}
 }
 
-unique_ptr<Symbol> SymbolFactory::createFunctionSymbol(const string& name, shared_ptr<Type> type) {
-	return unique_ptr<Symbol>(new FunctionSymbol(name, type));
+unique_ptr<Symbol> SymbolFactory::createFunctionSymbol(const string& name, shared_ptr<Type> type, size_t tokenIndex) {
+	return unique_ptr<Symbol>(new FunctionSymbol(name, type, tokenIndex));
 }
 
-unique_ptr<Symbol> SymbolFactory::createStructSymbol(const string& name, shared_ptr<Scope> enclosingScope) {
+unique_ptr<Symbol> SymbolFactory::createStructSymbol(const string& name, shared_ptr<Scope> enclosingScope, size_t tokenIndex) {
 	return unique_ptr<Symbol>(new StructSymbol(name, enclosingScope));
 }
 
-unique_ptr<Symbol> SymbolFactory::createVariableSymbol(const string& name, shared_ptr<Type> type) {
-	return unique_ptr<Symbol>(new VariableSymbol(name, type));
+unique_ptr<Symbol> SymbolFactory::createVariableSymbol(const string& name, shared_ptr<Type> type, size_t tokenIndex) {
+	return unique_ptr<Symbol>(new VariableSymbol(name, type, tokenIndex));
 }

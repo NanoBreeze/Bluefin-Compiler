@@ -14,11 +14,15 @@ namespace bluefin {
 	using std::shared_ptr;
 	using std::map;
 	using std::stack;
+	using std::pair;
 	using antlr4::tree::ParseTree;
 
 	/*
 	Resolves symbol references. To do so we need the appropriate scope associated with the contexts. 
-	This should be passed from the Declaration phase
+	This should be passed from the Declaration phase. Resolving symbols after all have been declared 
+	allows forward reference. To restrict forward references (only to within classes), we compare the 
+	position of the context to resolve with the position of the context of the actual resolved symbol 
+	(assumes it is resolved). Illegal is current context occurs before the other one.
 	*/
 	class Resolution : public bluefinBaseListener
 	{
@@ -38,7 +42,7 @@ namespace bluefin {
 
 	private:
 		map<ParseTree*, shared_ptr<Scope>> scopes;
-		shared_ptr<Symbol> resolve(const string name, shared_ptr<Scope> startScope);
+		pair<shared_ptr<Symbol>, shared_ptr<Scope>> resolve(const string name, shared_ptr<Scope> startScope);
 
 		/* 
 		The purpose of this stack is to enable resolution of struct members. Since each 
@@ -62,12 +66,12 @@ namespace bluefin {
 
 		stack<shared_ptr<StructSymbol>> structSymbolStack;
 		
-
 		// TODO: temporary fix for debug msgs
 		string& output;
 		string createResolveDebugMsg(shared_ptr<Symbol> resolvedSym) const;
 		string createUnresolvedDebugMsg(string resolvedSymName) const;
-		shared_ptr<Symbol> resolveImpl(const string name, shared_ptr<Scope> startScope);	
+		string createIllegalForwardRefDebugMsg(string resolvedSymName) const;
+		pair<shared_ptr<Symbol>, shared_ptr<Scope>> resolveImpl(const string name, shared_ptr<Scope> startScope);	
 		string getSymbolCategory(shared_ptr<Symbol> symbol) const;
 
 	};

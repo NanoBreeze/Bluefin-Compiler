@@ -23,8 +23,8 @@ namespace bluefin {
 	class FunctionSymbol : public Symbol {
 	public:
 
-		FunctionSymbol(const string& name, shared_ptr<Type> type) :
-			Symbol(name, move(type))
+		FunctionSymbol(const string& name, shared_ptr<Type> type, size_t tokenIndex) :
+			Symbol(name, move(type), tokenIndex)
 		{}
 
 		void attachParam(shared_ptr<Symbol>); 
