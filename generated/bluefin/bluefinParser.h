@@ -19,7 +19,7 @@ public:
     T__20 = 21, T__21 = 22, T__22 = 23, T__23 = 24, T__24 = 25, T__25 = 26, 
     T__26 = 27, T__27 = 28, T__28 = 29, TInt = 30, TFloat = 31, TString = 32, 
     TBool = 33, TVoid = 34, FLOAT = 35, BOOL = 36, STRING = 37, ID = 38, 
-    INT = 39, WS = 40
+    INT = 39, WS = 40, LINE_COMMENT = 41, MULTILINE_COMMENT = 42
   };
 
   enum {

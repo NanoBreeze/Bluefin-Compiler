@@ -91,6 +91,8 @@ ID : LETTER+;     // only characters
 INT : DIGIT+;       // even '007' and '000' are ints
 
 WS : [ \t\r\n]+ -> skip;
+LINE_COMMENT : '//' .*? '\n' -> skip;
+MULTILINE_COMMENT : '/*'  .*? '*/' -> skip;
 
 fragment
 LETTER : [a-zA-Z];

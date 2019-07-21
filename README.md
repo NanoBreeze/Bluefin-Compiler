@@ -96,11 +96,14 @@ The following punctuators are valid:
 
 **Description**: Punctuators don't specify an operation to be performed that would result in a value. They can be thoughts of as separators. Depending on context, some symbols may appear as both punctuators and operators.
 
-### 1.7 Whitespace
+### 1.7 Whitespace and Comments
 
 The following are whitespace: ` `, \r, \n, \t
 
-**Description**: Whitespaces are skipped
+Multi-line comments begin with /* and end with */. Comments do not nest
+Single-line comments begin with // 
+
+**Description**: Whitespaces and comments are skipped.
 
 ## 2 Conversions
 
