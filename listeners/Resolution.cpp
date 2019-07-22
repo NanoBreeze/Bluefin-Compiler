@@ -148,7 +148,7 @@ pair<shared_ptr<Symbol>, shared_ptr<Scope>> Resolution::resolveImpl(const string
 		if (sym) { 
 			return { sym, scope }; 
 		}
-	} while (scope = scope->getEnclosingScope());
+	} while (scope = scope->getParentScope());
 
 	throw UnresolvedSymbolException(name);
 }

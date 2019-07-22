@@ -63,7 +63,14 @@ void Declaration::enterParam(bluefinParser::ParamContext* ctx) {
 
 void Declaration::enterStructDef(bluefinParser::StructDefContext* ctx) {
 	const string structName = ctx->ID()->getText();
-	shared_ptr<Symbol> structSym = symbolFactory.createStructSymbol(structName, symbolTable.getCurrScope(), ctx->getStart()->getTokenIndex());
+
+	shared_ptr<StructSymbol> superClassSym;
+
+	if (ctx->superClass()) {
+		superClassSym = dynamic_pointer_cast<StructSymbol>(symbolTable.resolve(ctx->superClass()->ID()->getText()));
+	}
+
+	shared_ptr<Symbol> structSym = symbolFactory.createStructSymbol(structName, symbolTable.getCurrScope(), superClassSym);
 
 	symbolTable.declare(structSym);
 	symbolTable.setCurrentScope(dynamic_pointer_cast<Scope>(structSym));

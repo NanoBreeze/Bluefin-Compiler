@@ -10,8 +10,8 @@ namespace SymbolTableTests {
 	class StructSymbolTestWrapper : public StructSymbol
 	{
 	public:
-		StructSymbolTestWrapper(const string& name, string& output, shared_ptr<Scope> enclosingScope) :
-			StructSymbol(name, enclosingScope), output{ output }
+		StructSymbolTestWrapper(const string& name, string& output, shared_ptr<Scope> enclosingScope, shared_ptr<StructSymbol> superClass) :
+			StructSymbol(name, enclosingScope, superClass), output{ output }
 		{}
 
 		/*

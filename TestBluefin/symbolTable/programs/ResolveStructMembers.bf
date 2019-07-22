@@ -4,10 +4,13 @@ struct First {
 	float b;
 };
 
+float c;
+
 struct Second {
 	float a;
 	float f(float x) {
 		return a;
+		return c;
 	}
 	First first;
 };

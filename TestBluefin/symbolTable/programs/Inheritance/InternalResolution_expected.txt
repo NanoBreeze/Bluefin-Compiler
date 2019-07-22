@@ -1,0 +1,20 @@
+declare - Base - c_struct - t_Base
+setCurrentScope - Level 1
+resolve - int - c_builtinType - t_int
+declare - a - c_var - t_int
+resolve - void - c_builtinType - t_void
+declare - f - c_function - t_void
+enterScope - Level 2
+exitScope - Level 2
+exitScope - Level 1
+resolve - Base - c_struct - t_Base
+declare - Der - c_struct - t_Der
+setCurrentScope - Level 1
+resolve - void - c_builtinType - t_void
+declare - g - c_function - t_void
+enterScope - Level 2
+exitScope - Level 2
+exitScope - Level 1
+resolve - a - c_var - t_int
+resolve - f - c_function - t_void
+resolve - b - UNRESOLVED

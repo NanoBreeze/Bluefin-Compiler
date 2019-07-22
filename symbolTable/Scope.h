@@ -33,6 +33,9 @@ namespace bluefin {
 
 		inline shared_ptr<Scope> getEnclosingScope() const { return enclosingScope; }
 
+		// Used for inheritance. For structs, check superclass scope before global scope
+		virtual inline shared_ptr<Scope> getParentScope() const { return enclosingScope; }
+
 		inline string getName() const { return name; }
 
 		// TODO: for testing only. can't get friend function working
