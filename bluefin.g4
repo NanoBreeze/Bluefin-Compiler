@@ -2,7 +2,7 @@ grammar bluefin;
 
 program : (funcDef | varDecl | structDef)+ ;
 
-funcDef : type ID '(' paramList? ')' '{' stmt* '}' ;
+funcDef : type ID '(' paramList? ')' Override?  '{' stmt* '}' ;
 
 type : builtinType
      | ID ;
@@ -70,6 +70,7 @@ expr : INT                                  # primaryInt
 
 argList : expr (',' expr)* ;
 
+
 TInt : 'int' ;
 
 TFloat : 'float' ;
@@ -86,9 +87,12 @@ BOOL: 'true' | 'false' ;
 
 STRING : '"' .*? '"' ;                // no escaping " for now
 
+Override: 'override' ;
+
 ID : LETTER+;     // only characters
 
 INT : DIGIT+;       // even '007' and '000' are ints
+
 
 WS : [ \t\r\n]+ -> skip;
 LINE_COMMENT : '//' .*? '\n' -> skip;

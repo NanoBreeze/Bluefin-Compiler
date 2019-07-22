@@ -38,6 +38,7 @@ namespace bluefin {
 		shared_ptr<Scope> getParentScope() const override;
 
 		inline string type2str() const override { return Symbol::getName(); }
+		inline shared_ptr<StructSymbol> getSuperClass() const { return superClass; }
 
 	private:
 		shared_ptr<StructSymbol> superClass;

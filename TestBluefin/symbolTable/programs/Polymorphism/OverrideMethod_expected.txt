@@ -1,0 +1,9 @@
+Override specifier can only be used on methods whose class contains a superclass
+Parameter types must match
+Return type of methods must match
+Base class doesn't contain any symbol with same name
+Override of base class member must be a method
+All overriding methods must contain 'override' specifier
+Override OK!
+All overriding methods must contain 'override' specifier
+Override specifier may not appear in a function

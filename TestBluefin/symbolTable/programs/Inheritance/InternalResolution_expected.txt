@@ -13,6 +13,7 @@ setCurrentScope - Level 1
 resolve - void - c_builtinType - t_void
 declare - g - c_function - t_void
 enterScope - Level 2
+resolve - Base::g - UNRESOLVED
 exitScope - Level 2
 exitScope - Level 1
 resolve - a - c_var - t_int

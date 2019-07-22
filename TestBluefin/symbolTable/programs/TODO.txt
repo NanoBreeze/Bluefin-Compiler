@@ -1,0 +1,6 @@
+Inheritance
+- What if the base class can't be resolved (doesn't exist)?
+- super
+==============
+- Return expr must occur in method or function
+- Void method and non-void method with return [expr]

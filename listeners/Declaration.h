@@ -7,6 +7,7 @@
 #include "../symbolTable/SymbolTable.h"
 #include "../symbolTable/SymbolFactory.h"
 #include "../symbolTable/Scope.h"
+#include "../symbolTable/ErrorCollector.h"
 
 namespace bluefin {
 
@@ -27,7 +28,7 @@ namespace bluefin {
 			: symbolTable{ symbolTable }, symbolFactory{ factory }
 		{}
 
-		void Declaration::enterVarDecl(bluefinParser::VarDeclContext*) override;
+		void enterVarDecl(bluefinParser::VarDeclContext*) override;
 
 		/*
 		Design decision for function params:
@@ -51,10 +52,12 @@ namespace bluefin {
 
 		inline map<ParseTree*, shared_ptr<Scope>> getScopes() const { return scopes; }
 
+		inline ErrorCollector getErrorCollector() const { return errCollector; }
 
 	private:
 		SymbolTable& symbolTable;
 		SymbolFactory& symbolFactory;
+		ErrorCollector errCollector;
 
 		// Stores the scope associated with ParseTree contexts for future passes (resolution and type promotion
 		// NOTE: TODO: don't resolve here. to later resolve member access fields, we must resolve the ID within the expr, which can either be a 
@@ -66,6 +69,10 @@ namespace bluefin {
 		map<ParseTree*, shared_ptr<Scope>> scopes;
 
 		// to share a functionSymbol with its associated params
-		shared_ptr<FunctionSymbol> functionSymbol;
+		shared_ptr<FunctionSymbol> currFunctionSym;
+
+		// to know whether we're inside a method or function. 
+		// If inside a method, may need to check for override keyword
+		shared_ptr<StructSymbol> currStructSym;
 	};
 }

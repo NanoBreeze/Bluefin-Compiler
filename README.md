@@ -21,7 +21,8 @@ The following keywords are reserved and not to be used as identifiers:
 `break`, `continue`, `if`, `else`, `while` (*control flow*) <br />
 `int`, `float`, `string`, `void`, `bool`, `true`, `false` *(built-in types)* <br />
 `struct` *(user-defined type)* <br />
-`return` *(for functions)*
+`return` *(for functions)* <br />
+`override` *(for methods that override superclass' method)*
 
 ### 1.2 Identifiers
 
@@ -208,10 +209,12 @@ must occur before usage. The only exception is in structs, which allows forward 
 ### 4.1 Function Definition
 
 **Syntax**: <br />
-*funcDef* -> *type* *identifier* ( *paramList? ) *block* <br />
+*funcDef* -> *type* *identifier* ( *paramList? ) (override)? *block* <br />
 *paramList* -> *type* *identifier* (, *paramList*) *
 
 **Constraints**: Function definition must occur with the prototype. Declarations alone aren't allowed.
+A method must have the override keyword if it has the same name, return type, and parameter types as its superclass' method. 
+Otherwise, it must not use the keyword.
 
 ### 4.2 Struct Definition
 

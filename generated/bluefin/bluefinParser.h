@@ -18,8 +18,8 @@ public:
     T__14 = 15, T__15 = 16, T__16 = 17, T__17 = 18, T__18 = 19, T__19 = 20, 
     T__20 = 21, T__21 = 22, T__22 = 23, T__23 = 24, T__24 = 25, T__25 = 26, 
     T__26 = 27, T__27 = 28, T__28 = 29, TInt = 30, TFloat = 31, TString = 32, 
-    TBool = 33, TVoid = 34, FLOAT = 35, BOOL = 36, STRING = 37, ID = 38, 
-    INT = 39, WS = 40, LINE_COMMENT = 41, MULTILINE_COMMENT = 42
+    TBool = 33, TVoid = 34, FLOAT = 35, BOOL = 36, STRING = 37, Override = 38, 
+    ID = 39, INT = 40, WS = 41, LINE_COMMENT = 42, MULTILINE_COMMENT = 43
   };
 
   enum {
@@ -87,6 +87,7 @@ public:
     TypeContext *type();
     antlr4::tree::TerminalNode *ID();
     ParamListContext *paramList();
+    antlr4::tree::TerminalNode *Override();
     std::vector<StmtContext *> stmt();
     StmtContext* stmt(size_t i);
 
