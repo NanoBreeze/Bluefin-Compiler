@@ -55,6 +55,19 @@ shared_ptr<Symbol> SymbolTableTestWrapper::resolve(const string name) {
 	return resolvedSym;
 }
 
+shared_ptr<Symbol> SymbolTableTests::SymbolTableTestWrapper::getSymbolMatchingType(Type type)
+{
+	shared_ptr<Symbol> sym;
+	try {
+		sym = SymbolTable::getSymbolMatchingType(type);
+	}
+	catch (UnresolvedSymbolException e) {
+		output += createUnresolvedDebugMsg(type.type2str());
+	}
+
+	return sym;
+}
+
 string SymbolTableTestWrapper::createEnterScopeDebugMsg() {
 
 	scopeLevel++;
@@ -82,7 +95,7 @@ string SymbolTableTestWrapper::createExitScopeDebugMsg() {
 string SymbolTableTestWrapper::createDeclareDebugMsg(shared_ptr<Symbol> symbol) const {
 	const string symName = symbol->getName();
 	const string symCategory = getSymbolCategory(symbol);
-	const string symType = symbol->getType()->type2str();
+	const string symType = symbol->getType().type2str();
 
 	return "declare - " + symName + " - c_" + symCategory + " - t_" + symType + "\n";
 }
@@ -96,7 +109,7 @@ string SymbolTableTestWrapper::createRedeclarationDebugMsg(shared_ptr<Symbol> sy
 string SymbolTableTestWrapper::createResolveDebugMsg(shared_ptr<Symbol> resolvedSym) const {
 	const string resolvedSymName = resolvedSym->getName();
 	const string symCategory = getSymbolCategory(resolvedSym);
-	const string symType = resolvedSym->getType()->type2str();
+	const string symType = resolvedSym->getType().type2str();
 
 	return "resolve - " + resolvedSymName + " - c_" + symCategory + " - t_" + symType + "\n";
 }

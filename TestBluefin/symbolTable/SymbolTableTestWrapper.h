@@ -48,6 +48,8 @@ namespace SymbolTableTests {
 
 		shared_ptr<Symbol> resolve(const string name) override;
 
+		shared_ptr<Symbol> getSymbolMatchingType(Type type) override;
+
 	private:
 		string& output;
 		unsigned scopeLevel;

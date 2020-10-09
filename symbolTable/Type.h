@@ -5,31 +5,65 @@
 namespace bluefin {
 
 	using std::string;
+	using std::hash;
 
 	/*
-	Only BuiltinTypeSymbol and StructSymbol inherit from this.
-	They already have names, eg, "int", "float", "First", 
-	This "Type" is mostly used as a tag. However, it does 
-	contain a toString method, which returns the same as the Symbol's name,
-	in order to print the type. Used mostly for type checking testing
+	In the past, BuiltinTypeSymbol and StructSymbol inherited from this.
+	Now, no class should inherit this. It should be composed. 
+	Types are internally stored as strings, such as "int", "float", "First", 
+	Used mostly for type checking testing
 
-	There are 5 default types: int, float, string, bool void
+	There are 5 default types: int, float, string, bool, void
 	Any other types would be user defined (via structs)
 	*/
+
 	class Type
 	{
 	public:
 
-		virtual string type2str() const = 0; 
+		static Type INT() { return Type{ "int" }; }
+		static Type BOOL() { return Type{ "bool" }; }
+		static Type FLOAT() { return Type{ "float" }; }
+		static Type STRING() { return Type{ "string" }; }
 
-		inline bool operator==(const Type& rhs) {
-			return this->type2str() == rhs.type2str();
+		string type2str() const {
+			return name;
 		}
 
-		virtual ~Type() {}
+		bool isUserDefinedType() const {
+			bool isBuiltinType = (name == "int" || name == "bool" || name == "float" || name == "string" || name == "void");
+			return !isBuiltinType;
+		}
 
-	protected:
-		Type() {}
+		explicit Type(string name) : name{ name } {}
+		~Type() {}
+
+	private:
+		string name;
+
 	};
+
+
+	inline bool operator ==(const Type& lhs, const Type& rhs) {
+		return lhs.type2str() == rhs.type2str();
+	}
+
+	inline bool operator !=(const Type& lhs, const Type& rhs) {
+		return lhs.type2str() != rhs.type2str();
+	}
+
+	inline bool operator <(const Type& lhs, const Type& rhs) {
+		return lhs.type2str() < rhs.type2str();
+	}
 }
 
+namespace std {
+	using bluefin::Type;
+
+	template <>
+	struct std::hash<Type> {
+		size_t operator()(const Type& type) const {
+			return hash<string>()(type.type2str());
+		}
+	};
+};

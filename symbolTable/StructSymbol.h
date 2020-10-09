@@ -13,12 +13,12 @@ namespace bluefin {
 	/** 
 	Might be circular reference to have a sp to enclosing scope. Consider using wp
 	*/
-	class StructSymbol : public Symbol, public Type, public Scope
+	class StructSymbol : public Symbol, public Scope
 	{
 
 	public:
 		StructSymbol(const string& name, shared_ptr<Scope> enclosingScope, shared_ptr<StructSymbol> superClass=nullptr) : 
-			Symbol(name, this), Scope{ enclosingScope, name }, superClass{ superClass }
+			Symbol(name, Type{ name }), Scope{ enclosingScope, name }, superClass{ superClass }
 		{}
 
 		/*
@@ -37,7 +37,6 @@ namespace bluefin {
 
 		shared_ptr<Scope> getParentScope() const override;
 
-		inline string type2str() const override { return Symbol::getName(); }
 		inline shared_ptr<StructSymbol> getSuperClass() const { return superClass; }
 
 	private:

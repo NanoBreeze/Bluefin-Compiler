@@ -22,10 +22,10 @@ shared_ptr<Symbol> StructSymbolTestWrapper::resolveMember(const string memberNam
 
 string StructSymbolTestWrapper::createResolveMemberDebugMsg(shared_ptr<Symbol> resolvedSym) const
 {
-	const string structTypeName = type2str();
+	const string structTypeName = getType().type2str();
 	const string resolvedSymName = resolvedSym->getName();
 	const string symCategory = getSymbolCategory(resolvedSym);;
-	const string symType = resolvedSym->getType()->type2str();
+	const string symType = resolvedSym->getType().type2str();
 
 	return "resolve - " + structTypeName + "::" + resolvedSymName + " - c_" + symCategory + " - t_" + symType + "\n";
 
@@ -33,7 +33,7 @@ string StructSymbolTestWrapper::createResolveMemberDebugMsg(shared_ptr<Symbol> r
 
 string StructSymbolTestWrapper::createUnresolvedMemberDebugMsg(string unresolvedMemberName) const {
 
-	const string structTypeName = type2str();
+	const string structTypeName = getType().type2str();
 
 	return "resolve - " + structTypeName + "::" + unresolvedMemberName + " - " "UNRESOLVED\n";
 }

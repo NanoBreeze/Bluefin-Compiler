@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <unordered_map>
 #include "Scope.h"
 #include "../TestBluefin/utils.h"
 
@@ -9,6 +10,10 @@ namespace bluefin {
 	using std::shared_ptr;
 	using std::unique_ptr;;
 	using std::make_shared;
+	using std::unordered_map;
+
+	class StructSymbol;
+
 
 	class SymbolTable
 	{
@@ -22,7 +27,6 @@ namespace bluefin {
 		virtual void exitScope();
 
 		virtual void declare(shared_ptr<Symbol> symbol);
-
 
 		/*
 		Find the name in the curr scope, if not, find in its 
@@ -38,8 +42,13 @@ namespace bluefin {
 		*/
 		inline shared_ptr<Scope> getCurrScope() const { return currScope; }
 
+		virtual shared_ptr<Symbol> getSymbolMatchingType(Type type);
+
 	private:
+		void addUserDefinedType(shared_ptr<StructSymbol>);
+
 		shared_ptr<Scope> currScope; // shared_ptr b/c it can refer to the same scope as a StructSymbol's
+		unordered_map<Type, shared_ptr<Symbol>> typeSymbols;
 	};
 
 }

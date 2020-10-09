@@ -8,7 +8,7 @@ namespace bluefin {
 
 	using std::shared_ptr;
 
-	class BuiltinTypeSymbol : public Type, public Symbol
+	class BuiltinTypeSymbol : public Symbol
 	{
 	public:
 		static shared_ptr<BuiltinTypeSymbol> INT() {
@@ -35,9 +35,12 @@ namespace bluefin {
 		}
 
 
-		inline string type2str() const override { return getName(); }
-
 	private:
-		BuiltinTypeSymbol(string type) : Symbol{ type, this } {}
+		BuiltinTypeSymbol(string type) : Symbol{ type, Type{type}, 0 } {}
 	};
+	/*
+	Symbol(const string& name, Type type, size_t tokenIndex) : 
+		name{ name }, type{ type }, tokenIndex{ tokenIndex }
+	{}
+	*/
 }

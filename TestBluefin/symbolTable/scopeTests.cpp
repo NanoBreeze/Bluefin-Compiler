@@ -122,8 +122,8 @@ namespace SymbolTableTests {
 		SymbolTable symtab;
 		symtab.enterScope("First");
 
-		shared_ptr<Symbol> symA = make_shared<VariableSymbol>("a", dynamic_pointer_cast<Type>(symFact->createBuiltinTypeSymbol(SFB::INT)), 0);
-		shared_ptr<Symbol> symB = make_shared<VariableSymbol>("b", dynamic_pointer_cast<Type>(symFact->createBuiltinTypeSymbol(SFB::FLOAT)), 0);
+		shared_ptr<Symbol> symA = make_shared<VariableSymbol>("a", Type::INT(), 0);
+		shared_ptr<Symbol> symB = make_shared<VariableSymbol>("b", Type::FLOAT(), 0);
 		symtab.declare(symA);
 		symtab.declare(symB); 
 
@@ -138,14 +138,14 @@ namespace SymbolTableTests {
 		SymbolTable symtab;
 
 		symtab.enterScope("First");
-		shared_ptr<Symbol> symA = make_shared<VariableSymbol>("a", dynamic_pointer_cast<Type>(symFact->createBuiltinTypeSymbol(SFB::INT)), 0);
-		shared_ptr<Symbol> symB = make_shared<VariableSymbol>("b", dynamic_pointer_cast<Type>(symFact->createBuiltinTypeSymbol(SFB::FLOAT)), 0);
+		shared_ptr<Symbol> symA = make_shared<VariableSymbol>("a", Type::INT(), 0);
+		shared_ptr<Symbol> symB = make_shared<VariableSymbol>("b", Type::FLOAT(), 0);
 		symtab.declare(symA);
 		symtab.declare(symB); 
 
 		symtab.enterScope("Second");
-		shared_ptr<Symbol> symC = make_shared<VariableSymbol>("c", dynamic_pointer_cast<Type>(symFact->createBuiltinTypeSymbol(SFB::INT)), 0);
-		shared_ptr<Symbol> symD = make_shared<VariableSymbol>("d", dynamic_pointer_cast<Type>(symFact->createBuiltinTypeSymbol(SFB::FLOAT)), 0);
+		shared_ptr<Symbol> symC = make_shared<VariableSymbol>("c", Type::INT(), 0);
+		shared_ptr<Symbol> symD = make_shared<VariableSymbol>("d", Type::FLOAT(), 0);
 		symtab.declare(symC);
 		symtab.declare(symD); 
 
@@ -169,15 +169,15 @@ namespace SymbolTableTests {
 		SymbolTable symtab;
 
 		symtab.enterScope("First");
-		shared_ptr<Symbol> symA = make_shared<VariableSymbol>("a", dynamic_pointer_cast<Type>(symFact->createBuiltinTypeSymbol(SFB::INT)), 0);
-		shared_ptr<Symbol> symB = make_shared<VariableSymbol>("b", dynamic_pointer_cast<Type>(symFact->createBuiltinTypeSymbol(SFB::FLOAT)), 0);
+		shared_ptr<Symbol> symA = make_shared<VariableSymbol>("a", Type::INT(), 0);
+		shared_ptr<Symbol> symB = make_shared<VariableSymbol>("b", Type::FLOAT(), 0);
 		symtab.declare(symA);
 		symtab.declare(symB);
 
 		symtab.enterScope("Second");
-		shared_ptr<Symbol> symA2 = make_shared<VariableSymbol>("a", dynamic_pointer_cast<Type>(symFact->createBuiltinTypeSymbol(SFB::INT)), 0);
-		shared_ptr<Symbol> symB2 = make_shared<VariableSymbol>("b", dynamic_pointer_cast<Type>(symFact->createBuiltinTypeSymbol(SFB::FLOAT)), 0);
-		shared_ptr<Symbol> symD = make_shared<VariableSymbol>("d", dynamic_pointer_cast<Type>(symFact->createBuiltinTypeSymbol(SFB::INT)), 0);
+		shared_ptr<Symbol> symA2 = make_shared<VariableSymbol>("a", Type::INT(), 0);
+		shared_ptr<Symbol> symB2 = make_shared<VariableSymbol>("b", Type::FLOAT(), 0);
+		shared_ptr<Symbol> symD = make_shared<VariableSymbol>("d", Type::INT(), 0);
 		symtab.declare(symA2);
 		symtab.declare(symB2);
 		symtab.declare(symD);
@@ -211,8 +211,8 @@ namespace SymbolTableTests {
 		SymbolTable symtab;
 
 		symtab.enterScope("First");
-		shared_ptr<Symbol> symA = make_shared<VariableSymbol>("a", dynamic_pointer_cast<Type>(symFact->createBuiltinTypeSymbol(SFB::INT)), 0);
-		shared_ptr<Symbol> symAFunc = make_shared<FunctionSymbol>("a", dynamic_pointer_cast<Type>(symFact->createBuiltinTypeSymbol(SFB::FLOAT)), 0);
+		shared_ptr<Symbol> symA = make_shared<VariableSymbol>("a", Type::INT(), 0);
+		shared_ptr<Symbol> symAFunc = make_shared<FunctionSymbol>("a", Type::FLOAT(), 0);
 		symtab.declare(symA);
 
 		ASSERT_THROW(symtab.declare(symAFunc), ReclarationException);
@@ -223,8 +223,8 @@ namespace SymbolTableTests {
 		SymbolTable symtab;
 
 		symtab.enterScope("First");
-		shared_ptr<Symbol> symA = make_shared<VariableSymbol>("a", dynamic_pointer_cast<Type>(symFact->createBuiltinTypeSymbol(SFB::INT)), 0);
-		shared_ptr<Symbol> symB = make_shared<VariableSymbol>("b", dynamic_pointer_cast<Type>(symFact->createBuiltinTypeSymbol(SFB::FLOAT)), 0);
+		shared_ptr<Symbol> symA = make_shared<VariableSymbol>("a", Type::INT(), 0);
+		shared_ptr<Symbol> symB = make_shared<VariableSymbol>("b", Type::FLOAT(), 0);
 		symtab.declare(symA);
 		symtab.declare(symB);
 
@@ -242,13 +242,13 @@ namespace SymbolTableTests {
 		SymbolTable symtab;
 
 		symtab.enterScope("First");
-		shared_ptr<Symbol> symA = make_shared<VariableSymbol>("a", dynamic_pointer_cast<Type>(symFact->createBuiltinTypeSymbol(SFB::INT)), 0);
-		shared_ptr<Symbol> symB = make_shared<VariableSymbol>("b", dynamic_pointer_cast<Type>(symFact->createBuiltinTypeSymbol(SFB::FLOAT)), 0);
+		shared_ptr<Symbol> symA = make_shared<VariableSymbol>("a", Type::INT(), 0);
+		shared_ptr<Symbol> symB = make_shared<VariableSymbol>("b", Type::STRING(), 0);
 		symtab.declare(symA);
 		symtab.declare(symB);
 
 		symtab.enterScope("Second");
-		shared_ptr<Symbol> symA2 = make_shared<VariableSymbol>("a", dynamic_pointer_cast<Type>(symFact->createBuiltinTypeSymbol(SFB::INT)), 0);
+		shared_ptr<Symbol> symA2 = make_shared<VariableSymbol>("a", Type::INT(), 0);
 		symtab.declare(symA2);
 
 		shared_ptr<Symbol> resA2 = symtab.resolve("a");
@@ -266,8 +266,8 @@ namespace SymbolTableTests {
 		SymbolTable symtab;
 
 		symtab.enterScope("First");
-		shared_ptr<Symbol> symA = make_shared<VariableSymbol>("a", dynamic_pointer_cast<Type>(symFact->createBuiltinTypeSymbol(SFB::INT)), 0);
-		shared_ptr<Symbol> symB = make_shared<VariableSymbol>("b", dynamic_pointer_cast<Type>(symFact->createBuiltinTypeSymbol(SFB::INT)), 0);
+		shared_ptr<Symbol> symA = make_shared<VariableSymbol>("a", Type::INT(), 0);
+		shared_ptr<Symbol> symB = make_shared<VariableSymbol>("b", Type::INT(), 0);
 		symtab.declare(symA);
 		symtab.declare(symB);
 
@@ -282,14 +282,14 @@ namespace SymbolTableTests {
 		SymbolTable symtab;
 
 		symtab.enterScope("First");
-		shared_ptr<Symbol> globalB = make_shared<VariableSymbol>("b", dynamic_pointer_cast<Type>(symFact->createBuiltinTypeSymbol(SFB::INT)), 0);
+		shared_ptr<Symbol> globalB = make_shared<VariableSymbol>("b", Type::INT(), 0);
 		symtab.declare(globalB);
 		shared_ptr<Symbol> structA = make_shared<StructSymbol>("A", symtab.getCurrScope()); 
 		symtab.declare(structA);
 
 		symtab.setCurrentScope(dynamic_pointer_cast<Scope>(structA));
-		shared_ptr<Symbol> symB = make_shared<VariableSymbol>("b", dynamic_pointer_cast<Type>(symFact->createBuiltinTypeSymbol(SFB::INT)), 0);
-		shared_ptr<Symbol> symC = make_shared<VariableSymbol>("c", dynamic_pointer_cast<Type>(symFact->createBuiltinTypeSymbol(SFB::STRING)), 0);
+		shared_ptr<Symbol> symB = make_shared<VariableSymbol>("b", Type::INT(), 0);
+		shared_ptr<Symbol> symC = make_shared<VariableSymbol>("c", Type::STRING(), 0);
 		symtab.declare(symB);
 		symtab.declare(symC);
 		symtab.exitScope();
@@ -310,13 +310,13 @@ namespace SymbolTableTests {
 		SymbolTable symtab;
 
 		symtab.enterScope("First");
-		shared_ptr<Symbol> globalB = make_shared<VariableSymbol>("b", dynamic_pointer_cast<Type>(symFact->createBuiltinTypeSymbol(SFB::INT)), 0);
+		shared_ptr<Symbol> globalB = make_shared<VariableSymbol>("b", Type::INT(), 0);
 		symtab.declare(globalB);
 		shared_ptr<Symbol> structA = make_shared<StructSymbol>("A", symtab.getCurrScope());
 		symtab.declare(structA);
 
 		symtab.setCurrentScope(dynamic_pointer_cast<Scope>(structA));
-		shared_ptr<Symbol> symC = make_shared<VariableSymbol>("c", dynamic_pointer_cast<Type>(symFact->createBuiltinTypeSymbol(SFB::STRING)), 0);
+		shared_ptr<Symbol> symC = make_shared<VariableSymbol>("c", Type::INT(), 0);
 		symtab.declare(symC);
 		symtab.exitScope();
 
