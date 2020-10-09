@@ -27,9 +27,20 @@ void Resolution::enterPrimaryId(bluefinParser::PrimaryIdContext* ctx)
 				return;
 			}
 
-			if (shared_ptr<StructSymbol> s = dynamic_pointer_cast<StructSymbol>(resolvedSymAndScope.first->getType())) {
+			if (resolvedSym->getType().isUserDefinedType()) {
+				shared_ptr<StructSymbol> structSym = dynamic_pointer_cast<StructSymbol>(symbolTable.getSymbolMatchingType(resolvedSym->getType()));
+				//assert(structSym != nullptr);
+				// ^^^ In testing, we may deliberate test negative cases by supplying invalid structs In such a case, don't crash the test
+				if (structSym)
+					structSymbolStack.push(structSym);
+				//shared_ptr<Symbol> getSymbolMatchingType(Type type);
+			}
+
+			/*
+			if (shared_ptr<StructSymbol> s = dynamic_pointer_cast<StructSymbol>(resolvedSym)) {
 				structSymbolStack.push(s); // this Id has the type of a structSymbol. eg, A a; a.b; "a" in "a.b" is the primaryId
 			}
+			*/
 		}
 	}
 }
@@ -41,11 +52,25 @@ void Resolution::exitMemberAccess(bluefinParser::MemberAccessContext* ctx)
 		structSymbolStack.pop();
 
 		shared_ptr<Symbol> resMemSym = s->resolveMember(ctx->ID()->getText());
+
 		if (resMemSym) { // if not resolved, no need to check its type
-			if (shared_ptr<StructSymbol> resStruct = dynamic_pointer_cast<StructSymbol>(resMemSym->getType())) {
+			if (resMemSym->getType().isUserDefinedType()) {
+				shared_ptr<StructSymbol> structSym = dynamic_pointer_cast<StructSymbol>(symbolTable.getSymbolMatchingType(resMemSym->getType()));
+				//assert(structSym != nullptr);
+				// ^^^ In testing, we may deliberate test negative cases by supplying invalid structs In such a case, don't crash the test
+				if (structSym)
+					structSymbolStack.push(structSym);
+				//shared_ptr<Symbol> getSymbolMatchingType(Type type);
+			}
+		}
+
+		/*
+		if (resMemSym) { // if not resolved, no need to check its type
+			if (shared_ptr<StructSymbol> resStruct = dynamic_pointer_cast<StructSymbol>(resMemSym)) {
 				structSymbolStack.push(resStruct); // if the resolved member is a struct, it may be used later
 			}
 		}
+		*/
 	}
 
 	// Empty stack is possible if the struct symbol were not resolved, in enterPrimaryId
@@ -67,18 +92,34 @@ void Resolution::enterFuncCall(bluefinParser::FuncCallContext* ctx)
 
 // eg, a.b(), 'a' must be a struct type. In non-chained cased, we can easily resolve 'a'. No memberAccess involved
 // but if chained, eg, a.b.c(), we need to pass the struct to each other with the structSymbolStack, memberAccess involved
+// can we chanin method calls like a.b().c(); I feel that should be valid logically but my impl doesn't handle that.
 void Resolution::exitMethodCall(bluefinParser::MethodCallContext* ctx)
 {
 	shared_ptr<StructSymbol> structSym;
 
 	if (structSymbolStack.empty())
 	{
-		structSym = dynamic_pointer_cast<StructSymbol>(resolve(ctx->expr()->getText(), scopes.at(ctx->expr())).first);
+		shared_ptr<Symbol> sym = resolve(ctx->expr()->getText(), scopes.at(ctx->expr())).first;
+		if (sym->getType().isUserDefinedType()) {
+			structSym = dynamic_pointer_cast<StructSymbol>(symbolTable.getSymbolMatchingType(sym->getType()));
+			//assert(structSym != nullptr);
+			// ^^^ In testing, we may deliberate test negative cases by supplying invalid structs In such a case, don't crash the test
+			//structSymbolStack.push(structSym);
+			//shared_ptr<Symbol> getSymbolMatchingType(Type type);
+		}
 	}
 	else {
 
 		structSym = structSymbolStack.top();
 		structSymbolStack.pop();
+	}
+
+	if (structSym == nullptr) {
+		std::cerr << "BLOOP" << std::endl;
+		std::cerr << "ctx->expr()->getText()" << ctx->expr()->getText() << std::endl;
+		shared_ptr<Symbol> sym = resolve(ctx->expr()->getText(), scopes.at(ctx->expr())).first;
+		std::cerr << "sym->getName(): " << sym->getName() << std::endl;
+		std::cerr << "sym->getType().type2str(): " << sym->getType().type2str() << std::endl;
 	}
 
 	// TODO: Define what happens if symbol not resolved or no struct symbol on stack.
@@ -108,7 +149,7 @@ pair<shared_ptr<Symbol>, shared_ptr<Scope>> Resolution::resolve(const string nam
 string Resolution::createResolveDebugMsg(shared_ptr<Symbol> resolvedSym) const {
 	const string resolvedSymName = resolvedSym->getName();
 	const string symCategory = getSymbolCategory(resolvedSym);
-	const string symType = resolvedSym->getType()->type2str();
+	const string symType = resolvedSym->getType().type2str();
 
 	return "resolve - " + resolvedSymName + " - c_" + symCategory + " - t_" + symType + "\n";
 }

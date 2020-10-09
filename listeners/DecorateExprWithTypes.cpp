@@ -18,33 +18,25 @@ using SFB = SymbolFactory::Builtin;
 void DecorateExprWithTypes::exitPrimaryInt(bluefinParser::PrimaryIntContext* ctx) {
 
 	typeContexts.emplace(ctx, 
-		TypeContext { 
-			dynamic_pointer_cast<Type>(symbolFactory.createBuiltinTypeSymbol(SFB::INT)), 
-		}
+		TypeContext { Type::INT() } 
 	); // what is this monstrosity?
 }
 
 void DecorateExprWithTypes::exitPrimaryFloat(bluefinParser::PrimaryFloatContext* ctx) {
 	typeContexts.emplace(ctx, 
-		TypeContext{ 
-			dynamic_pointer_cast<Type>(symbolFactory.createBuiltinTypeSymbol(SFB::FLOAT))
-		}
+		TypeContext { Type::FLOAT() }
 	);
 }
 
 void DecorateExprWithTypes::exitPrimaryString(bluefinParser::PrimaryStringContext* ctx) {
 	typeContexts.emplace(ctx,
-		TypeContext { 
-			dynamic_pointer_cast<Type>(symbolFactory.createBuiltinTypeSymbol(SFB::STRING))
-		}
+		TypeContext { Type::STRING() }
 	);
 }
 
 void DecorateExprWithTypes::exitPrimaryBool(bluefinParser::PrimaryBoolContext* ctx) {
 	typeContexts.emplace(ctx,
-		TypeContext { 
-			dynamic_pointer_cast<Type>(symbolFactory.createBuiltinTypeSymbol(SFB::BOOL))
-		}
+		TypeContext { Type::BOOL() }
 	);
 }
 
@@ -59,7 +51,7 @@ void DecorateExprWithTypes::exitPrimaryId(bluefinParser::PrimaryIdContext* ctx) 
 }
 
 void DecorateExprWithTypes::exitPrimaryParenth(bluefinParser::PrimaryParenthContext* ctx) {
-	shared_ptr<Type> subExprType = typeContexts.at(ctx->expr()).getEvalType(); // don't use [] b/c TypeContext doesn't have default ctor
+	Type subExprType = typeContexts.at(ctx->expr()).getEvalType(); // don't use [] b/c TypeContext doesn't have default ctor
 	typeContexts.emplace(ctx, TypeContext{ subExprType });
 }
 
@@ -80,7 +72,7 @@ void DecorateExprWithTypes::exitFuncCall(bluefinParser::FuncCallContext* ctx) {
 		if (numArgs == params.size()) {
 			// now check that all args can be promoted to the right type (implicity assignment)
 			for (size_t i = 0; i < params.size(); i++) {
-				shared_ptr<Type> curParamType = params[i]->getType();
+				Type curParamType = params[i]->getType();
 				ParseTree* curArgCtx = ctx->argList()->expr(i);
 				TypeContext& curArgTypeCxt = typeContexts.at(curArgCtx);
 
@@ -104,10 +96,27 @@ void DecorateExprWithTypes::exitFuncCall(bluefinParser::FuncCallContext* ctx) {
 
 void bluefin::DecorateExprWithTypes::exitMethodCall(bluefinParser::MethodCallContext* ctx)
 {
+	/*
+	// put type of member. Eg, first.a could have type int
+	TypeContext& typeContext = typeContexts.at(ctx->expr());
+	if (typeContext.getEvalType().isUserDefinedType()) {
+		shared_ptr<StructSymbol> structSym = dynamic_pointer_cast<StructSymbol>(symbolTable.getSymbolMatchingType(typeContext.getEvalType()));
+		//assert(structSym != nullptr);
+		// ^^^ In testing, we may deliberate test negative cases by supplying invalid structs In such a case, don't crash the test
+
+		Type memberType = structSym->resolveMember(ctx->ID()->getText())->getType();
+		typeContexts.emplace(ctx, TypeContext { memberType });
+	}
+	else {
+		cerr << "id must be a struct type. Eg, x.y, x must be a struct type" << endl;
+	}
+	*/;
+	//almost identical to functionCall
+
 	TypeContext& structMemberTypeContext = typeContexts.at(ctx->expr());
 
-	if (shared_ptr<StructSymbol> structType =
-		dynamic_pointer_cast<StructSymbol>(structMemberTypeContext.getEvalType())) { //almost identical to functionCall
+	if (structMemberTypeContext.getEvalType().isUserDefinedType()) {
+		shared_ptr<StructSymbol> structType = dynamic_pointer_cast<StructSymbol>(symbolTable.getSymbolMatchingType(structMemberTypeContext.getEvalType()));
 
 		if (shared_ptr<FunctionSymbol> methodSym =
 			dynamic_pointer_cast<FunctionSymbol>(structType->resolveMember(ctx->ID()->getText()))) {
@@ -121,7 +130,7 @@ void bluefin::DecorateExprWithTypes::exitMethodCall(bluefinParser::MethodCallCon
 			if (numArgs == params.size()) {
 				// now check that all args can be promoted to the right type (implicity assignment)
 				for (size_t i = 0; i < params.size(); i++) {
-					shared_ptr<Type> curParamType = params[i]->getType();
+					Type curParamType = params[i]->getType();
 					ParseTree* curArgCtx = ctx->argList()->expr(i);
 					TypeContext& curArgTypeCxt = typeContexts.at(curArgCtx);
 
@@ -148,21 +157,18 @@ void bluefin::DecorateExprWithTypes::exitMethodCall(bluefinParser::MethodCallCon
 		cerr << "id must be a struct type. Eg, x.y, x must be a struct type" << endl;
 	}
 
-
-
-	
 }
 
 void DecorateExprWithTypes::exitUnaryExpr(bluefinParser::UnaryExprContext* ctx) {
-	shared_ptr<Type> subExprType = typeContexts.at(ctx->expr()).getEvalType();
+	Type subExprType = typeContexts.at(ctx->expr()).getEvalType();
 
 	if (ctx->op->getText() == "!") {
-		if (subExprType == BuiltinTypeSymbol::BOOL()) {
+		if (subExprType == Type::BOOL()) {
 			cerr << "Bad unary ! operand type" << endl;
 		}
 	}
 	else { // - (negative)
-		if (subExprType != BTS::INT() && subExprType != BTS::FLOAT()) {
+		if (subExprType != Type::INT() && subExprType != Type::FLOAT()) {
 			cerr << "Bad unary - operand type" << endl;
 		}
 	}
@@ -180,7 +186,7 @@ void DecorateExprWithTypes::exitMultiExpr(bluefinParser::MultiExprContext* ctx) 
 		rightTypeContext.setPromotionType(
 			getPromotionType(rightTypeContext.getEvalType(), leftTypeContext.getEvalType()));
 
-		shared_ptr<Type> exprType = getArithmeticExprType(leftTypeContext.getEvalType(), rightTypeContext.getEvalType());
+		Type exprType = getArithmeticExprType(leftTypeContext.getEvalType(), rightTypeContext.getEvalType());
 		typeContexts.emplace(ctx, TypeContext { exprType });
 	}
 	else {
@@ -198,7 +204,7 @@ void DecorateExprWithTypes::exitAddExpr(bluefinParser::AddExprContext* ctx) {
 		rightTypeContext.setPromotionType(
 			getPromotionType(rightTypeContext.getEvalType(), leftTypeContext.getEvalType()));
 
-		shared_ptr<Type> exprType = getArithmeticExprType(leftTypeContext.getEvalType(), rightTypeContext.getEvalType());
+		Type exprType = getArithmeticExprType(leftTypeContext.getEvalType(), rightTypeContext.getEvalType());
 		typeContexts.emplace(ctx, TypeContext { exprType });
 	}
 	else {
@@ -208,9 +214,7 @@ void DecorateExprWithTypes::exitAddExpr(bluefinParser::AddExprContext* ctx) {
 
 void DecorateExprWithTypes::exitRelExpr(bluefinParser::RelExprContext* ctx) {
 	typeContexts.emplace(ctx,
-		TypeContext { 
-			dynamic_pointer_cast<Type>(symbolFactory.createBuiltinTypeSymbol(SFB::BOOL))
-		}
+		TypeContext { Type::BOOL() }
 	);
 
 	// may need to promote children's type. eg, float > int
@@ -230,9 +234,7 @@ void DecorateExprWithTypes::exitRelExpr(bluefinParser::RelExprContext* ctx) {
 
 void DecorateExprWithTypes::exitEqualityExpr(bluefinParser::EqualityExprContext* ctx) {
 	typeContexts.emplace(ctx,
-		TypeContext { 
-			dynamic_pointer_cast<Type>(symbolFactory.createBuiltinTypeSymbol(SFB::BOOL))
-		}
+		TypeContext { Type::BOOL() }
 	);
 
 	// may need to convert children's type. eg, float > int
@@ -256,9 +258,7 @@ void DecorateExprWithTypes::exitEqualityExpr(bluefinParser::EqualityExprContext*
 
 void DecorateExprWithTypes::exitLogicalANDExpr(bluefinParser::LogicalANDExprContext* ctx) {
 	typeContexts.emplace(ctx,
-		TypeContext { 
-			dynamic_pointer_cast<Type>(symbolFactory.createBuiltinTypeSymbol(SFB::BOOL))
-		}
+		TypeContext { Type::BOOL() }
 	);
 
 	TypeContext& leftTypeContext = typeContexts.at(ctx->expr(0));
@@ -274,9 +274,7 @@ void DecorateExprWithTypes::exitLogicalANDExpr(bluefinParser::LogicalANDExprCont
 
 void DecorateExprWithTypes::exitLogicalORExpr(bluefinParser::LogicalORExprContext* ctx) {
 	typeContexts.emplace(ctx,
-		TypeContext { 
-			dynamic_pointer_cast<Type>(symbolFactory.createBuiltinTypeSymbol(SFB::BOOL))
-		}
+		TypeContext { Type::BOOL() }
 	);
 
 	TypeContext& leftTypeContext = typeContexts.at(ctx->expr(0));
@@ -300,7 +298,7 @@ void DecorateExprWithTypes::exitSimpleAssignExpr(bluefinParser::SimpleAssignExpr
 		rightTypeContext.setPromotionType(
 			getPromotionType(rightTypeContext.getEvalType(), leftTypeContext.getEvalType()));
 
-		shared_ptr<Type> exprType = getArithmeticExprType(leftTypeContext.getEvalType(), rightTypeContext.getEvalType());
+		Type exprType = getArithmeticExprType(leftTypeContext.getEvalType(), rightTypeContext.getEvalType());
 		typeContexts.emplace(ctx, TypeContext { exprType });
 	}
 	else {
@@ -310,12 +308,15 @@ void DecorateExprWithTypes::exitSimpleAssignExpr(bluefinParser::SimpleAssignExpr
 
 
 void DecorateExprWithTypes::exitMemberAccess(bluefinParser::MemberAccessContext* ctx) {
+
 	// put type of member. Eg, first.a could have type int
 	TypeContext& typeContext = typeContexts.at(ctx->expr());
-	if (shared_ptr<StructSymbol> structType =
-		dynamic_pointer_cast<StructSymbol>(typeContext.getEvalType())) {
+	if (typeContext.getEvalType().isUserDefinedType()) {
+		shared_ptr<StructSymbol> structSym = dynamic_pointer_cast<StructSymbol>(symbolTable.getSymbolMatchingType(typeContext.getEvalType()));
+		//assert(structSym != nullptr);
+		// ^^^ In testing, we may deliberate test negative cases by supplying invalid structs In such a case, don't crash the test
 
-		shared_ptr<Type> memberType = structType->resolveMember(ctx->ID()->getText())->getType();
+		Type memberType = structSym->resolveMember(ctx->ID()->getText())->getType();
 		typeContexts.emplace(ctx, TypeContext { memberType });
 	}
 	else {
@@ -369,7 +370,7 @@ void DecorateExprWithTypes::exitStmtReturn(bluefinParser::StmtReturnContext* ctx
 		TypeContext& retTypeCtx = typeContexts.at(ctx->expr());
 		shared_ptr<Symbol> enclosingFuncSym = 
 			resolve(currFuncDefCtx->ID()->getText(), scopeOfPrimaryIdsVarDeclAndFuncDefs.at(currFuncDefCtx)); // wow, this is long
-		shared_ptr<Type> funcRetType = enclosingFuncSym->getType();
+		Type funcRetType = enclosingFuncSym->getType();
 
 		if (isAssignmentCompatible(funcRetType, retTypeCtx.getEvalType())) {
 			retTypeCtx.setPromotionType(getPromotionType(funcRetType, retTypeCtx.getEvalType()));
@@ -382,13 +383,13 @@ void DecorateExprWithTypes::exitStmtReturn(bluefinParser::StmtReturnContext* ctx
 
 
 void DecorateExprWithTypes::exitStmtIf(bluefinParser::StmtIfContext* ctx) {
-	if (typeContexts.at(ctx->expr()).getEvalType() != BTS::BOOL()) {
+	if (typeContexts.at(ctx->expr()).getEvalType() != Type::BOOL()) {
 		cerr << "if (expr) ... should be bool" << endl;
 	}
 }
 
 void DecorateExprWithTypes::exitStmtWhile(bluefinParser::StmtWhileContext* ctx) {
-	if (typeContexts.at(ctx->expr()).getEvalType() != BTS::BOOL()) {
+	if (typeContexts.at(ctx->expr()).getEvalType() != Type::BOOL()) {
 		cerr << "if (expr) ... should be bool" << endl;
 	}
 }
@@ -407,33 +408,33 @@ shared_ptr<Symbol> DecorateExprWithTypes::resolve(const string name, shared_ptr<
 }
 
 
-bool DecorateExprWithTypes::areBothBoolType(shared_ptr<Type> left, shared_ptr<Type> right) const {
-	return left == BTS::BOOL() && right == BTS::BOOL();
+bool DecorateExprWithTypes::areBothBoolType(Type left, Type right) const {
+	return left == Type::BOOL() && right == Type::BOOL();
 }
 
 // Arithmetics (+,-,*,/) are allowed only on float and int
-bool DecorateExprWithTypes::areArithmeticallyCompatible(shared_ptr<Type> left, shared_ptr <Type> right) const {
-	return (left == BTS::INT() || left == BTS::FLOAT()) &&
-		(right == BTS::INT() || right == BTS::FLOAT());
+bool DecorateExprWithTypes::areArithmeticallyCompatible(Type left, Type right) const {
+	return (left == Type::INT() || left == Type::FLOAT()) &&
+		(right == Type::INT() || right == Type::FLOAT());
 }
 
 // used for simple assignment and for varDecl (eg, int a = 5;)
 // Two types can be assignable if they are the same possibility or the rhs can be promoted to the lhs
-bool DecorateExprWithTypes::isAssignmentCompatible(shared_ptr<Type> left, shared_ptr<Type> right) const {
+bool DecorateExprWithTypes::isAssignmentCompatible(Type left, Type right) const {
 	if (left == right) {
 		return true;
 	}
 
 	// check if rhs can be promoted to lhs. The only promotion in this program is int->float, so then
 	// we'll just check if lhs is float and rhs is int
-	return left == BTS::FLOAT() && right == BTS::INT();
+	return left == Type::FLOAT() && right == Type::INT();
 }
 
-shared_ptr<Type> DecorateExprWithTypes::getArithmeticExprType(shared_ptr<Type> left, shared_ptr<Type> right) {
+Type DecorateExprWithTypes::getArithmeticExprType(Type left, Type right) {
 	return arithmeticExprType.at({ left, right });
 }
 
-shared_ptr<Type> DecorateExprWithTypes::getPromotionType(shared_ptr<Type> left,shared_ptr<Type>right) {
+Type DecorateExprWithTypes::getPromotionType(Type left, Type right) {
 	return promotionFromTo.at({ left, right });
 }
 

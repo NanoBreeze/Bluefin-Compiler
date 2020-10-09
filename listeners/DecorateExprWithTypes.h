@@ -33,8 +33,8 @@ namespace bluefin {
 	public:
 
 		// For testing, we'll pass in an adapter of a symbol table
-		DecorateExprWithTypes(map<ParseTree*, shared_ptr<Scope>> scopeOfPrimaryIds, SymbolFactory& factory) :
-			scopeOfPrimaryIdsVarDeclAndFuncDefs{ scopeOfPrimaryIds }, symbolFactory{ factory }, currFuncDefCtx{ nullptr }
+		DecorateExprWithTypes(map<ParseTree*, shared_ptr<Scope>> scopeOfPrimaryIds, SymbolFactory& factory, SymbolTable& symTab) :
+			scopeOfPrimaryIdsVarDeclAndFuncDefs{ scopeOfPrimaryIds }, symbolFactory{ factory }, symbolTable{ symTab }, currFuncDefCtx{ nullptr }
 		{}
 
 		//===== listener methods for obtaining/evaluating expression types
@@ -69,6 +69,7 @@ namespace bluefin {
 
 	private:
 		SymbolFactory& symbolFactory;
+		SymbolTable& symbolTable;
 		map<ParseTree*, shared_ptr<Scope>> scopeOfPrimaryIdsVarDeclAndFuncDefs;
 
 		map<ParseTree*, TypeContext> typeContexts; // stores the type associated with expressions and functions. Enables type checking
@@ -82,28 +83,46 @@ namespace bluefin {
 		//      a) For arithmetic expr, compute its own type from its children's type. Then check whether this expression has compatible types
 		//			THen compute its children's promoteTo type
 		//		b) For equality and relational, compute children's promotTo type and set own type to bool. Same wtih promoteTo type (since that won't change)
-		shared_ptr<Type> getArithmeticExprType(shared_ptr<Type> left, shared_ptr<Type> right);
-		shared_ptr<Type> getPromotionType(shared_ptr<Type> left, shared_ptr<Type> right);
+		Type getArithmeticExprType(Type left, Type right);
+		Type getPromotionType(Type left, Type right);
 
-		bool areBothBoolType(shared_ptr<Type> left, shared_ptr<Type> right) const;
-		bool areArithmeticallyCompatible(shared_ptr<Type> left, shared_ptr<Type> right) const;
-		bool isAssignmentCompatible(shared_ptr<Type> left, shared_ptr<Type> right) const;
+		bool areBothBoolType(Type left, Type right) const;
+		bool areArithmeticallyCompatible(Type left, Type right) const;
+		bool isAssignmentCompatible(Type left, Type right) const;
 
 
 		// can't use pair with unordered_map here b/c pair doesn't have a hash key
+		/*
 		const map<pair<shared_ptr<Type>, shared_ptr<Type>>, shared_ptr<Type>> arithmeticExprType{
 			{{BTS::INT(), BTS::INT()}, BTS::INT()},
 			{{BTS::INT(), BTS::FLOAT()}, BTS::FLOAT()},
 			{{BTS::FLOAT(), BTS::INT()}, BTS::FLOAT()},
 			{{BTS::FLOAT(), BTS::FLOAT()}, BTS::FLOAT()}
 		};
+		*/
+		const map<pair<Type, Type>, Type> arithmeticExprType{
+			{{ Type::INT(), Type::INT()}, Type::INT()},
+			{{ Type::INT(), Type::FLOAT()}, Type::FLOAT()},
+			{{ Type::FLOAT(), Type::INT()}, Type::FLOAT()},
+			{{ Type::FLOAT(), Type::FLOAT()}, Type::FLOAT()}
+		};
 
+		/*
 		const map<pair<shared_ptr<Type>, shared_ptr<Type>>, shared_ptr<Type>> promotionFromTo{
 			{{BTS::BOOL(), BTS::BOOL()}, BTS::BOOL()},
 			{{BTS::INT(), BTS::FLOAT()}, BTS::FLOAT()},
 			{{BTS::INT(), BTS::INT()}, BTS::INT()},
 			{{BTS::FLOAT(), BTS::INT()}, BTS::FLOAT()},
 			{{BTS::FLOAT(), BTS::FLOAT()}, BTS::FLOAT()}
+		};
+		*/
+
+		const map<pair<Type, Type>, Type> promotionFromTo{
+			{{Type::BOOL(), Type::BOOL()}, Type::BOOL()},
+			{{Type::INT(), Type::FLOAT()}, Type::FLOAT()},
+			{{Type::INT(), Type::INT()}, Type::INT()},
+			{{Type::FLOAT(), Type::INT()}, Type::FLOAT()},
+			{{Type::FLOAT(), Type::FLOAT()}, Type::FLOAT()}
 		};
 	};
 }

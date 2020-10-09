@@ -29,8 +29,8 @@ namespace bluefin {
 	public:
 		// For testing, we'll pass in an adapter of a symbol table
 		// TODO: find some way to decouple testing of output from Resolution
-		Resolution(map<ParseTree*, shared_ptr<Scope>> scopes, string& output) : 
-			scopes{ scopes }, output{ output }
+		Resolution(map<ParseTree*, shared_ptr<Scope>> scopes, string& output, SymbolTable& symTab) : 
+			scopes{ scopes }, output{ output }, symbolTable{symTab}
 		{}
 
 		void enterPrimaryId(bluefinParser::PrimaryIdContext*) override;
@@ -44,6 +44,7 @@ namespace bluefin {
 		map<ParseTree*, shared_ptr<Scope>> scopes;
 		pair<shared_ptr<Symbol>, shared_ptr<Scope>> resolve(const string name, shared_ptr<Scope> startScope);
 
+		SymbolTable& symbolTable;
 		/* 
 		The purpose of this stack is to enable resolution of struct members. Since each 
 		listener's return type is void, there's no implicit way for the child of a node 

@@ -18,13 +18,13 @@ namespace bluefin {
 		bool operator==(Symbol& rhs);
 
 		inline string getName() const { return name; }
-		inline shared_ptr<Type> getType() const  { return type; }
+		inline Type getType() const  { return type; }
 		inline size_t getTokenIndex() const { return tokenIndex; }
 		virtual ~Symbol() {}
 
 	protected:
 		// name is the name of the id, eg, a, hello, wow
-		Symbol(const string& name, shared_ptr<Type> type, size_t tokenIndex) : 
+		Symbol(const string& name, Type type, size_t tokenIndex=0) : 
 			name{ name }, type{ type }, tokenIndex{ tokenIndex }
 		{}
 		
@@ -35,13 +35,15 @@ namespace bluefin {
 		// groups of shared pointers. They would use this ctor, so create custom deleter
 		// that doesn't delete this. 
 		// NOTE: Implementation Hack
+		/*
 		Symbol(const string& name, Type* t) : 
 			name{ name }, type{ t, [](Type*) {} }, tokenIndex{ 0 }
 		{}
+		*/
 
 	private:
 		const string name;
-		shared_ptr<Type> type; // a variableSymbol or other symbols may require this type for their ctors
+		Type type; // a variableSymbol or other symbols may require this type for their ctors
 		size_t tokenIndex;
 	};
 }

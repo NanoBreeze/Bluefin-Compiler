@@ -10,7 +10,6 @@ namespace bluefin {
 
 	using std::string;
 	using std::shared_ptr;
-	using std::move;
 	using std::vector;
 
 	/* TODO: should this contain its own arguments?
@@ -23,8 +22,8 @@ namespace bluefin {
 	class FunctionSymbol : public Symbol {
 	public:
 
-		FunctionSymbol(const string& name, shared_ptr<Type> type, size_t tokenIndex) :
-			Symbol(name, move(type), tokenIndex)
+		FunctionSymbol(const string& name, Type type, size_t tokenIndex) :
+			Symbol(name, type, tokenIndex)
 		{}
 
 		void attachParam(shared_ptr<Symbol>); 

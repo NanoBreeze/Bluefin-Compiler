@@ -43,6 +43,10 @@ namespace bluefin {
 
 	void SymbolTable::declare(shared_ptr<Symbol> symbol) {
 		currScope->declare(symbol);
+
+		if (shared_ptr<StructSymbol> structSym = dynamic_pointer_cast<StructSymbol>(symbol)) {
+			addUserDefinedType(structSym);
+		}
 	}
 
 
@@ -56,5 +60,21 @@ namespace bluefin {
 		} while (scope = scope->getEnclosingScope());
 
 		throw UnresolvedSymbolException(name);
+	}
+
+	shared_ptr<Symbol> SymbolTable::getSymbolMatchingType(Type type) {
+
+		if (typeSymbols.find(type) != typeSymbols.end())
+			return typeSymbols.at(type);
+
+		throw UnresolvedSymbolException(type.type2str());
+	}
+
+	void SymbolTable::addUserDefinedType(shared_ptr<StructSymbol> structSym) {
+		if (typeSymbols.count(structSym->getType())) {
+			throw ReclarationException(structSym->getType().type2str());
+		}
+
+		typeSymbols.emplace(structSym->getType(), structSym);
 	}
 }
