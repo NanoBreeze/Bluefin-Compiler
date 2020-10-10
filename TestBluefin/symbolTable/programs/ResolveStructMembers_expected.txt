@@ -14,7 +14,6 @@ declare - a - c_var - t_float
 resolve - float - c_builtinType - t_float
 declare - f - c_function - t_float
 enterScope - Level 2
-resolve - float - c_builtinType - t_float
 declare - x - c_var - t_float
 exitScope - Level 2
 declare - first - c_var - t_First
@@ -26,6 +25,7 @@ declare - fir - c_var - t_First
 declare - second - c_var - t_Second
 exitScope - Level 1
 resolve - int - c_builtinType - t_int
+resolve - float - c_builtinType - t_float
 resolve - float - c_builtinType - t_float
 resolve - float - c_builtinType - t_float
 resolve - float - c_builtinType - t_float

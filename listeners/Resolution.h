@@ -34,6 +34,7 @@ namespace bluefin {
 		{}
 
 		void enterVarDecl(bluefinParser::VarDeclContext * ctx) override;
+		void enterParam(bluefinParser::ParamContext * ctx) override;
 		void enterPrimaryId(bluefinParser::PrimaryIdContext*) override;
 		void exitMemberAccess(bluefinParser::MemberAccessContext*) override;
 		void enterFuncCall(bluefinParser::FuncCallContext*) override;

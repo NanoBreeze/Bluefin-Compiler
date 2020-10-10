@@ -12,7 +12,7 @@ declare - b - c_var - t_Another
 resolve - void - c_builtinType - t_void
 declare - g - c_function - t_void
 enterScope - Level 1
-resolve - Second - UNRESOLVED
+declare - b - c_var - t_Second
 declare - c - c_var - t_Third
 exitScope - Level 1
 declare - Third - c_struct - t_Third
@@ -25,5 +25,6 @@ resolve - a - c_var - t_int
 resolve - b - c_var - t_Another
 resolve - b - ILLEGAL_FORWARD_REFERENCE
 resolve - Another - c_struct - t_Another
+resolve - Second - UNRESOLVED
 resolve - Third - c_struct - t_Third
 resolve - Third - ILLEGAL_FORWARD_REFERENCE

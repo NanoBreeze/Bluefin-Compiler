@@ -4,7 +4,6 @@ declare - a - c_var - t_int
 resolve - void - c_builtinType - t_void
 declare - f - c_function - t_void
 enterScope - Level 2
-resolve - int - c_builtinType - t_int
 declare - a - c_var - t_int
 declare - x - c_var - t_int
 declare - b - c_var - t_bool
@@ -19,6 +18,7 @@ enterScope - Level 2
 exitScope - Level 2
 declare - b - c_var - t_bool
 exitScope - Level 1
+resolve - int - c_builtinType - t_int
 resolve - int - c_builtinType - t_int
 resolve - int - c_builtinType - t_int
 resolve - g - c_function - t_int

@@ -13,7 +13,6 @@ exitScope - Level 1
 resolve - First - c_struct - t_First
 declare - f - c_function - t_First
 enterScope - Level 1
-resolve - float - c_builtinType - t_float
 declare - a - c_var - t_float
 declare - a - REDECLARATION
 enterScope - Level 2
@@ -26,9 +25,7 @@ declare - b - c_var - t_string
 resolve - bool - c_builtinType - t_bool
 declare - f - REDECLARATION
 enterScope - Level 1
-resolve - int - c_builtinType - t_int
 declare - x - c_var - t_int
-resolve - float - c_builtinType - t_float
 declare - x - REDECLARATION
 exitScope - Level 1
 declare - First - REDECLARATION
@@ -37,9 +34,12 @@ resolve - int - c_builtinType - t_int
 resolve - int - c_builtinType - t_int
 resolve - float - c_builtinType - t_float
 resolve - void - c_builtinType - t_void
+resolve - float - c_builtinType - t_float
 resolve - First - c_struct - t_First
 resolve - int - c_builtinType - t_int
 resolve - string - c_builtinType - t_string
 resolve - First - c_struct - t_First
 resolve - string - c_builtinType - t_string
+resolve - int - c_builtinType - t_int
+resolve - float - c_builtinType - t_float
 resolve - int - c_builtinType - t_int

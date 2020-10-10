@@ -8,7 +8,6 @@ exitScope - Level 1
 resolve - bool - c_builtinType - t_bool
 declare - g - c_function - t_bool
 enterScope - Level 1
-resolve - int - c_builtinType - t_int
 declare - d - c_var - t_int
 declare - e - c_var - t_int
 enterScope - Level 2
@@ -25,6 +24,7 @@ exitScope - Level 1
 resolve - int - c_builtinType - t_int
 resolve - float - c_builtinType - t_float
 resolve - string - c_builtinType - t_string
+resolve - int - c_builtinType - t_int
 resolve - int - c_builtinType - t_int
 resolve - float - c_builtinType - t_float
 resolve - int - c_builtinType - t_int

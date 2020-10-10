@@ -17,7 +17,6 @@ exitScope - Level 1
 resolve - Second - c_struct - t_Second
 declare - g - c_function - t_Second
 enterScope - Level 1
-resolve - First - c_struct - t_First
 declare - d - c_var - t_First
 declare - e - c_var - t_int
 declare - f - c_var - t_float
@@ -30,6 +29,7 @@ resolve - bool - c_builtinType - t_bool
 resolve - string - c_builtinType - t_string
 resolve - First - c_struct - t_First
 resolve - string - c_builtinType - t_string
+resolve - First - c_struct - t_First
 resolve - int - c_builtinType - t_int
 resolve - float - c_builtinType - t_float
 resolve - First - c_struct - t_First
