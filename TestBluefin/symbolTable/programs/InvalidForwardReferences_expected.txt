@@ -4,31 +4,33 @@ resolve - void - c_builtinType - t_void
 declare - f - c_function - t_void
 enterScope - Level 2
 exitScope - Level 2
-resolve - int - c_builtinType - t_int
 declare - a - c_var - t_int
 exitScope - Level 1
 resolve - int - c_builtinType - t_int
 declare - main - c_function - t_int
 enterScope - Level 1
-resolve - int - c_builtinType - t_int
 declare - a - c_var - t_int
 enterScope - Level 2
 exitScope - Level 2
-resolve - First - UNRESOLVED
+declare - first - c_var - t_First
 exitScope - Level 1
 resolve - void - c_builtinType - t_void
 declare - f - c_function - t_void
 enterScope - Level 1
 exitScope - Level 1
-resolve - float - c_builtinType - t_float
 declare - b - c_var - t_float
 declare - First - c_struct - t_First
 setCurrentScope - Level 1
 exitScope - Level 1
 resolve - a - c_var - t_int
+resolve - int - c_builtinType - t_int
 resolve - a - c_var - t_int
 resolve - a - ILLEGAL_FORWARD_REFERENCE
+resolve - int - c_builtinType - t_int
 resolve - b - c_var - t_float
 resolve - b - ILLEGAL_FORWARD_REFERENCE
 resolve - f - c_function - t_void
 resolve - f - ILLEGAL_FORWARD_REFERENCE
+resolve - First - c_struct - t_First
+resolve - First - ILLEGAL_FORWARD_REFERENCE
+resolve - float - c_builtinType - t_float

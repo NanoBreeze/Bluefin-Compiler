@@ -1,8 +1,6 @@
 declare - Base - c_struct - t_Base
 setCurrentScope - Level 1
-resolve - int - c_builtinType - t_int
 declare - a - c_var - t_int
-resolve - bool - c_builtinType - t_bool
 declare - b - c_var - t_bool
 resolve - float - c_builtinType - t_float
 declare - f - c_function - t_float
@@ -12,9 +10,7 @@ exitScope - Level 1
 resolve - Base - c_struct - t_Base
 declare - Der - c_struct - t_Der
 setCurrentScope - Level 1
-resolve - bool - c_builtinType - t_bool
 declare - a - c_var - t_bool
-resolve - Base - c_struct - t_Base
 declare - b - c_var - t_Base
 resolve - void - c_builtinType - t_void
 declare - f - c_function - t_void
@@ -25,9 +21,13 @@ exitScope - Level 1
 resolve - int - c_builtinType - t_int
 declare - main - c_function - t_int
 enterScope - Level 1
-resolve - Der - c_struct - t_Der
 declare - der - c_var - t_Der
 exitScope - Level 1
+resolve - int - c_builtinType - t_int
+resolve - bool - c_builtinType - t_bool
+resolve - bool - c_builtinType - t_bool
+resolve - Base - c_struct - t_Base
+resolve - Der - c_struct - t_Der
 resolve - der - c_var - t_Der
 resolve - Der::f - c_function - t_void
 resolve - der - c_var - t_Der

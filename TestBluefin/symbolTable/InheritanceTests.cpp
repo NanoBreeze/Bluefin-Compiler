@@ -55,7 +55,9 @@ namespace SymbolTableTests {
 	TEST(Inheritance, Program_NameHiding) {
 		validateInheritance("NameHiding.bf", "NameHiding_expected.txt");
 	}
+	/*
 	TEST(Inheritance, Program_SuperclassMembers) {
 		validateInheritance("SuperclassMembers.bf", "SuperclassMembers_expected.txt");
 	}
+	*/
 }

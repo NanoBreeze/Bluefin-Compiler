@@ -9,18 +9,18 @@ using std::vector;
 
 void Declaration::enterVarDecl(bluefinParser::VarDeclContext* ctx) {
 	const string typeName = ctx->type()->getText();
-	shared_ptr<Symbol> typeSymbol = symbolTable.resolve(typeName);
+	//shared_ptr<Symbol> typeSymbol = symbolTable.resolve(typeName);
 	// assert(typeSymbol != nullptr);
 	// right now, if this fails, we don't want to stop execution
 
 	// However, we will skip the variable declaration if can't resolve its type
-	if (typeSymbol) {
+	//if (typeSymbol) {
 		string varName = ctx->ID()->getText();
-		shared_ptr<Symbol> varSym =  symbolFactory.createVariableSymbol(varName, typeSymbol->getType(), ctx->getStart()->getTokenIndex());
+		shared_ptr<Symbol> varSym = symbolFactory.createVariableSymbol(varName, Type{ typeName }, ctx->getStart()->getTokenIndex());
 
 		symbolTable.declare(varSym);
 		scopes.emplace(ctx, symbolTable.getCurrScope());
-	}
+	//}
 }
 
 void Declaration::enterFuncDef(bluefinParser::FuncDefContext* ctx) {
@@ -153,7 +153,7 @@ void Declaration::enterStructDef(bluefinParser::StructDefContext* ctx) {
 		superClassSym = dynamic_pointer_cast<StructSymbol>(symbolTable.resolve(ctx->superClass()->ID()->getText()));
 	}
 
-	shared_ptr<Symbol> structSym = symbolFactory.createStructSymbol(structName, symbolTable.getCurrScope(), superClassSym);
+	shared_ptr<Symbol> structSym = symbolFactory.createStructSymbol(structName, symbolTable.getCurrScope(), ctx->getStart()->getTokenIndex(), superClassSym);
 
 	symbolTable.declare(structSym);
 	symbolTable.setCurrentScope(dynamic_pointer_cast<Scope>(structSym));

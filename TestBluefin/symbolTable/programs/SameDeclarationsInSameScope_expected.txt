@@ -1,18 +1,13 @@
 declare - First - c_struct - t_First
 setCurrentScope - Level 1
-resolve - int - c_builtinType - t_int
 declare - b - c_var - t_int
-resolve - int - c_builtinType - t_int
 declare - b - REDECLARATION
-resolve - int - c_builtinType - t_int
 declare - c - c_var - t_int
-resolve - float - c_builtinType - t_float
 declare - c - REDECLARATION
 resolve - bool - c_builtinType - t_bool
 declare - d - c_function - t_bool
 enterScope - Level 2
 exitScope - Level 2
-resolve - void - c_builtinType - t_void
 declare - d - REDECLARATION
 exitScope - Level 1
 resolve - First - c_struct - t_First
@@ -20,18 +15,13 @@ declare - f - c_function - t_First
 enterScope - Level 1
 resolve - float - c_builtinType - t_float
 declare - a - c_var - t_float
-resolve - First - c_struct - t_First
 declare - a - REDECLARATION
 enterScope - Level 2
-resolve - int - c_builtinType - t_int
 declare - b - c_var - t_int
-resolve - string - c_builtinType - t_string
 declare - b - REDECLARATION
 exitScope - Level 2
 exitScope - Level 1
-resolve - First - c_struct - t_First
 declare - a - c_var - t_First
-resolve - string - c_builtinType - t_string
 declare - b - c_var - t_string
 resolve - bool - c_builtinType - t_bool
 declare - f - REDECLARATION
@@ -41,5 +31,15 @@ declare - x - c_var - t_int
 resolve - float - c_builtinType - t_float
 declare - x - REDECLARATION
 exitScope - Level 1
-resolve - int - c_builtinType - t_int
 declare - First - REDECLARATION
+resolve - int - c_builtinType - t_int
+resolve - int - c_builtinType - t_int
+resolve - int - c_builtinType - t_int
+resolve - float - c_builtinType - t_float
+resolve - void - c_builtinType - t_void
+resolve - First - c_struct - t_First
+resolve - int - c_builtinType - t_int
+resolve - string - c_builtinType - t_string
+resolve - First - c_struct - t_First
+resolve - string - c_builtinType - t_string
+resolve - int - c_builtinType - t_int

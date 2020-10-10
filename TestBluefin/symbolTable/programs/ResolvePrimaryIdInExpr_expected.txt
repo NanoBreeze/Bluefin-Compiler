@@ -1,6 +1,4 @@
-resolve - int - c_builtinType - t_int
 declare - a - c_var - t_int
-resolve - float - c_builtinType - t_float
 declare - b - c_var - t_float
 resolve - void - c_builtinType - t_void
 declare - f - c_function - t_void
@@ -16,6 +14,8 @@ resolve - int - c_builtinType - t_int
 declare - main - c_function - t_int
 enterScope - Level 1
 exitScope - Level 1
+resolve - int - c_builtinType - t_int
+resolve - float - c_builtinType - t_float
 resolve - a - c_var - t_int
 resolve - a - c_var - t_int
 resolve - b - c_var - t_float

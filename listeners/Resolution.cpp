@@ -5,6 +5,34 @@
 using namespace bluefin;
 using std::dynamic_pointer_cast;
 
+// Eg) int a = 5; Here, we want to resolve "int". The type can be either a user-defined type or built-in type
+// In the past, such resolution was done in Declaration pass, but now we move it into Resolution pass
+void Resolution::enterVarDecl(bluefinParser::VarDeclContext* ctx) {
+	const string typeName = ctx->type()->getText();
+	shared_ptr<Symbol> typeSymbol = symbolTable.resolve(typeName);
+
+	if (typeSymbol && ctx->type()->getStart()->getTokenIndex() < typeSymbol->getTokenIndex()) {
+		output += createIllegalForwardRefDebugMsg(typeName);
+		return;
+	}
+
+	//if (typeSymbol == nullptr) {
+		//output += createUnresolvedDebugMsg(ctx->ID()->getText());
+	//}
+	// assert(typeSymbol != nullptr);
+	// right now, if this fails, we don't want to stop execution
+
+	// However, we will skip the variable declaration if can't resolve its type
+	//if (typeSymbol) {
+		//string varName = ctx->ID()->getText();
+		//shared_ptr<Symbol> varSym = symbolFactory.createVariableSymbol(varName, Type{ typeName }, ctx->getStart()->getTokenIndex());
+
+		//symbolTable.declare(varSym);
+		//scopes.emplace(ctx, symbolTable.getCurrScope());
+	//}
+
+}
+
 void Resolution::enterPrimaryId(bluefinParser::PrimaryIdContext* ctx)
 {
 	// TODO: temp fix for unresolved msg
