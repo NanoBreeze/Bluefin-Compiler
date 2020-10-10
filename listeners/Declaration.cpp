@@ -26,17 +26,16 @@ void Declaration::enterVarDecl(bluefinParser::VarDeclContext* ctx) {
 void Declaration::enterFuncDef(bluefinParser::FuncDefContext* ctx) {
 	// almost identical to enterVarDecl(..)
 	const string retTypeName = ctx->type()->getText();
-	shared_ptr<Symbol> retTypeSymbol = symbolTable.resolve(retTypeName);
+	//shared_ptr<Symbol> retTypeSymbol = symbolTable.resolve(retTypeName);
 	// assert(retTypeSymbol != nullptr); if this fails, we don't want to stop execution just right now
 
-	if (retTypeSymbol) {
-		string funcName = ctx->ID()->getText();
-		shared_ptr<Symbol> funcSym = symbolFactory.createFunctionSymbol(funcName, retTypeSymbol->getType(), ctx->getStart()->getTokenIndex());
+	//if (retTypeSymbol) {
+	string funcName = ctx->ID()->getText();
+	shared_ptr<Symbol> funcSym = symbolFactory.createFunctionSymbol(funcName, Type{ retTypeName }, ctx->getStart()->getTokenIndex());
 
-		symbolTable.declare(funcSym);
-		currFunctionSym = dynamic_pointer_cast<FunctionSymbol>(funcSym);
-		scopes.emplace(ctx, symbolTable.getCurrScope());
-	}
+	symbolTable.declare(funcSym);
+	currFunctionSym = dynamic_pointer_cast<FunctionSymbol>(funcSym);
+	scopes.emplace(ctx, symbolTable.getCurrScope());
 
 	symbolTable.enterScope("function " + ctx->ID()->getText());
 }

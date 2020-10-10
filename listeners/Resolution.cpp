@@ -42,6 +42,16 @@ void Resolution::enterParam(bluefinParser::ParamContext* ctx) {
 	}
 }
 
+void Resolution::enterFuncDef(bluefinParser::FuncDefContext* ctx) {
+	const string typeName = ctx->type()->getText();
+	shared_ptr<Symbol> typeSymbol = symbolTable.resolve(typeName);
+
+	if (typeSymbol && ctx->type()->getStart()->getTokenIndex() < typeSymbol->getTokenIndex()) {
+		output += createIllegalForwardRefDebugMsg(typeName);
+		return;
+	}
+}
+
 void Resolution::enterPrimaryId(bluefinParser::PrimaryIdContext* ctx)
 {
 	// TODO: temp fix for unresolved msg

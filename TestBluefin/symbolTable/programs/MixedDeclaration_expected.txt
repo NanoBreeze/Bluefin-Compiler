@@ -3,7 +3,6 @@ setCurrentScope - Level 1
 declare - b - c_var - t_int
 declare - c - c_var - t_int
 exitScope - Level 1
-resolve - First - c_struct - t_First
 declare - f - c_function - t_First
 enterScope - Level 1
 declare - b - c_var - t_bool
@@ -14,7 +13,6 @@ setCurrentScope - Level 1
 declare - a - c_var - t_First
 declare - b - c_var - t_string
 exitScope - Level 1
-resolve - Second - c_struct - t_Second
 declare - g - c_function - t_Second
 enterScope - Level 1
 declare - d - c_var - t_First
@@ -25,10 +23,12 @@ declare - b - c_var - t_Second
 exitScope - Level 1
 resolve - int - c_builtinType - t_int
 resolve - int - c_builtinType - t_int
+resolve - First - c_struct - t_First
 resolve - bool - c_builtinType - t_bool
 resolve - string - c_builtinType - t_string
 resolve - First - c_struct - t_First
 resolve - string - c_builtinType - t_string
+resolve - Second - c_struct - t_Second
 resolve - First - c_struct - t_First
 resolve - int - c_builtinType - t_int
 resolve - float - c_builtinType - t_float
