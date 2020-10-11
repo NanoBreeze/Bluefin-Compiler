@@ -284,7 +284,7 @@ namespace SymbolTableTests {
 		symtab.enterScope("First");
 		shared_ptr<Symbol> globalB = make_shared<VariableSymbol>("b", Type::INT(), 0);
 		symtab.declare(globalB);
-		shared_ptr<Symbol> structA = make_shared<StructSymbol>("A", symtab.getCurrScope()); 
+		shared_ptr<Symbol> structA = make_shared<StructSymbol>("A", symtab.getCurrScope(), 0); 
 		symtab.declare(structA);
 
 		symtab.setCurrentScope(dynamic_pointer_cast<Scope>(structA));
@@ -312,7 +312,7 @@ namespace SymbolTableTests {
 		symtab.enterScope("First");
 		shared_ptr<Symbol> globalB = make_shared<VariableSymbol>("b", Type::INT(), 0);
 		symtab.declare(globalB);
-		shared_ptr<Symbol> structA = make_shared<StructSymbol>("A", symtab.getCurrScope());
+		shared_ptr<Symbol> structA = make_shared<StructSymbol>("A", symtab.getCurrScope(), 0);
 		symtab.declare(structA);
 
 		symtab.setCurrentScope(dynamic_pointer_cast<Scope>(structA));

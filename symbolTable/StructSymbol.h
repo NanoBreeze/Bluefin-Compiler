@@ -17,9 +17,10 @@ namespace bluefin {
 	{
 
 	public:
-		StructSymbol(const string& name, shared_ptr<Scope> enclosingScope, shared_ptr<StructSymbol> superClass=nullptr) : 
-			Symbol(name, Type{ name }), Scope{ enclosingScope, name }, superClass{ superClass }
+		StructSymbol(const string& name, shared_ptr<Scope> enclosingScope, size_t tokenIndex, shared_ptr<StructSymbol> superClass=nullptr) : 
+			Symbol(name, Type{ name }, tokenIndex), Scope{ enclosingScope, name }, superClass{ superClass }
 		{}
+
 
 		/*
 		TODO: Technically, this is not needed

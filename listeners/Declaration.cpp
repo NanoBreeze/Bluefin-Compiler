@@ -9,34 +9,33 @@ using std::vector;
 
 void Declaration::enterVarDecl(bluefinParser::VarDeclContext* ctx) {
 	const string typeName = ctx->type()->getText();
-	shared_ptr<Symbol> typeSymbol = symbolTable.resolve(typeName);
+	//shared_ptr<Symbol> typeSymbol = symbolTable.resolve(typeName);
 	// assert(typeSymbol != nullptr);
 	// right now, if this fails, we don't want to stop execution
 
 	// However, we will skip the variable declaration if can't resolve its type
-	if (typeSymbol) {
+	//if (typeSymbol) {
 		string varName = ctx->ID()->getText();
-		shared_ptr<Symbol> varSym =  symbolFactory.createVariableSymbol(varName, typeSymbol->getType(), ctx->getStart()->getTokenIndex());
+		shared_ptr<Symbol> varSym = symbolFactory.createVariableSymbol(varName, Type{ typeName }, ctx->getStart()->getTokenIndex());
 
 		symbolTable.declare(varSym);
 		scopes.emplace(ctx, symbolTable.getCurrScope());
-	}
+	//}
 }
 
 void Declaration::enterFuncDef(bluefinParser::FuncDefContext* ctx) {
 	// almost identical to enterVarDecl(..)
 	const string retTypeName = ctx->type()->getText();
-	shared_ptr<Symbol> retTypeSymbol = symbolTable.resolve(retTypeName);
+	//shared_ptr<Symbol> retTypeSymbol = symbolTable.resolve(retTypeName);
 	// assert(retTypeSymbol != nullptr); if this fails, we don't want to stop execution just right now
 
-	if (retTypeSymbol) {
-		string funcName = ctx->ID()->getText();
-		shared_ptr<Symbol> funcSym = symbolFactory.createFunctionSymbol(funcName, retTypeSymbol->getType(), ctx->getStart()->getTokenIndex());
+	//if (retTypeSymbol) {
+	string funcName = ctx->ID()->getText();
+	shared_ptr<Symbol> funcSym = symbolFactory.createFunctionSymbol(funcName, Type{ retTypeName }, ctx->getStart()->getTokenIndex());
 
-		symbolTable.declare(funcSym);
-		currFunctionSym = dynamic_pointer_cast<FunctionSymbol>(funcSym);
-		scopes.emplace(ctx, symbolTable.getCurrScope());
-	}
+	symbolTable.declare(funcSym);
+	currFunctionSym = dynamic_pointer_cast<FunctionSymbol>(funcSym);
+	scopes.emplace(ctx, symbolTable.getCurrScope());
 
 	symbolTable.enterScope("function " + ctx->ID()->getText());
 }
@@ -132,16 +131,16 @@ void Declaration::exitFuncDef(bluefinParser::FuncDefContext* ctx)
 void Declaration::enterParam(bluefinParser::ParamContext* ctx) {
 		// almost identical to enterVarDecl(..)
 		const string retTypeName = ctx->type()->getText();
-		shared_ptr<Symbol> retTypeSymbol = symbolTable.resolve(retTypeName);
+		//shared_ptr<Symbol> retTypeSymbol = symbolTable.resolve(retTypeName);
 		// assert(retTypeSymbol != nullptr); if this fails, we don't want to stop execution just right now
 
-		if (retTypeSymbol) {
-			string funcName = ctx->ID()->getText();
-			shared_ptr<Symbol> paramSym = symbolFactory.createVariableSymbol(funcName, retTypeSymbol->getType(), ctx->getStart()->getTokenIndex());
+		//if (retTypeSymbol) {
+		string funcName = ctx->ID()->getText();
+		shared_ptr<Symbol> paramSym = symbolFactory.createVariableSymbol(funcName, Type{ retTypeName }, ctx->getStart()->getTokenIndex());
 
-			symbolTable.declare(paramSym);
-			currFunctionSym->attachParam(paramSym);
-		}
+		symbolTable.declare(paramSym);
+		currFunctionSym->attachParam(paramSym);
+		//}
 }
 
 void Declaration::enterStructDef(bluefinParser::StructDefContext* ctx) {
@@ -153,7 +152,7 @@ void Declaration::enterStructDef(bluefinParser::StructDefContext* ctx) {
 		superClassSym = dynamic_pointer_cast<StructSymbol>(symbolTable.resolve(ctx->superClass()->ID()->getText()));
 	}
 
-	shared_ptr<Symbol> structSym = symbolFactory.createStructSymbol(structName, symbolTable.getCurrScope(), superClassSym);
+	shared_ptr<Symbol> structSym = symbolFactory.createStructSymbol(structName, symbolTable.getCurrScope(), ctx->getStart()->getTokenIndex(), superClassSym);
 
 	symbolTable.declare(structSym);
 	symbolTable.setCurrentScope(dynamic_pointer_cast<Scope>(structSym));
