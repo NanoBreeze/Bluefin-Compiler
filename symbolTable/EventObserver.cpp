@@ -83,52 +83,6 @@ void EventObserver::onEvent(ErrorEvent errorEvent, string symName, shared_ptr<St
 	}
 }
 
-/*
-void EventObserver::onEvent(ComplexEvent complexEvent, shared_ptr<Symbol> sym)
-{
-	const string symName = sym->getName();
-	const string symType = sym->getType().type2str();
-	const string symCategory = getSymbolCategory(sym);
-
-	switch (complexEvent) {
-		case ComplexEvent::DECLARED_SYMBOL:
-			output += "declare - " + symName + " - c_" + symCategory + " - t_" + symType + "\n";
-			break;
-		case ComplexEvent::RESOLVED_SYMBOL:
-			output += "resolve - " + symName + " - c_" + symCategory + " - t_" + symType + "\n";
-			break;
-		case ComplexEvent::REDECLARED_EXISTING_SYMBOL:
-			output += "declare - " + symName + " - " + "REDECLARATION\n";
-			break;
-		case ComplexEvent::UNRESOLVED_SYMBOL:
-			output += "resolve - " + symName + " - " "UNRESOLVED\n";
-			break;
-		case ComplexEvent::ILLEGAL_FORWARD_REFERENCE:
-			output += "resolve - " + symName + " - " "ILLEGAL_FORWARD_REFERENCE\n";
-			break;
-		default:
-			assert(false);
-	}
-}
-
-void EventObserver::onEvent(StructMemberEvent structMemberEvent, shared_ptr<Symbol> memberSym, shared_ptr<StructSymbol> structSym) {
-	const string structTypeName = structSym->getType().type2str();
-	const string memberSymName = memberSym->getName();
-	const string memberSymCategory = getSymbolCategory(memberSym);;
-	const string memberSymType = memberSym->getType().type2str();
-	switch (structMemberEvent) {
-		case StructMemberEvent::RESOLVED_STRUCT_MEMBER_SYMBOL:
-			output += "resolve - " + structTypeName + "::" + memberSymName + " - c_" + memberSymCategory + " - t_" + memberSymType + "\n";
-			break;
-		case StructMemberEvent::UNRESOLVED_STRUCT_MEMBER_SYMBOL:
-			output += "resolve - " + structTypeName + "::" + memberSymName + " - UNRESOLVED\n";
-			break;
-		default:
-			assert(false);
-	}
-}
-*/
-
 string EventObserver::getSymbolCategory(shared_ptr<Symbol> symbol) const
 {
 	if (dynamic_pointer_cast<BuiltinTypeSymbol>(symbol)) {

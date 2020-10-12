@@ -13,8 +13,6 @@
 #include "../../listeners/DecorateExprWithTypes.h"
 
 #include "PostOrderPrintType.h"
-#include "SymbolTableTestWrapper.h"
-#include "SymbolWrapperFactory.h"
 
 namespace SymbolTableTests {
 

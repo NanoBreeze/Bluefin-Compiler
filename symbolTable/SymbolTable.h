@@ -45,17 +45,11 @@ namespace bluefin {
 
 		virtual shared_ptr<Symbol> getSymbolMatchingType(Type type);
 
-		//void attachEventObserver(shared_ptr<EventObserver>);
-
 	private:
 		void addUserDefinedType(shared_ptr<StructSymbol>);
 
 		shared_ptr<Scope> currScope; // shared_ptr b/c it can refer to the same scope as a StructSymbol's
 		unordered_map<Type, shared_ptr<Symbol>> typeSymbols;
-		//vector<shared_ptr<EventObserver>> eventObservers;
-		//void broadcastEvent(ScopeEvent);
-		//void broadcastEvent(SuccessEvent, shared_ptr<Symbol>, shared_ptr<StructSymbol> structSym = nullptr);
-		//void broadcastEvent(ErrorEvent, string, shared_ptr<StructSymbol> structSym=nullptr);
 	};
 
 }

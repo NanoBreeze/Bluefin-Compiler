@@ -11,7 +11,6 @@
 #include "../../symbolTable/VariableSymbol.h"
 #include "../../symbolTable/BuiltinTypeSymbol.h"
 #include "../../symbolTable/StructSymbol.h"
-#include "SymbolWrapperFactory.h"
 #include "../../symbolTable/SymbolFactory.h"
 
 namespace SymbolTableTests {
@@ -25,10 +24,9 @@ namespace SymbolTableTests {
 	using namespace bluefin;
 	using SFB = SymbolFactory::Builtin;
 
-	string dummyStr;
-	unique_ptr<SymbolFactory> symFact(new SymbolWrapperFactory(dummyStr));
 
 	TEST(SymbolTable, DefaultState) {
+		SymbolFactory symFact;
 
 		SymbolTable symtab;
 		shared_ptr<Scope> scope = symtab.getCurrScope();
@@ -38,12 +36,12 @@ namespace SymbolTableTests {
 		unordered_map<string, shared_ptr<Symbol>> defaultSymbols = scope->getSymbols();
 		ASSERT_EQ(defaultSymbols.size(), 5);
 
-		ASSERT_TRUE(*(defaultSymbols.at("int")) == *symFact->createBuiltinTypeSymbol(SFB::INT));
+		ASSERT_TRUE(*(defaultSymbols.at("int")) == *symFact.createBuiltinTypeSymbol(SFB::INT));
 		// for some reason ASSERT_EQ isn't working here
-		ASSERT_TRUE(*(defaultSymbols.at("float")) == *symFact->createBuiltinTypeSymbol(SFB::FLOAT));
-		ASSERT_TRUE(*(defaultSymbols.at("void")) == *symFact->createBuiltinTypeSymbol(SFB::VOID));
-		ASSERT_TRUE(*(defaultSymbols.at("bool")) == *symFact->createBuiltinTypeSymbol(SFB::BOOL));
-		ASSERT_TRUE(*(defaultSymbols.at("string")) == *symFact->createBuiltinTypeSymbol(SFB::STRING));
+		ASSERT_TRUE(*(defaultSymbols.at("float")) == *symFact.createBuiltinTypeSymbol(SFB::FLOAT));
+		ASSERT_TRUE(*(defaultSymbols.at("void")) == *symFact.createBuiltinTypeSymbol(SFB::VOID));
+		ASSERT_TRUE(*(defaultSymbols.at("bool")) == *symFact.createBuiltinTypeSymbol(SFB::BOOL));
+		ASSERT_TRUE(*(defaultSymbols.at("string")) == *symFact.createBuiltinTypeSymbol(SFB::STRING));
 	}
 
 	TEST(SymbolTable, EnterScope) {
@@ -215,7 +213,7 @@ namespace SymbolTableTests {
 		shared_ptr<Symbol> symAFunc = make_shared<FunctionSymbol>("a", Type::FLOAT(), 0);
 		symtab.declare(symA);
 
-		ASSERT_THROW(symtab.declare(symAFunc), ReclarationException);
+		ASSERT_THROW(symtab.declare(symAFunc), RedeclarationException);
 	}
 
 	TEST(SymbolTable, ResolutionInSameScope) {

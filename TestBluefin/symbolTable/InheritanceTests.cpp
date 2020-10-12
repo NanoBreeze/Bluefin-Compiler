@@ -9,8 +9,6 @@
 #include "../../symbolTable/SymbolFactory.h"
 #include "../../listeners/Declaration.h"
 #include "../../listeners/Resolution.h"
-#include "SymbolTableTestWrapper.h"
-#include "SymbolWrapperFactory.h"
 
 namespace SymbolTableTests {
 

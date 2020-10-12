@@ -7,7 +7,7 @@ void Scope::declare(shared_ptr<Symbol> symbol)
 {
 	// if declaration had already occured in this scope, throw an exception
 	if (symbols.count(symbol->getName())) {
-		throw ReclarationException(symbol->getName());
+		throw RedeclarationException(symbol->getName());
 	}
 
 	symbols.emplace(symbol->getName(), symbol);
