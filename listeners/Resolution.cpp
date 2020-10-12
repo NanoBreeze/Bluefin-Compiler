@@ -94,7 +94,7 @@ void Resolution::exitMemberAccess(bluefinParser::MemberAccessContext* ctx)
 		structSymbolStack.pop();
 		string memName = ctx->ID()->getText();
 
-		shared_ptr<Symbol> resMemSym = s->resolveMember(memName);
+		shared_ptr<Symbol> resMemSym = s->resolve(memName);
 
 		// TODO: the semantics of StructSymbolTestWrapper::resolveMember should be similar to SymbolTable's
 		// which is to return with a proper symbol or throw an exception. No nullptr. Maybe get rid of 
@@ -154,7 +154,7 @@ void Resolution::exitMethodCall(bluefinParser::MethodCallContext* ctx)
 	}
 
 	// TODO: Define what happens if symbol not resolved or no struct symbol on stack.
-	shared_ptr<Symbol> methodSym = structSym->resolveMember(ctx->ID()->getText()); // method
+	shared_ptr<Symbol> methodSym = structSym->resolve(ctx->ID()->getText()); // method
 
 	if (methodSym) {
 		broadcastEvent(SuccessEvent::RESOLVED_SYMBOL, methodSym, structSym);

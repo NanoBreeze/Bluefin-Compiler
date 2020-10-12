@@ -64,7 +64,7 @@ void Declaration::exitFuncDef(bluefinParser::FuncDefContext* ctx)
 			goto finish;
 		}
 
-		shared_ptr<Symbol> resolved = superClass->resolveMember(ctx->ID()->getText());
+		shared_ptr<Symbol> resolved = superClass->resolve(ctx->ID()->getText());
 		if (!resolved)  {
 			errCollector.err(ErrorCollector::OVERRIDE_UNRESOLVED_NAME);
 			goto finish;
@@ -104,7 +104,7 @@ void Declaration::exitFuncDef(bluefinParser::FuncDefContext* ctx)
 	else {
 		if (currStructSym && currStructSym->getSuperClass()) {
 			string memberToSearchFor = ctx->ID()->getText();
-			shared_ptr<Symbol> resolved = currStructSym->getSuperClass()->resolveMember(memberToSearchFor);
+			shared_ptr<Symbol> resolved = currStructSym->getSuperClass()->resolve(memberToSearchFor);
 			if (resolved) {
 				broadcastEvent(SuccessEvent::RESOLVED_SYMBOL, resolved, currStructSym->getSuperClass());
 

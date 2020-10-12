@@ -21,20 +21,7 @@ namespace bluefin {
 			Symbol(name, Type{ name }, tokenIndex), Scope{ enclosingScope, name }, superClass{ superClass }
 		{}
 
-
-		/*
-		TODO: Technically, this is not needed
-		but if we use resolve, then structSymbolTestWrapper's resolve
-		message will also be rpinted when symbol table searches
-		So this is used to temporarily not mess up other tests
-		*/
-		virtual shared_ptr<Symbol> resolveMember(const string memberName) {// virtual to allow testing, so test can write
-			shared_ptr<Symbol> member = resolve(memberName);
-			if (!member && superClass) {
-				return superClass->resolveMember(memberName);
-			}
-			return member;
-		}
+		virtual shared_ptr<Symbol> resolve(const string memberName) const override;
 
 		shared_ptr<Scope> getParentScope() const override;
 

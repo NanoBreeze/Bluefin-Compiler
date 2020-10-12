@@ -119,7 +119,7 @@ void bluefin::DecorateExprWithTypes::exitMethodCall(bluefinParser::MethodCallCon
 		shared_ptr<StructSymbol> structType = dynamic_pointer_cast<StructSymbol>(symbolTable.getSymbolMatchingType(structMemberTypeContext.getEvalType()));
 
 		if (shared_ptr<FunctionSymbol> methodSym =
-			dynamic_pointer_cast<FunctionSymbol>(structType->resolveMember(ctx->ID()->getText()))) {
+			dynamic_pointer_cast<FunctionSymbol>(structType->resolve(ctx->ID()->getText()))) {
 
 			typeContexts.emplace(ctx, TypeContext{ methodSym->getType() });
 
@@ -316,7 +316,7 @@ void DecorateExprWithTypes::exitMemberAccess(bluefinParser::MemberAccessContext*
 		//assert(structSym != nullptr);
 		// ^^^ In testing, we may deliberate test negative cases by supplying invalid structs In such a case, don't crash the test
 
-		Type memberType = structSym->resolveMember(ctx->ID()->getText())->getType();
+		Type memberType = structSym->resolve(ctx->ID()->getText())->getType();
 		typeContexts.emplace(ctx, TypeContext { memberType });
 	}
 	else {
