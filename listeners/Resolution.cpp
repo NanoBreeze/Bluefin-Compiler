@@ -9,12 +9,26 @@ using std::dynamic_pointer_cast;
 // In the past, such resolution was done in Declaration pass, but now we move it into Resolution pass
 void Resolution::enterVarDecl(bluefinParser::VarDeclContext* ctx) {
 	const string typeName = ctx->type()->getText();
-	shared_ptr<Symbol> typeSymbol = symbolTable.resolve(typeName);
+	try {
+		shared_ptr<Symbol> typeSymbol = symbolTable.resolve(typeName);
+		assert(typeSymbol != nullptr);
+		broadcastEvent(SuccessEvent::RESOLVED_SYMBOL, typeSymbol);
 
-	if (typeSymbol && ctx->type()->getStart()->getTokenIndex() < typeSymbol->getTokenIndex()) {
-		output += createIllegalForwardRefDebugMsg(typeName);
-		return;
+		if (ctx->type()->getStart()->getTokenIndex() < typeSymbol->getTokenIndex()) {
+			broadcastEvent(ErrorEvent::ILLEGAL_FORWARD_REFERENCE, typeName);
+		}
 	}
+	catch (UnresolvedSymbolException e) {
+		broadcastEvent(ErrorEvent::UNRESOLVED_SYMBOL, typeName);
+	}
+
+	/*
+	if (typeSymbol && ctx->type()->getStart()->getTokenIndex() < typeSymbol->getTokenIndex()) {
+		broadcastEvent(ErrorEvent::ILLEGAL_FORWARD_REFERENCE, typeName);
+		//output += createIllegalForwardRefDebugMsg(typeName);
+		//return;
+	}
+	*/
 
 	//if (typeSymbol == nullptr) {
 		//output += createUnresolvedDebugMsg(ctx->ID()->getText());
@@ -34,29 +48,59 @@ void Resolution::enterVarDecl(bluefinParser::VarDeclContext* ctx) {
 }
 void Resolution::enterParam(bluefinParser::ParamContext* ctx) {
 	const string typeName = ctx->type()->getText();
-	shared_ptr<Symbol> typeSymbol = symbolTable.resolve(typeName);
-
-	if (typeSymbol && ctx->type()->getStart()->getTokenIndex() < typeSymbol->getTokenIndex()) {
-		output += createIllegalForwardRefDebugMsg(typeName);
-		return;
+	try {
+		shared_ptr<Symbol> typeSymbol = symbolTable.resolve(typeName);
+		assert(typeSymbol != nullptr);
+		broadcastEvent(SuccessEvent::RESOLVED_SYMBOL, typeSymbol);
+		
+		if (ctx->type()->getStart()->getTokenIndex() < typeSymbol->getTokenIndex()) {
+			broadcastEvent(ErrorEvent::ILLEGAL_FORWARD_REFERENCE, typeName);
+		}
 	}
+	catch (UnresolvedSymbolException e) {
+		broadcastEvent(ErrorEvent::UNRESOLVED_SYMBOL, typeName);
+	}
+
+	/*
+	if (typeSymbol && ctx->type()->getStart()->getTokenIndex() < typeSymbol->getTokenIndex()) {
+		broadcastEvent(ErrorEvent::ILLEGAL_FORWARD_REFERENCE, typeName);
+		//output += createIllegalForwardRefDebugMsg(typeName);
+		//return;
+	}
+	*/
 }
 
 void Resolution::enterFuncDef(bluefinParser::FuncDefContext* ctx) {
 	const string typeName = ctx->type()->getText();
+	try {
+		shared_ptr<Symbol> typeSymbol = symbolTable.resolve(typeName);
+		assert(typeSymbol != nullptr);
+		broadcastEvent(SuccessEvent::RESOLVED_SYMBOL, typeSymbol);
+		
+		if (ctx->type()->getStart()->getTokenIndex() < typeSymbol->getTokenIndex()) {
+			broadcastEvent(ErrorEvent::ILLEGAL_FORWARD_REFERENCE, typeName);
+		}
+	}
+	catch (UnresolvedSymbolException e) {
+		broadcastEvent(ErrorEvent::UNRESOLVED_SYMBOL, typeName);
+	}
+	/*
 	shared_ptr<Symbol> typeSymbol = symbolTable.resolve(typeName);
 
 	if (typeSymbol && ctx->type()->getStart()->getTokenIndex() < typeSymbol->getTokenIndex()) {
-		output += createIllegalForwardRefDebugMsg(typeName);
-		return;
+		broadcastEvent(ErrorEvent::ILLEGAL_FORWARD_REFERENCE, typeName);
+		//output += createIllegalForwardRefDebugMsg(typeName);
+		//return;
 	}
+	*/
 }
 
 void Resolution::enterPrimaryId(bluefinParser::PrimaryIdContext* ctx)
 {
 	// TODO: temp fix for unresolved msg
 	if (scopes.find(ctx) == scopes.end()) {
-		output += createUnresolvedDebugMsg(ctx->ID()->getText());
+		broadcastEvent(ErrorEvent::UNRESOLVED_SYMBOL, ctx->ID()->getText());
+		//output += createUnresolvedDebugMsg(ctx->ID()->getText());
 	}
 	else {
 		pair<shared_ptr<Symbol>, shared_ptr<Scope>> resolvedSymAndScope = resolve(ctx->ID()->getText(), scopes.at(ctx));
@@ -70,7 +114,9 @@ void Resolution::enterPrimaryId(bluefinParser::PrimaryIdContext* ctx)
 			// Otherwise, compare ctx position with resolved sym's location
 			// B/c symbols don't store references to hack resolve(..) to return not just the symbol but also its scope
 			if (!dynamic_pointer_cast<StructSymbol>(scope) && ctx->getStart()->getTokenIndex() < resolvedSym->getTokenIndex()) {
-				output += createIllegalForwardRefDebugMsg(ctx->ID()->getText());
+				//output += createIllegalForwardRefDebugMsg(ctx->ID()->getText());
+				broadcastEvent(ErrorEvent::ILLEGAL_FORWARD_REFERENCE, resolvedSym->getName());
+
 				return;
 			}
 
@@ -100,7 +146,12 @@ void Resolution::exitMemberAccess(bluefinParser::MemberAccessContext* ctx)
 
 		shared_ptr<Symbol> resMemSym = s->resolveMember(ctx->ID()->getText());
 
+
+		// TODO: the semantics of StructSymbolTestWrapper::resolveMember should be similar to SymbolTable's
+		// which is to return with a proper symbol or throw an exception. No nullptr. Maybe get rid of 
+		// StructSymbolTestWrapper altogether.
 		if (resMemSym) { // if not resolved, no need to check its type
+			broadcastEvent(SuccessEvent::RESOLVED_SYMBOL, resMemSym, s);
 			if (resMemSym->getType().isUserDefinedType()) {
 				shared_ptr<StructSymbol> structSym = dynamic_pointer_cast<StructSymbol>(symbolTable.getSymbolMatchingType(resMemSym->getType()));
 				//assert(structSym != nullptr);
@@ -109,6 +160,9 @@ void Resolution::exitMemberAccess(bluefinParser::MemberAccessContext* ctx)
 					structSymbolStack.push(structSym);
 				//shared_ptr<Symbol> getSymbolMatchingType(Type type);
 			}
+		}
+		else {
+			broadcastEvent(ErrorEvent::UNRESOLVED_SYMBOL, ctx->ID()->getText(), s);
 		}
 
 		/*
@@ -133,7 +187,8 @@ void Resolution::enterFuncCall(bluefinParser::FuncCallContext* ctx)
 	shared_ptr<Scope> scope = resolvedSymAndScope.second;
 
 	if (!dynamic_pointer_cast<StructSymbol>(scope) && ctx->getStart()->getTokenIndex() < resolvedSym->getTokenIndex()) {
-		output += createIllegalForwardRefDebugMsg(ctx->ID()->getText());
+		//output += createIllegalForwardRefDebugMsg(ctx->ID()->getText());
+		broadcastEvent(ErrorEvent::ILLEGAL_FORWARD_REFERENCE, resolvedSym->getName());
 	}
 }
 
@@ -172,6 +227,25 @@ void Resolution::exitMethodCall(bluefinParser::MethodCallContext* ctx)
 	// TODO: Define what happens if symbol not resolved or no struct symbol on stack.
 	shared_ptr<Symbol> methodSym = structSym->resolveMember(ctx->ID()->getText()); // method
 
+	if (methodSym) {
+		broadcastEvent(SuccessEvent::RESOLVED_SYMBOL, methodSym, structSym);
+	}
+	else {
+		broadcastEvent(ErrorEvent::UNRESOLVED_SYMBOL, ctx->ID()->getText(), structSym);
+	}
+}
+
+void Resolution::attachEventObserver(shared_ptr<EventObserver> observer)
+{
+	eventObservers.push_back(observer);
+}
+
+void Resolution::detachEventObserver(shared_ptr<EventObserver> observer)
+{
+	auto it = std::find(eventObservers.begin(), eventObservers.end(), observer);
+	if (it != eventObservers.end()) {
+		eventObservers.erase(it); 
+	}
 }
 
 
@@ -182,16 +256,40 @@ pair<shared_ptr<Symbol>, shared_ptr<Scope>> Resolution::resolve(const string nam
 
 	try {
 		resolvedSymAndScope = resolveImpl(name, startScope);
+		broadcastEvent(SuccessEvent::RESOLVED_SYMBOL, resolvedSymAndScope.first);
 		output += createResolveDebugMsg(resolvedSymAndScope.first);
 		assert(resolvedSymAndScope.first->getName() == name);
 	}
 	catch (UnresolvedSymbolException e) {
+		broadcastEvent(ErrorEvent::UNRESOLVED_SYMBOL, name);
 		output += createUnresolvedDebugMsg(name);
 	}
 
 	return resolvedSymAndScope;
 }
 
+
+/*
+void Resolution::broadcastEvent(SimpleEvent e)
+{
+	for (shared_ptr<EventObserver> obs : eventObservers) {
+		obs->onEvent(e);
+	}
+}
+*/
+
+void Resolution::broadcastEvent(SuccessEvent e, shared_ptr<Symbol> sym, shared_ptr<StructSymbol> structSym)
+{
+	for ( shared_ptr<EventObserver> obs : eventObservers) {
+		obs->onEvent(e, sym, structSym);
+	}
+}
+
+void Resolution::broadcastEvent(ErrorEvent e, string symName, shared_ptr<StructSymbol> structSym) {
+	for ( shared_ptr<EventObserver> obs : eventObservers) {
+		obs->onEvent(e, symName, structSym);
+	}
+}
 
 string Resolution::createResolveDebugMsg(shared_ptr<Symbol> resolvedSym) const {
 	const string resolvedSymName = resolvedSym->getName();
@@ -205,9 +303,11 @@ string Resolution::createUnresolvedDebugMsg(string resolvedSymName) const {
 	return "resolve - " + resolvedSymName + " - " "UNRESOLVED\n";
 }
 
+/*
 string Resolution::createIllegalForwardRefDebugMsg(string resolvedSymName) const {
 	return "resolve - " + resolvedSymName + " - " "ILLEGAL_FORWARD_REFERENCE\n";
 }
+*/
 
 #include "../symbolTable/BuiltinTypeSymbol.h"
 #include "../symbolTable/VariableSymbol.h"
@@ -240,4 +340,5 @@ pair<shared_ptr<Symbol>, shared_ptr<Scope>> Resolution::resolveImpl(const string
 
 	throw UnresolvedSymbolException(name);
 }
+
 
