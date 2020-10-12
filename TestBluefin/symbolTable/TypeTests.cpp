@@ -13,8 +13,6 @@
 #include "../../listeners/DecorateExprWithTypes.h"
 
 #include "PostOrderPrintType.h"
-#include "SymbolTableTestWrapper.h"
-#include "SymbolWrapperFactory.h"
 
 namespace SymbolTableTests {
 
@@ -35,14 +33,13 @@ namespace SymbolTableTests {
 
 		ParseTreeWalker walker;
 
-		string dummy;
-		SymbolTableTestWrapper symTab(dummy);
-		SymbolWrapperFactory symFact(dummy);
+		SymbolTable symTab;
+		SymbolFactory symFact;
 
 		Declaration declarationListener(symTab, symFact);
 		walker.walk(&declarationListener, tree);
 
-		Resolution resolutionListener(declarationListener.getScopes(), dummy, symTab);
+		Resolution resolutionListener(declarationListener.getScopes(), symTab);
 		walker.walk(&resolutionListener, tree);
 
 		map<ParseTree*, shared_ptr<Scope>> scopes = declarationListener.getScopes(); 

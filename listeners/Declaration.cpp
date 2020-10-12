@@ -1,6 +1,8 @@
 #include "Declaration.h"
+#include "../symbolTable/Exceptions.h"
 #include <iostream>
 #include <vector>
+
 
 using namespace bluefin;
 using std::string;
@@ -9,35 +11,37 @@ using std::vector;
 
 void Declaration::enterVarDecl(bluefinParser::VarDeclContext* ctx) {
 	const string typeName = ctx->type()->getText();
-	//shared_ptr<Symbol> typeSymbol = symbolTable.resolve(typeName);
-	// assert(typeSymbol != nullptr);
-	// right now, if this fails, we don't want to stop execution
-
-	// However, we will skip the variable declaration if can't resolve its type
-	//if (typeSymbol) {
-		string varName = ctx->ID()->getText();
-		shared_ptr<Symbol> varSym = symbolFactory.createVariableSymbol(varName, Type{ typeName }, ctx->getStart()->getTokenIndex());
-
+	string varName = ctx->ID()->getText();
+	shared_ptr<Symbol> varSym = symbolFactory.createVariableSymbol(varName, Type{ typeName }, ctx->getStart()->getTokenIndex());
+	
+	try {
 		symbolTable.declare(varSym);
-		scopes.emplace(ctx, symbolTable.getCurrScope());
-	//}
+		broadcastEvent(SuccessEvent::DECLARED_SYMBOL, varSym);
+	}
+	catch (RedeclarationException e) {
+		broadcastEvent(ErrorEvent::REDECLARED_EXISTING_SYMBOL, varName);
+	}
+	scopes.emplace(ctx, symbolTable.getCurrScope());
 }
 
 void Declaration::enterFuncDef(bluefinParser::FuncDefContext* ctx) {
 	// almost identical to enterVarDecl(..)
 	const string retTypeName = ctx->type()->getText();
-	//shared_ptr<Symbol> retTypeSymbol = symbolTable.resolve(retTypeName);
-	// assert(retTypeSymbol != nullptr); if this fails, we don't want to stop execution just right now
-
-	//if (retTypeSymbol) {
 	string funcName = ctx->ID()->getText();
 	shared_ptr<Symbol> funcSym = symbolFactory.createFunctionSymbol(funcName, Type{ retTypeName }, ctx->getStart()->getTokenIndex());
 
-	symbolTable.declare(funcSym);
+	try {
+		symbolTable.declare(funcSym);
+		broadcastEvent(SuccessEvent::DECLARED_SYMBOL, funcSym);
+	}
+	catch (RedeclarationException e) {
+		broadcastEvent(ErrorEvent::REDECLARED_EXISTING_SYMBOL, funcName);
+	}
 	currFunctionSym = dynamic_pointer_cast<FunctionSymbol>(funcSym);
 	scopes.emplace(ctx, symbolTable.getCurrScope());
 
 	symbolTable.enterScope("function " + ctx->ID()->getText());
+	broadcastEvent(ScopeEvent::ENTERING_SCOPE);
 }
 
 void Declaration::exitFuncDef(bluefinParser::FuncDefContext* ctx)
@@ -99,25 +103,33 @@ void Declaration::exitFuncDef(bluefinParser::FuncDefContext* ctx)
 	// this gets ugly
 	else {
 		if (currStructSym && currStructSym->getSuperClass()) {
-			shared_ptr<Symbol> resolved = currStructSym->getSuperClass()->resolveMember(ctx->ID()->getText());
-			shared_ptr<FunctionSymbol> resolvedFunc = dynamic_pointer_cast<FunctionSymbol>(resolved);
-			if (resolvedFunc &&
-				resolvedFunc->getType() == currFunctionSym->getType()) {
+			string memberToSearchFor = ctx->ID()->getText();
+			shared_ptr<Symbol> resolved = currStructSym->getSuperClass()->resolveMember(memberToSearchFor);
+			if (resolved) {
+				broadcastEvent(SuccessEvent::RESOLVED_SYMBOL, resolved, currStructSym->getSuperClass());
 
-				vector<shared_ptr<Symbol>> resolvedParams = resolvedFunc->getParams();
-				vector<shared_ptr<Symbol>> currParams = currFunctionSym->getParams();
+				shared_ptr<FunctionSymbol> resolvedFunc = dynamic_pointer_cast<FunctionSymbol>(resolved);
+				if (resolvedFunc &&
+					resolvedFunc->getType() == currFunctionSym->getType()) {
 
-				if (resolvedParams.size() == currParams.size()) {
-					bool sameParamTypes = true;
-					for (int i = 0; i < resolvedParams.size(); i++) {
-						if (resolvedParams[i]->getType() != currParams[i]->getType()) {
-							sameParamTypes = false;
+					vector<shared_ptr<Symbol>> resolvedParams = resolvedFunc->getParams();
+					vector<shared_ptr<Symbol>> currParams = currFunctionSym->getParams();
+
+					if (resolvedParams.size() == currParams.size()) {
+						bool sameParamTypes = true;
+						for (int i = 0; i < resolvedParams.size(); i++) {
+							if (resolvedParams[i]->getType() != currParams[i]->getType()) {
+								sameParamTypes = false;
+							}
+						}
+						if (sameParamTypes) {
+							errCollector.err(ErrorCollector::OVERRIDE_SPECIFIER_NEEDED);
 						}
 					}
-					if (sameParamTypes) {
-						errCollector.err(ErrorCollector::OVERRIDE_SPECIFIER_NEEDED);
-					}
 				}
+			}
+			else {
+				broadcastEvent(ErrorEvent::UNRESOLVED_SYMBOL, memberToSearchFor, currStructSym->getSuperClass());
 			}
 
 		}
@@ -125,61 +137,61 @@ void Declaration::exitFuncDef(bluefinParser::FuncDefContext* ctx)
 
 	finish:
 	symbolTable.exitScope();
+	broadcastEvent(ScopeEvent::EXITING_SCOPE);
 	currFunctionSym = nullptr;
 }
 
 void Declaration::enterParam(bluefinParser::ParamContext* ctx) {
-		// almost identical to enterVarDecl(..)
-		const string retTypeName = ctx->type()->getText();
-		//shared_ptr<Symbol> retTypeSymbol = symbolTable.resolve(retTypeName);
-		// assert(retTypeSymbol != nullptr); if this fails, we don't want to stop execution just right now
+	// almost identical to enterVarDecl(..)
+	const string typeName = ctx->type()->getText();
+	string varName = ctx->ID()->getText();
+	shared_ptr<Symbol> paramSym = symbolFactory.createVariableSymbol(varName, Type{ typeName }, ctx->getStart()->getTokenIndex());
 
-		//if (retTypeSymbol) {
-		string funcName = ctx->ID()->getText();
-		shared_ptr<Symbol> paramSym = symbolFactory.createVariableSymbol(funcName, Type{ retTypeName }, ctx->getStart()->getTokenIndex());
-
+	try {
 		symbolTable.declare(paramSym);
-		currFunctionSym->attachParam(paramSym);
-		//}
+		broadcastEvent(SuccessEvent::DECLARED_SYMBOL, paramSym);
+	}
+	catch (RedeclarationException e) {
+		broadcastEvent(ErrorEvent::REDECLARED_EXISTING_SYMBOL, varName);
+	}
+	currFunctionSym->attachParam(paramSym);
 }
 
 void Declaration::enterStructDef(bluefinParser::StructDefContext* ctx) {
 	const string structName = ctx->ID()->getText();
-
 	shared_ptr<StructSymbol> superClassSym;
 
 	if (ctx->superClass()) {
 		superClassSym = dynamic_pointer_cast<StructSymbol>(symbolTable.resolve(ctx->superClass()->ID()->getText()));
+		if (superClassSym) {
+			broadcastEvent(SuccessEvent::RESOLVED_SYMBOL, superClassSym);
+		}
 	}
 
 	shared_ptr<Symbol> structSym = symbolFactory.createStructSymbol(structName, symbolTable.getCurrScope(), ctx->getStart()->getTokenIndex(), superClassSym);
+	try {
+		symbolTable.declare(structSym);
+	broadcastEvent(SuccessEvent::DECLARED_SYMBOL, structSym);
+	}
+	catch (RedeclarationException e) {
+		broadcastEvent(ErrorEvent::REDECLARED_EXISTING_SYMBOL, structName);
+	}
 
-	symbolTable.declare(structSym);
 	symbolTable.setCurrentScope(dynamic_pointer_cast<Scope>(structSym));
+	broadcastEvent(ScopeEvent::SETTING_CURRENT_SCOPE);
 	currStructSym = dynamic_pointer_cast<StructSymbol>(structSym);
 }
 
 void Declaration::exitStructDef(bluefinParser::StructDefContext* ctx)
 {
 	symbolTable.exitScope();
+	broadcastEvent(ScopeEvent::EXITING_SCOPE);
 	currStructSym = nullptr;
 }
 
 void Declaration::enterPrimaryId(bluefinParser::PrimaryIdContext* ctx) {
 	scopes.emplace(ctx, symbolTable.getCurrScope());
 }
-
-/*
-void Declaration::exitMemberAccess(bluefinParser::MemberAccessContext* ctx) {
-	shared_ptr<StructSymbol> s = std::static_pointer_cast<StructSymbol>(scopes.at(ctx->expr())); // ctx->expr() is either a primaryId or another MA, which already had their scopes stored
-	shared_ptr<Symbol> resMemSym = s->resolveMember(ctx->ID()->getText());
-
-	if (shared_ptr<StructSymbol> memberStructType = dynamic_pointer_cast<StructSymbol>(resMemSym->getType())) {
-		scopes.emplace(ctx, memberStructType);
-	}
-}
-*/
-
 
 void Declaration::enterFuncCall(bluefinParser::FuncCallContext* ctx)
 {
@@ -189,9 +201,45 @@ void Declaration::enterFuncCall(bluefinParser::FuncCallContext* ctx)
 void Declaration::enterBlock(bluefinParser::BlockContext* ctx)
 {
 	symbolTable.enterScope();
+	broadcastEvent(ScopeEvent::ENTERING_SCOPE);
 }
 
 void Declaration::exitBlock(bluefinParser::BlockContext* ctx)
 {
 	symbolTable.exitScope();
+	broadcastEvent(ScopeEvent::EXITING_SCOPE);
+}
+
+
+void Declaration::broadcastEvent(ScopeEvent e)
+{
+	for (shared_ptr<EventObserver> obs : eventObservers) {
+		obs->onEvent(e);
+	}
+}
+
+void Declaration::broadcastEvent(SuccessEvent e, shared_ptr<Symbol> sym, shared_ptr<StructSymbol> structSym)
+{
+	for ( shared_ptr<EventObserver> obs : eventObservers) {
+		obs->onEvent(e, sym, structSym);
+	}
+}
+
+void Declaration::broadcastEvent(ErrorEvent e, string symName, shared_ptr<StructSymbol> structSym) {
+	for ( shared_ptr<EventObserver> obs : eventObservers) {
+		obs->onEvent(e, symName, structSym);
+	}
+}
+
+void Declaration::attachEventObserver(shared_ptr<EventObserver> observer)
+{
+	eventObservers.push_back(observer);
+}
+
+void Declaration::detachEventObserver(shared_ptr<EventObserver> observer)
+{
+	auto it = std::find(eventObservers.begin(), eventObservers.end(), observer);
+	if (it != eventObservers.end()) {
+		eventObservers.erase(it); 
+	}
 }

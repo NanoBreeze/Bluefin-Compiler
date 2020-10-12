@@ -60,7 +60,8 @@ namespace bluefin {
 namespace std {
 	using bluefin::Type;
 
-	template <>
+	// Specialize hash<Type> so that Type can be used in unordered_map as the key
+	template <> 
 	struct std::hash<Type> {
 		size_t operator()(const Type& type) const {
 			return hash<string>()(type.type2str());

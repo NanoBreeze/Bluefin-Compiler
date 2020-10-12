@@ -92,30 +92,12 @@ namespace bluefin {
 
 
 		// can't use pair with unordered_map here b/c pair doesn't have a hash key
-		/*
-		const map<pair<shared_ptr<Type>, shared_ptr<Type>>, shared_ptr<Type>> arithmeticExprType{
-			{{BTS::INT(), BTS::INT()}, BTS::INT()},
-			{{BTS::INT(), BTS::FLOAT()}, BTS::FLOAT()},
-			{{BTS::FLOAT(), BTS::INT()}, BTS::FLOAT()},
-			{{BTS::FLOAT(), BTS::FLOAT()}, BTS::FLOAT()}
-		};
-		*/
 		const map<pair<Type, Type>, Type> arithmeticExprType{
 			{{ Type::INT(), Type::INT()}, Type::INT()},
 			{{ Type::INT(), Type::FLOAT()}, Type::FLOAT()},
 			{{ Type::FLOAT(), Type::INT()}, Type::FLOAT()},
 			{{ Type::FLOAT(), Type::FLOAT()}, Type::FLOAT()}
 		};
-
-		/*
-		const map<pair<shared_ptr<Type>, shared_ptr<Type>>, shared_ptr<Type>> promotionFromTo{
-			{{BTS::BOOL(), BTS::BOOL()}, BTS::BOOL()},
-			{{BTS::INT(), BTS::FLOAT()}, BTS::FLOAT()},
-			{{BTS::INT(), BTS::INT()}, BTS::INT()},
-			{{BTS::FLOAT(), BTS::INT()}, BTS::FLOAT()},
-			{{BTS::FLOAT(), BTS::FLOAT()}, BTS::FLOAT()}
-		};
-		*/
 
 		const map<pair<Type, Type>, Type> promotionFromTo{
 			{{Type::BOOL(), Type::BOOL()}, Type::BOOL()},

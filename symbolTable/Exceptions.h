@@ -8,11 +8,11 @@ namespace bluefin {
 	using std::exception;
 	using std::string;
 
-	class ReclarationException : public exception
+	class RedeclarationException : public exception
 	{
 	public:
 
-		ReclarationException(const string redefinedId) :
+		RedeclarationException(const string redefinedId) :
 			redefinedId{ redefinedId }
 		{}
 

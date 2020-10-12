@@ -72,7 +72,7 @@ namespace bluefin {
 
 	void SymbolTable::addUserDefinedType(shared_ptr<StructSymbol> structSym) {
 		if (typeSymbols.count(structSym->getType())) {
-			throw ReclarationException(structSym->getType().type2str());
+			throw RedeclarationException(structSym->getType().type2str());
 		}
 
 		typeSymbols.emplace(structSym->getType(), structSym);

@@ -28,19 +28,6 @@ namespace bluefin {
 			name{ name }, type{ type }, tokenIndex{ tokenIndex }
 		{}
 		
-		// Both BuiltinTypeSymbol and StructSymbol also inherit from Type
-		// passing a self reference to the ctor isn't a good idea
-		//  with adding smart pointer b/c it would cause double deletion 
-		// when user's sp goes out of scope. Single this is handled by two
-		// groups of shared pointers. They would use this ctor, so create custom deleter
-		// that doesn't delete this. 
-		// NOTE: Implementation Hack
-		/*
-		Symbol(const string& name, Type* t) : 
-			name{ name }, type{ t, [](Type*) {} }, tokenIndex{ 0 }
-		{}
-		*/
-
 	private:
 		const string name;
 		Type type; // a variableSymbol or other symbols may require this type for their ctors

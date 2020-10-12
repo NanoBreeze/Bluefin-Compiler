@@ -8,11 +8,12 @@
 namespace bluefin {
 
 	using std::shared_ptr;
-	using std::unique_ptr;;
+	using std::unique_ptr;
 	using std::make_shared;
 	using std::unordered_map;
 
 	class StructSymbol;
+	class EventObserver;
 
 
 	class SymbolTable

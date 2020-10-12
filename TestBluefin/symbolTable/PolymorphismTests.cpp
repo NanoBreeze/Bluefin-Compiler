@@ -10,8 +10,6 @@
 #include "../../symbolTable/ErrorCollector.h"
 #include "../../listeners/Declaration.h"
 #include "../../listeners/Resolution.h"
-#include "SymbolTableTestWrapper.h"
-#include "SymbolWrapperFactory.h"
 
 namespace SymbolTableTests {
 
@@ -28,15 +26,14 @@ namespace SymbolTableTests {
 		tree::ParseTree* tree = createParseTree(file);
 
 		tree::ParseTreeWalker walker;
-		string output = "";
 
-		SymbolTableTestWrapper symTab(output); 
-		SymbolWrapperFactory symFact(output);
+		SymbolTable symTab;
+		SymbolFactory symFact;
 
 		Declaration declarationListener(symTab, symFact);
 		walker.walk(&declarationListener, tree);
 
-		Resolution resolutionListener(declarationListener.getScopes(), output, symTab);
+		Resolution resolutionListener(declarationListener.getScopes(), symTab);
 		walker.walk(&resolutionListener, tree);
 
 		string expectedOutput = readFile(pathPrefix + expectedOutputFile);

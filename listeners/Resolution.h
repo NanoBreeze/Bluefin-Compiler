@@ -4,6 +4,8 @@
 #include <memory>
 #include <map>
 #include <stack>
+#include <vector>
+#include "../symbolTable/EventObserver.h"
 #include "../generated/bluefin/bluefinBaseListener.h"
 #include "../symbolTable/SymbolTable.h"
 #include "../symbolTable/StructSymbol.h"
@@ -15,7 +17,10 @@ namespace bluefin {
 	using std::map;
 	using std::stack;
 	using std::pair;
+	using std::vector;
 	using antlr4::tree::ParseTree;
+
+	class EventObserver;
 
 	/*
 	Resolves symbol references. To do so we need the appropriate scope associated with the contexts. 
@@ -29,8 +34,8 @@ namespace bluefin {
 	public:
 		// For testing, we'll pass in an adapter of a symbol table
 		// TODO: find some way to decouple testing of output from Resolution
-		Resolution(map<ParseTree*, shared_ptr<Scope>> scopes, string& output, SymbolTable& symTab) : 
-			scopes{ scopes }, output{ output }, symbolTable{symTab}
+		Resolution(map<ParseTree*, shared_ptr<Scope>> scopes, SymbolTable& symTab) : 
+			scopes{ scopes },  symbolTable{symTab}
 		{}
 
 		void enterVarDecl(bluefinParser::VarDeclContext * ctx) override;
@@ -41,7 +46,8 @@ namespace bluefin {
 		void enterFuncCall(bluefinParser::FuncCallContext*) override;
 		void exitMethodCall(bluefinParser::MethodCallContext*) override;
 
-		string& getOutput() const { return output; }
+		void attachEventObserver(shared_ptr<EventObserver>);
+		void detachEventObserver(shared_ptr<EventObserver>); // is this even called? If arg not found, no error would be thrown
 
 	private:
 		map<ParseTree*, shared_ptr<Scope>> scopes;
@@ -69,14 +75,12 @@ namespace bluefin {
 		*/
 
 		stack<shared_ptr<StructSymbol>> structSymbolStack;
-		
-		// TODO: temporary fix for debug msgs
-		string& output;
-		string createResolveDebugMsg(shared_ptr<Symbol> resolvedSym) const;
-		string createUnresolvedDebugMsg(string resolvedSymName) const;
-		string createIllegalForwardRefDebugMsg(string resolvedSymName) const;
+		vector<shared_ptr<EventObserver>> eventObservers;
+
+		void broadcastEvent(SuccessEvent, shared_ptr<Symbol>, shared_ptr<StructSymbol> structSym = nullptr);
+		void broadcastEvent(ErrorEvent, string, shared_ptr<StructSymbol> structSym=nullptr);
+
 		pair<shared_ptr<Symbol>, shared_ptr<Scope>> resolveImpl(const string name, shared_ptr<Scope> startScope);	
-		string getSymbolCategory(shared_ptr<Symbol> symbol) const;
 
 	};
 }
