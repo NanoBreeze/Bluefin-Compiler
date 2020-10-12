@@ -27,11 +27,9 @@ namespace SymbolTableTests {
 		tree::ParseTree* tree = createParseTree(file);
 
 		tree::ParseTreeWalker walker;
-		string orig_output = "";
 
 		SymbolTable symTab;
-		//SymbolTableTestWrapper symTab(output); 
-		SymbolWrapperFactory symFact(orig_output);
+		SymbolFactory symFact;
 
 		shared_ptr<EventObserver> obs = make_shared<EventObserver>();
 
@@ -39,7 +37,7 @@ namespace SymbolTableTests {
 		declarationListener.attachEventObserver(obs);
 		walker.walk(&declarationListener, tree);
 
-		Resolution resolutionListener(declarationListener.getScopes(), orig_output, symTab);
+		Resolution resolutionListener(declarationListener.getScopes(), symTab);
 		resolutionListener.attachEventObserver(obs);
 		walker.walk(&resolutionListener, tree);
 

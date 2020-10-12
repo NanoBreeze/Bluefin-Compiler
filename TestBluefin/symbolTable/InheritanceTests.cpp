@@ -27,18 +27,22 @@ namespace SymbolTableTests {
 		tree::ParseTree* tree = createParseTree(file);
 
 		tree::ParseTreeWalker walker;
-		string output = "";
 
-		SymbolTableTestWrapper symTab(output); 
-		SymbolWrapperFactory symFact(output);
+		SymbolTable symTab;
+		SymbolFactory symFact;
+
+		shared_ptr<EventObserver> obs = make_shared<EventObserver>();
 
 		Declaration declarationListener(symTab, symFact);
+		declarationListener.attachEventObserver(obs);
 		walker.walk(&declarationListener, tree);
 
-		Resolution resolutionListener(declarationListener.getScopes(), output, symTab);
+		Resolution resolutionListener(declarationListener.getScopes(), symTab);
+		resolutionListener.attachEventObserver(obs);
 		walker.walk(&resolutionListener, tree);
 
 		string expectedOutput = readFile(pathPrefix + expectedOutputFile);
+		string output = obs->getOutput();
 		std::cout << "OUTPUT:" << std::endl;
 		std::cout << output << std::endl;
 		std::cout << "EXPECTED:" << std::endl;

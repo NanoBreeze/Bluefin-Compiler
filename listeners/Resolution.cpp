@@ -257,12 +257,12 @@ pair<shared_ptr<Symbol>, shared_ptr<Scope>> Resolution::resolve(const string nam
 	try {
 		resolvedSymAndScope = resolveImpl(name, startScope);
 		broadcastEvent(SuccessEvent::RESOLVED_SYMBOL, resolvedSymAndScope.first);
-		output += createResolveDebugMsg(resolvedSymAndScope.first);
+		//output += createResolveDebugMsg(resolvedSymAndScope.first);
 		assert(resolvedSymAndScope.first->getName() == name);
 	}
 	catch (UnresolvedSymbolException e) {
 		broadcastEvent(ErrorEvent::UNRESOLVED_SYMBOL, name);
-		output += createUnresolvedDebugMsg(name);
+		//output += createUnresolvedDebugMsg(name);
 	}
 
 	return resolvedSymAndScope;
@@ -291,6 +291,7 @@ void Resolution::broadcastEvent(ErrorEvent e, string symName, shared_ptr<StructS
 	}
 }
 
+/*
 string Resolution::createResolveDebugMsg(shared_ptr<Symbol> resolvedSym) const {
 	const string resolvedSymName = resolvedSym->getName();
 	const string symCategory = getSymbolCategory(resolvedSym);
@@ -298,10 +299,13 @@ string Resolution::createResolveDebugMsg(shared_ptr<Symbol> resolvedSym) const {
 
 	return "resolve - " + resolvedSymName + " - c_" + symCategory + " - t_" + symType + "\n";
 }
+*/
 
+/*
 string Resolution::createUnresolvedDebugMsg(string resolvedSymName) const {
 	return "resolve - " + resolvedSymName + " - " "UNRESOLVED\n";
 }
+*/
 
 /*
 string Resolution::createIllegalForwardRefDebugMsg(string resolvedSymName) const {
@@ -309,6 +313,7 @@ string Resolution::createIllegalForwardRefDebugMsg(string resolvedSymName) const
 }
 */
 
+/*
 #include "../symbolTable/BuiltinTypeSymbol.h"
 #include "../symbolTable/VariableSymbol.h"
 #include "../symbolTable/FunctionSymbol.h"
@@ -327,6 +332,7 @@ string Resolution::getSymbolCategory(shared_ptr<Symbol> symbol) const
 		return "struct";
 	}
 }
+*/
 
 pair<shared_ptr<Symbol>, shared_ptr<Scope>> Resolution::resolveImpl(const string name, shared_ptr<Scope> startScope) {
 	shared_ptr<Scope> scope = startScope;

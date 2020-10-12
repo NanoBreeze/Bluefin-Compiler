@@ -19,7 +19,6 @@ declare - DerDer - c_struct - t_DerDer
 setCurrentScope - Level 1
 declare - h - c_function - t_float
 enterScope - Level 2
-resolve - Base::h - UNRESOLVED
 resolve - Der::h - UNRESOLVED
 exitScope - Level 2
 exitScope - Level 1
@@ -37,23 +36,14 @@ resolve - int - c_builtinType - t_int
 resolve - int - c_builtinType - t_int
 resolve - DerDer - c_struct - t_DerDer
 resolve - derder - c_var - t_DerDer
-resolve - Base::a - c_var - t_int
-resolve - Der::a - c_var - t_int
 resolve - DerDer::a - c_var - t_int
 resolve - derder - c_var - t_DerDer
-resolve - Base::b - c_var - t_float
-resolve - Der::b - c_var - t_float
 resolve - DerDer::b - c_var - t_float
 resolve - derder - c_var - t_DerDer
-resolve - Base::f - c_function - t_void
-resolve - Der::f - c_function - t_void
 resolve - DerDer::f - c_function - t_void
 resolve - derder - c_var - t_DerDer
-resolve - Der::g - c_function - t_void
 resolve - DerDer::g - c_function - t_void
 resolve - derder - c_var - t_DerDer
 resolve - DerDer::h - c_function - t_float
 resolve - derder - c_var - t_DerDer
-resolve - Base::x - UNRESOLVED
-resolve - Der::x - UNRESOLVED
 resolve - DerDer::x - UNRESOLVED

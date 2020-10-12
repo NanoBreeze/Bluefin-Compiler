@@ -114,26 +114,33 @@ void Declaration::exitFuncDef(bluefinParser::FuncDefContext* ctx)
 	// this gets ugly
 	else {
 		if (currStructSym && currStructSym->getSuperClass()) {
-			shared_ptr<Symbol> resolved = currStructSym->getSuperClass()->resolveMember(ctx->ID()->getText());
+			string memberToSearchFor = ctx->ID()->getText();
+			shared_ptr<Symbol> resolved = currStructSym->getSuperClass()->resolveMember(memberToSearchFor);
+			if (resolved) {
+				broadcastEvent(SuccessEvent::RESOLVED_SYMBOL, resolved, currStructSym->getSuperClass());
 
-			shared_ptr<FunctionSymbol> resolvedFunc = dynamic_pointer_cast<FunctionSymbol>(resolved);
-			if (resolvedFunc &&
-				resolvedFunc->getType() == currFunctionSym->getType()) {
+				shared_ptr<FunctionSymbol> resolvedFunc = dynamic_pointer_cast<FunctionSymbol>(resolved);
+				if (resolvedFunc &&
+					resolvedFunc->getType() == currFunctionSym->getType()) {
 
-				vector<shared_ptr<Symbol>> resolvedParams = resolvedFunc->getParams();
-				vector<shared_ptr<Symbol>> currParams = currFunctionSym->getParams();
+					vector<shared_ptr<Symbol>> resolvedParams = resolvedFunc->getParams();
+					vector<shared_ptr<Symbol>> currParams = currFunctionSym->getParams();
 
-				if (resolvedParams.size() == currParams.size()) {
-					bool sameParamTypes = true;
-					for (int i = 0; i < resolvedParams.size(); i++) {
-						if (resolvedParams[i]->getType() != currParams[i]->getType()) {
-							sameParamTypes = false;
+					if (resolvedParams.size() == currParams.size()) {
+						bool sameParamTypes = true;
+						for (int i = 0; i < resolvedParams.size(); i++) {
+							if (resolvedParams[i]->getType() != currParams[i]->getType()) {
+								sameParamTypes = false;
+							}
+						}
+						if (sameParamTypes) {
+							errCollector.err(ErrorCollector::OVERRIDE_SPECIFIER_NEEDED);
 						}
 					}
-					if (sameParamTypes) {
-						errCollector.err(ErrorCollector::OVERRIDE_SPECIFIER_NEEDED);
-					}
 				}
+			}
+			else {
+				broadcastEvent(ErrorEvent::UNRESOLVED_SYMBOL, memberToSearchFor, currStructSym->getSuperClass());
 			}
 
 		}
@@ -173,6 +180,9 @@ void Declaration::enterStructDef(bluefinParser::StructDefContext* ctx) {
 
 	if (ctx->superClass()) {
 		superClassSym = dynamic_pointer_cast<StructSymbol>(symbolTable.resolve(ctx->superClass()->ID()->getText()));
+		if (superClassSym) {
+			broadcastEvent(SuccessEvent::RESOLVED_SYMBOL, superClassSym);
+		}
 	}
 
 	shared_ptr<Symbol> structSym = symbolFactory.createStructSymbol(structName, symbolTable.getCurrScope(), ctx->getStart()->getTokenIndex(), superClassSym);
