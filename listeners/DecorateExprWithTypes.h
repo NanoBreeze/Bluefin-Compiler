@@ -33,8 +33,8 @@ namespace bluefin {
 	public:
 
 		// For testing, we'll pass in an adapter of a symbol table
-		DecorateExprWithTypes(map<ParseTree*, shared_ptr<Scope>> scopeOfPrimaryIds, SymbolFactory& factory, SymbolTable& symTab) :
-			scopeOfPrimaryIdsVarDeclAndFuncDefs{ scopeOfPrimaryIds }, symbolFactory{ factory }, symbolTable{ symTab }, currFuncDefCtx{ nullptr }
+		DecorateExprWithTypes(SymbolFactory& factory, SymbolTable& symTab) :
+			symbolFactory{ factory }, symbolTable{ symTab }, currFuncDefCtx{ nullptr }
 		{}
 
 		//===== listener methods for obtaining/evaluating expression types
@@ -70,12 +70,9 @@ namespace bluefin {
 	private:
 		SymbolFactory& symbolFactory;
 		SymbolTable& symbolTable;
-		map<ParseTree*, shared_ptr<Scope>> scopeOfPrimaryIdsVarDeclAndFuncDefs;
 
 		map<ParseTree*, TypeContext> typeContexts; // stores the type associated with expressions and functions. Enables type checking
 		bluefinParser::FuncDefContext* currFuncDefCtx;
-
-		shared_ptr<Symbol> resolve(const string name, shared_ptr<Scope> startScope);
 
 		// ==== How to update type
 		// 1. When we visit a primary, compute its type

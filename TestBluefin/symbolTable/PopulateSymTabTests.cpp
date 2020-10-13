@@ -35,7 +35,7 @@ namespace SymbolTableTests {
 		declarationListener.attachEventObserver(obs);
 		walker.walk(&declarationListener, tree);
 
-		Resolution resolutionListener(declarationListener.getScopes(), symTab);
+		Resolution resolutionListener(symTab);
 		resolutionListener.attachEventObserver(obs);
 		walker.walk(&resolutionListener, tree);
 

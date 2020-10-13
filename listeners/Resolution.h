@@ -32,8 +32,7 @@ namespace bluefin {
 	class Resolution : public bluefinBaseListener
 	{
 	public:
-		Resolution(map<ParseTree*, shared_ptr<Scope>> scopes, SymbolTable& symTab) : 
-			scopes{ scopes },  symbolTable{symTab}
+		Resolution(SymbolTable& symTab) : symbolTable{symTab}
 		{}
 
 		void enterVarDecl(bluefinParser::VarDeclContext * ctx) override;
@@ -48,8 +47,6 @@ namespace bluefin {
 		void detachEventObserver(shared_ptr<EventObserver>); // is this even called? If arg not found, no error would be thrown
 
 	private:
-		map<ParseTree*, shared_ptr<Scope>> scopes;
-
 		SymbolTable& symbolTable;
 		/* 
 		The purpose of this stack is to enable resolution of struct members. Since each 

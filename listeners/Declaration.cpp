@@ -21,7 +21,6 @@ void Declaration::enterVarDecl(bluefinParser::VarDeclContext* ctx) {
 	catch (RedeclarationException e) {
 		broadcastEvent(ErrorEvent::REDECLARED_EXISTING_SYMBOL, varName);
 	}
-	scopes.emplace(ctx, symbolTable.getCurrScope());
 }
 
 void Declaration::enterFuncDef(bluefinParser::FuncDefContext* ctx) {
@@ -38,7 +37,6 @@ void Declaration::enterFuncDef(bluefinParser::FuncDefContext* ctx) {
 		broadcastEvent(ErrorEvent::REDECLARED_EXISTING_SYMBOL, funcName);
 	}
 	currFunctionSym = dynamic_pointer_cast<FunctionSymbol>(funcSym);
-	scopes.emplace(ctx, symbolTable.getCurrScope());
 
 	symbolTable.enterScope("function " + ctx->ID()->getText());
 	broadcastEvent(ScopeEvent::ENTERING_SCOPE);
@@ -190,13 +188,11 @@ void Declaration::exitStructDef(bluefinParser::StructDefContext* ctx)
 }
 
 void Declaration::enterPrimaryId(bluefinParser::PrimaryIdContext* ctx) {
-	scopes.emplace(ctx, symbolTable.getCurrScope());
 	symbolTable.saveParseTreeWithCurrentScope(ctx);
 }
 
 void Declaration::enterFuncCall(bluefinParser::FuncCallContext* ctx)
 {
-	scopes.emplace(ctx, symbolTable.getCurrScope()); // will be used in later pass to resolve this ctx name again
 	symbolTable.saveParseTreeWithCurrentScope(ctx);
 }
 

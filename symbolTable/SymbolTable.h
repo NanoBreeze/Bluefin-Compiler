@@ -59,8 +59,13 @@ namespace bluefin {
 		shared_ptr<Scope> currScope; // shared_ptr b/c it can refer to the same scope as a StructSymbol's
 		unordered_map<Type, shared_ptr<Symbol>> typeSymbols;
 
+		/* Declaration stores the symbol and scope associated with ParseTree contexts, so that future passes
+		(Resolution and type promotion) can access the scope info. Note, to resolve struct member access
+		we must store the StructSymbol as a scope (eg, for a.b.c, we must store the StructSymbol for a.b 
+		inside the context to later resolve c)
+		*/
 		struct Context {
-			shared_ptr<Scope> scope;
+			shared_ptr<Scope> scope; // the scope that the Symbol is in
 			shared_ptr<Symbol> sym;
 		};
 		unordered_map<ParseTree*, Context> parseTreeContexts;
