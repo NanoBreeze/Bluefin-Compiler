@@ -49,9 +49,6 @@ namespace bluefin {
 		void exitBlock(bluefinParser::BlockContext*) override;
 		void exitFuncDef(bluefinParser::FuncDefContext*) override;
 		void enterFuncCall(bluefinParser::FuncCallContext*) override;
-		//void exitMemberAccess(bluefinParser::MemberAccessContext*) override;
-
-		inline map<ParseTree*, shared_ptr<Scope>> getScopes() const { return scopes; }
 
 		inline ErrorCollector getErrorCollector() const { return errCollector; }
 		void attachEventObserver(shared_ptr<EventObserver>);
@@ -66,15 +63,6 @@ namespace bluefin {
 		void broadcastEvent(ScopeEvent);
 		void broadcastEvent(SuccessEvent, shared_ptr<Symbol>, shared_ptr<StructSymbol> structSym = nullptr);
 		void broadcastEvent(ErrorEvent, string, shared_ptr<StructSymbol> structSym=nullptr);
-
-		// Stores the scope associated with ParseTree contexts for future passes (resolution and type promotion
-		// NOTE: TODO: don't resolve here. to later resolve member access fields, we must resolve the ID within the expr, which can either be a 
-		// primaryId or another member access. This means that we must associate the member access' context with the 
-		// scope of the struct type. (eg, a.b.c, for a.b, we must associate that ctx with the type of b, to resolve c)
-		// This also means if the member is a primitive, we can't place it into the scope, suggesting not all member access will be placed within scope
-		// only those whose member are a struct type (scope).
-		// TODO: This applies to methods as well, but does it make sense to allow chained method calls? a.b().c()
-		map<ParseTree*, shared_ptr<Scope>> scopes;
 
 		// to share a functionSymbol with its associated params
 		shared_ptr<FunctionSymbol> currFunctionSym;

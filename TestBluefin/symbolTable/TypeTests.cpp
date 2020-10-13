@@ -39,11 +39,10 @@ namespace SymbolTableTests {
 		Declaration declarationListener(symTab, symFact);
 		walker.walk(&declarationListener, tree);
 
-		Resolution resolutionListener(declarationListener.getScopes(), symTab);
+		Resolution resolutionListener(symTab);
 		walker.walk(&resolutionListener, tree);
 
-		map<ParseTree*, shared_ptr<Scope>> scopes = declarationListener.getScopes(); 
-		DecorateExprWithTypes decorateExprListener(scopes, symFact, symTab);
+		DecorateExprWithTypes decorateExprListener(symFact, symTab);
 		walker.walk(&decorateExprListener, tree);
 
 		string symbolTypesStr;

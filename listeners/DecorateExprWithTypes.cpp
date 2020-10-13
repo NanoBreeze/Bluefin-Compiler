@@ -12,7 +12,11 @@ using antlr4::tree::ParseTreeProperty;
 using std::cerr; 
 using std::endl;
 
-using SFB = SymbolFactory::Builtin;
+
+/*
+NOTE: by the time we're decorating expr with types, we expect all relevant symbols can be resolved, 
+so calling symbolTable::resolve(..) should not throw an exception
+*/
 
 //=============== listener methods for expressions
 void DecorateExprWithTypes::exitPrimaryInt(bluefinParser::PrimaryIntContext* ctx) {
@@ -41,13 +45,11 @@ void DecorateExprWithTypes::exitPrimaryBool(bluefinParser::PrimaryBoolContext* c
 }
 
 void DecorateExprWithTypes::exitPrimaryId(bluefinParser::PrimaryIdContext* ctx) {
-	shared_ptr<Scope> scope = scopeOfPrimaryIdsVarDeclAndFuncDefs.at(ctx);
-	shared_ptr<Symbol> resolvedSym = resolve(ctx->ID()->getText(), scope);
+	string varName = ctx->ID()->getText();
+	shared_ptr<Scope> scope = symbolTable.getScope(ctx);
+	shared_ptr<Symbol> resolvedSym = symbolTable.resolve(varName, scope);
 
-	if (resolvedSym) // maybe the symbol is unresolved?
-	{
-		typeContexts.emplace(ctx, TypeContext { resolvedSym->getType() });
-	}
+	typeContexts.emplace(ctx, TypeContext { resolvedSym->getType() });
 }
 
 void DecorateExprWithTypes::exitPrimaryParenth(bluefinParser::PrimaryParenthContext* ctx) {
@@ -58,10 +60,11 @@ void DecorateExprWithTypes::exitPrimaryParenth(bluefinParser::PrimaryParenthCont
 void DecorateExprWithTypes::exitFuncCall(bluefinParser::FuncCallContext* ctx) {
 
 	// make sure that for f(), f really is a function symbol and not, say, an int
-	shared_ptr<Scope> scope = scopeOfPrimaryIdsVarDeclAndFuncDefs.at(ctx);
+	string funcName = ctx->ID()->getText();
+	shared_ptr<Scope> scope = symbolTable.getScope(ctx);
 
 	if (shared_ptr<FunctionSymbol> fSym = 
-		dynamic_pointer_cast<FunctionSymbol>(resolve(ctx->ID()->getText(), scope))) {
+		dynamic_pointer_cast<FunctionSymbol>(symbolTable.resolve(funcName, scope))) {
 		
 		typeContexts.emplace(ctx, TypeContext { fSym->getType() });
 
@@ -96,23 +99,6 @@ void DecorateExprWithTypes::exitFuncCall(bluefinParser::FuncCallContext* ctx) {
 
 void bluefin::DecorateExprWithTypes::exitMethodCall(bluefinParser::MethodCallContext* ctx)
 {
-	/*
-	// put type of member. Eg, first.a could have type int
-	TypeContext& typeContext = typeContexts.at(ctx->expr());
-	if (typeContext.getEvalType().isUserDefinedType()) {
-		shared_ptr<StructSymbol> structSym = dynamic_pointer_cast<StructSymbol>(symbolTable.getSymbolMatchingType(typeContext.getEvalType()));
-		//assert(structSym != nullptr);
-		// ^^^ In testing, we may deliberate test negative cases by supplying invalid structs In such a case, don't crash the test
-
-		Type memberType = structSym->resolveMember(ctx->ID()->getText())->getType();
-		typeContexts.emplace(ctx, TypeContext { memberType });
-	}
-	else {
-		cerr << "id must be a struct type. Eg, x.y, x must be a struct type" << endl;
-	}
-	*/;
-	//almost identical to functionCall
-
 	TypeContext& structMemberTypeContext = typeContexts.at(ctx->expr());
 
 	if (structMemberTypeContext.getEvalType().isUserDefinedType()) {
@@ -332,8 +318,9 @@ void DecorateExprWithTypes::exitVarDecl(bluefinParser::VarDeclContext* ctx) {
 	if (ctx->expr()) {
 
 		// find type of the variable
-		shared_ptr<Scope> scope = scopeOfPrimaryIdsVarDeclAndFuncDefs.at(ctx);
-		shared_ptr<Symbol> resolvedSym = resolve(ctx->ID()->getText(), scope);
+		string varName = ctx->ID()->getText();
+		shared_ptr<Scope> scope = symbolTable.getScope(ctx); // scopeOfPrimaryIdsVarDeclAndFuncDefs.at(ctx);
+		shared_ptr<Symbol> resolvedSym = symbolTable.resolve(varName, scope); // resolve(ctx->ID()->getText(), scope);
 
 		TypeContext& rightTypeContext = typeContexts.at(ctx->expr());
 
@@ -367,9 +354,10 @@ void DecorateExprWithTypes::exitStmtReturn(bluefinParser::StmtReturnContext* ctx
 
 	// How do we get a stmtReturn's enclosing function?
 	if (ctx->expr()) {
+		string enclosingFuncName = currFuncDefCtx->ID()->getText();
+		shared_ptr<Scope> scopeOfFunc = symbolTable.getScope(currFuncDefCtx); 
 		TypeContext& retTypeCtx = typeContexts.at(ctx->expr());
-		shared_ptr<Symbol> enclosingFuncSym = 
-			resolve(currFuncDefCtx->ID()->getText(), scopeOfPrimaryIdsVarDeclAndFuncDefs.at(currFuncDefCtx)); // wow, this is long
+		shared_ptr<Symbol> enclosingFuncSym = symbolTable.resolve(enclosingFuncName, scopeOfFunc); 
 		Type funcRetType = enclosingFuncSym->getType();
 
 		if (isAssignmentCompatible(funcRetType, retTypeCtx.getEvalType())) {
@@ -392,19 +380,6 @@ void DecorateExprWithTypes::exitStmtWhile(bluefinParser::StmtWhileContext* ctx) 
 	if (typeContexts.at(ctx->expr()).getEvalType() != Type::BOOL()) {
 		cerr << "if (expr) ... should be bool" << endl;
 	}
-}
-
-
-shared_ptr<Symbol> DecorateExprWithTypes::resolve(const string name, shared_ptr<Scope> startScope) {
-
-	shared_ptr<Scope> scope = startScope;
-
-	do {
-		shared_ptr<Symbol> sym = scope->resolve(name);
-		if (sym) { return sym; }
-	} while (scope = scope->getEnclosingScope());
-
-	throw UnresolvedSymbolException(name);
 }
 
 

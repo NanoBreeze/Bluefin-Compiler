@@ -33,7 +33,7 @@ namespace SymbolTableTests {
 		Declaration declarationListener(symTab, symFact);
 		walker.walk(&declarationListener, tree);
 
-		Resolution resolutionListener(declarationListener.getScopes(), symTab);
+		Resolution resolutionListener(symTab);
 		walker.walk(&resolutionListener, tree);
 
 		string expectedOutput = readFile(pathPrefix + expectedOutputFile);

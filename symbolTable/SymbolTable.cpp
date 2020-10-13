@@ -1,5 +1,6 @@
 
 #include <memory>
+#include <exception>
 #include "SymbolTable.h"
 #include "StructSymbol.h"
 #include "BuiltinTypeSymbol.h"
@@ -14,11 +15,16 @@ namespace bluefin {
 	SymbolTable::SymbolTable() : currScope{ new Scope(nullptr, "global") } {
 
 		// Add all built-in types to the global scope
-		declare(BuiltinTypeSymbol::BOOL());
-		declare(BuiltinTypeSymbol::STRING());
-		declare(BuiltinTypeSymbol::INT());
-		declare(BuiltinTypeSymbol::FLOAT());
-		declare(BuiltinTypeSymbol::VOID());
+		currScope->declare(BuiltinTypeSymbol::BOOL());
+		currScope->declare(BuiltinTypeSymbol::STRING());
+		currScope->declare(BuiltinTypeSymbol::INT());
+		currScope->declare(BuiltinTypeSymbol::FLOAT());
+		currScope->declare(BuiltinTypeSymbol::VOID());
+		//declare(BuiltinTypeSymbol::BOOL(),);
+		//declare(BuiltinTypeSymbol::STRING());
+		//declare(BuiltinTypeSymbol::INT());
+		//declare(BuiltinTypeSymbol::FLOAT());
+		//declare(BuiltinTypeSymbol::VOID());
 	}
 
 	void SymbolTable::enterScope(const string scopeName) {
@@ -41,23 +47,25 @@ namespace bluefin {
 		currScope = currScope->getEnclosingScope();
 	}
 
-	void SymbolTable::declare(shared_ptr<Symbol> symbol) {
-		currScope->declare(symbol);
-
+	void SymbolTable::declare(shared_ptr<Symbol> symbol, ParseTree* parseTree) {
 		if (shared_ptr<StructSymbol> structSym = dynamic_pointer_cast<StructSymbol>(symbol)) {
 			addUserDefinedType(structSym);
 		}
+
+		parseTreeContexts.emplace(parseTree, Context{ currScope, symbol });
+		currScope->declare(symbol); // it's important to call currScope->declare(..) after placing the parseTree into the map. Otherwise, 
+		// an exception may be thrown and the parseTreeContexts won't contain it, which is not good for resolution phase.
 	}
 
 
-	shared_ptr<Symbol> SymbolTable::resolve(const string name) {
+	shared_ptr<Symbol> SymbolTable::resolve(const string name, const shared_ptr<Scope> scope) const {
 
-		shared_ptr<Scope> scope = currScope;
+		shared_ptr<Scope> scopeToSearch = scope;
 
 		do {
-			shared_ptr<Symbol> sym = scope->resolve(name);
+			shared_ptr<Symbol> sym = scopeToSearch->resolve(name);
 			if (sym) { return sym; }
-		} while (scope = scope->getEnclosingScope());
+		} while (scopeToSearch = scopeToSearch->getEnclosingScope());
 
 		throw UnresolvedSymbolException(name);
 	}
@@ -68,6 +76,27 @@ namespace bluefin {
 			return typeSymbols.at(type);
 
 		throw UnresolvedSymbolException(type.type2str());
+	}
+
+	void SymbolTable::saveParseTreeWithCurrentScope(ParseTree* parseTree) {
+		Context context;
+		context.scope = currScope; 
+		context.sym = nullptr; // note, we don't set the symbol
+		parseTreeContexts.emplace(parseTree, context);
+	}
+
+	shared_ptr<Scope> SymbolTable::getScope(ParseTree* parseTree) const {
+		return parseTreeContexts.at(parseTree).scope;
+	}
+
+	shared_ptr<Scope> SymbolTable::getScope(shared_ptr<Symbol> sym) const {
+		for (auto& it : parseTreeContexts) {
+			if (it.second.sym == sym) {
+				return it.second.scope;
+			}
+		}
+
+		throw std::exception("Sym not in map");
 	}
 
 	void SymbolTable::addUserDefinedType(shared_ptr<StructSymbol> structSym) {

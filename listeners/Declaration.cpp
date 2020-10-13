@@ -15,13 +15,12 @@ void Declaration::enterVarDecl(bluefinParser::VarDeclContext* ctx) {
 	shared_ptr<Symbol> varSym = symbolFactory.createVariableSymbol(varName, Type{ typeName }, ctx->getStart()->getTokenIndex());
 	
 	try {
-		symbolTable.declare(varSym);
+		symbolTable.declare(varSym, ctx);
 		broadcastEvent(SuccessEvent::DECLARED_SYMBOL, varSym);
 	}
 	catch (RedeclarationException e) {
 		broadcastEvent(ErrorEvent::REDECLARED_EXISTING_SYMBOL, varName);
 	}
-	scopes.emplace(ctx, symbolTable.getCurrScope());
 }
 
 void Declaration::enterFuncDef(bluefinParser::FuncDefContext* ctx) {
@@ -31,14 +30,13 @@ void Declaration::enterFuncDef(bluefinParser::FuncDefContext* ctx) {
 	shared_ptr<Symbol> funcSym = symbolFactory.createFunctionSymbol(funcName, Type{ retTypeName }, ctx->getStart()->getTokenIndex());
 
 	try {
-		symbolTable.declare(funcSym);
+		symbolTable.declare(funcSym, ctx);
 		broadcastEvent(SuccessEvent::DECLARED_SYMBOL, funcSym);
 	}
 	catch (RedeclarationException e) {
 		broadcastEvent(ErrorEvent::REDECLARED_EXISTING_SYMBOL, funcName);
 	}
 	currFunctionSym = dynamic_pointer_cast<FunctionSymbol>(funcSym);
-	scopes.emplace(ctx, symbolTable.getCurrScope());
 
 	symbolTable.enterScope("function " + ctx->ID()->getText());
 	broadcastEvent(ScopeEvent::ENTERING_SCOPE);
@@ -148,7 +146,7 @@ void Declaration::enterParam(bluefinParser::ParamContext* ctx) {
 	shared_ptr<Symbol> paramSym = symbolFactory.createVariableSymbol(varName, Type{ typeName }, ctx->getStart()->getTokenIndex());
 
 	try {
-		symbolTable.declare(paramSym);
+		symbolTable.declare(paramSym, ctx);
 		broadcastEvent(SuccessEvent::DECLARED_SYMBOL, paramSym);
 	}
 	catch (RedeclarationException e) {
@@ -162,7 +160,7 @@ void Declaration::enterStructDef(bluefinParser::StructDefContext* ctx) {
 	shared_ptr<StructSymbol> superClassSym;
 
 	if (ctx->superClass()) {
-		superClassSym = dynamic_pointer_cast<StructSymbol>(symbolTable.resolve(ctx->superClass()->ID()->getText()));
+		superClassSym = dynamic_pointer_cast<StructSymbol>(symbolTable.resolve(ctx->superClass()->ID()->getText(), symbolTable.getCurrScope()));
 		if (superClassSym) {
 			broadcastEvent(SuccessEvent::RESOLVED_SYMBOL, superClassSym);
 		}
@@ -170,7 +168,7 @@ void Declaration::enterStructDef(bluefinParser::StructDefContext* ctx) {
 
 	shared_ptr<Symbol> structSym = symbolFactory.createStructSymbol(structName, symbolTable.getCurrScope(), ctx->getStart()->getTokenIndex(), superClassSym);
 	try {
-		symbolTable.declare(structSym);
+		symbolTable.declare(structSym, ctx);
 	broadcastEvent(SuccessEvent::DECLARED_SYMBOL, structSym);
 	}
 	catch (RedeclarationException e) {
@@ -190,12 +188,12 @@ void Declaration::exitStructDef(bluefinParser::StructDefContext* ctx)
 }
 
 void Declaration::enterPrimaryId(bluefinParser::PrimaryIdContext* ctx) {
-	scopes.emplace(ctx, symbolTable.getCurrScope());
+	symbolTable.saveParseTreeWithCurrentScope(ctx);
 }
 
 void Declaration::enterFuncCall(bluefinParser::FuncCallContext* ctx)
 {
-	scopes.emplace(ctx, symbolTable.getCurrScope()); // will be used in later pass to resolve this ctx name again
+	symbolTable.saveParseTreeWithCurrentScope(ctx);
 }
 
 void Declaration::enterBlock(bluefinParser::BlockContext* ctx)
