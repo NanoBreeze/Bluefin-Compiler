@@ -21,8 +21,6 @@ namespace bluefin {
 			Symbol(name, Type{ name }, tokenIndex), Scope{ enclosingScope, name }, superClass{ superClass }
 		{}
 
-		virtual shared_ptr<Symbol> resolve(const string memberName) const override;
-
 		shared_ptr<Scope> getParentScope() const override;
 
 		inline shared_ptr<StructSymbol> getSuperClass() const { return superClass; }

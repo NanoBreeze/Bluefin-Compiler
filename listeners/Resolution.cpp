@@ -79,6 +79,7 @@ void Resolution::enterPrimaryId(bluefinParser::PrimaryIdContext* ctx)
 			shared_ptr<StructSymbol> structSym = dynamic_pointer_cast<StructSymbol>(symbolTable.getSymbolMatchingType(sym->getType()));
 			//assert(structSym != nullptr);
 			// ^^^ In testing, we may deliberate test negative cases by supplying invalid structs In such a case, don't crash the test
+			// eg) a.b, if "a" doesn't exist, we don't push it onto the stack
 			if (structSym)
 				structSymbolStack.push(structSym);
 		}
@@ -95,12 +96,9 @@ void Resolution::exitMemberAccess(bluefinParser::MemberAccessContext* ctx)
 		structSymbolStack.pop();
 		string memName = ctx->ID()->getText();
 
-		shared_ptr<Symbol> resMemSym = s->resolve(memName);
+		try {
+			shared_ptr<Symbol> resMemSym = symbolTable.resolveMember(memName, s); //.s->resolve(memName);
 
-		// TODO: the semantics of StructSymbolTestWrapper::resolveMember should be similar to SymbolTable's
-		// which is to return with a proper symbol or throw an exception. No nullptr. Maybe get rid of 
-		// StructSymbolTestWrapper altogether.
-		if (resMemSym) { // if not resolved, no need to check its type
 			broadcastEvent(SuccessEvent::RESOLVED_SYMBOL, resMemSym, s);
 			if (resMemSym->getType().isUserDefinedType()) {
 				shared_ptr<StructSymbol> structSym = dynamic_pointer_cast<StructSymbol>(symbolTable.getSymbolMatchingType(resMemSym->getType()));
@@ -110,15 +108,14 @@ void Resolution::exitMemberAccess(bluefinParser::MemberAccessContext* ctx)
 					structSymbolStack.push(structSym);
 			}
 		}
-		else {
+		catch (UnresolvedSymbolException e) {
 			broadcastEvent(ErrorEvent::UNRESOLVED_SYMBOL, memName, s);
 		}
 	}
 
-	// Empty stack is possible if the struct symbol were not resolved, in enterPrimaryId
-	// eg, a.b, if "a" doesn't exist, it wouldn't have been pushed onto the stack
-	// so we can't access it
-	// TODO: Currently fails silent, make unsilent failure, expect to find a struct to be on stack
+	// The stack may be empty if the StructSymbol weren't resolved, in which case it wouldn't be put onto the stack
+	// eg) a.b, if "a" doesn't exist, it wouldn't have been pushed onto the stack // so we can't access it
+	// TODO: Should there be a broadcast here?
 }
 
 // NOTE: We want to check if we're making the func call inside a struct's method. If so, then it's okay for
@@ -148,13 +145,13 @@ void Resolution::enterFuncCall(bluefinParser::FuncCallContext* ctx)
 void Resolution::exitMethodCall(bluefinParser::MethodCallContext* ctx)
 {
 	shared_ptr<StructSymbol> structSym;
+	string methodName = ctx->ID()->getText();
 
 	if (structSymbolStack.empty())
 	{
-		string varName = ctx->ID()->getText();
 		shared_ptr<Scope> s = symbolTable.getScope(ctx);
 		try {
-			shared_ptr<Symbol> sym = symbolTable.resolve(varName, s);
+			shared_ptr<Symbol> sym = symbolTable.resolve(methodName, s);
 			structSym = dynamic_pointer_cast<StructSymbol>(symbolTable.getSymbolMatchingType(sym->getType()));
 		}
 		catch (UnresolvedSymbolException e) {}
@@ -166,12 +163,11 @@ void Resolution::exitMethodCall(bluefinParser::MethodCallContext* ctx)
 	}
 
 	// TODO: Define what happens if symbol not resolved or no struct symbol on stack.
-	shared_ptr<Symbol> methodSym = structSym->resolve(ctx->ID()->getText()); // method
-
-	if (methodSym) {
+	try {
+		shared_ptr<Symbol> methodSym = symbolTable.resolveMember(methodName, structSym); //structSym->resolve(methodName); // method
 		broadcastEvent(SuccessEvent::RESOLVED_SYMBOL, methodSym, structSym);
 	}
-	else {
+	catch (UnresolvedSymbolException e) {
 		broadcastEvent(ErrorEvent::UNRESOLVED_SYMBOL, ctx->ID()->getText(), structSym);
 	}
 }

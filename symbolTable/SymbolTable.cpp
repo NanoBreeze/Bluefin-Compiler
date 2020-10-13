@@ -20,11 +20,6 @@ namespace bluefin {
 		currScope->declare(BuiltinTypeSymbol::INT());
 		currScope->declare(BuiltinTypeSymbol::FLOAT());
 		currScope->declare(BuiltinTypeSymbol::VOID());
-		//declare(BuiltinTypeSymbol::BOOL(),);
-		//declare(BuiltinTypeSymbol::STRING());
-		//declare(BuiltinTypeSymbol::INT());
-		//declare(BuiltinTypeSymbol::FLOAT());
-		//declare(BuiltinTypeSymbol::VOID());
 	}
 
 	void SymbolTable::enterScope(const string scopeName) {
@@ -57,7 +52,6 @@ namespace bluefin {
 		// an exception may be thrown and the parseTreeContexts won't contain it, which is not good for resolution phase.
 	}
 
-
 	shared_ptr<Symbol> SymbolTable::resolve(const string name, const shared_ptr<Scope> scope) const {
 
 		shared_ptr<Scope> scopeToSearch = scope;
@@ -65,12 +59,24 @@ namespace bluefin {
 		do {
 			shared_ptr<Symbol> sym = scopeToSearch->resolve(name);
 			if (sym) { return sym; }
-		} while (scopeToSearch = scopeToSearch->getEnclosingScope());
+		} while (scopeToSearch = scopeToSearch->getParentScope());
 
 		throw UnresolvedSymbolException(name);
 	}
 
-	shared_ptr<Symbol> SymbolTable::getSymbolMatchingType(Type type) {
+	shared_ptr<Symbol> SymbolTable::resolveMember(const string memberName, const shared_ptr<StructSymbol> structSym) const {
+
+		shared_ptr<StructSymbol> currStructSym = structSym;
+
+		do {
+			shared_ptr<Symbol> member = currStructSym->resolve(memberName);
+			if (member) { return member; }
+		} while (currStructSym = currStructSym->getSuperClass());
+
+		throw UnresolvedSymbolException(memberName);
+	}
+
+	shared_ptr<Symbol> SymbolTable::getSymbolMatchingType(Type type) const {
 
 		if (typeSymbols.find(type) != typeSymbols.end())
 			return typeSymbols.at(type);
@@ -81,7 +87,7 @@ namespace bluefin {
 	void SymbolTable::saveParseTreeWithCurrentScope(ParseTree* parseTree) {
 		Context context;
 		context.scope = currScope; 
-		context.sym = nullptr; // note, we don't set the symbol
+		context.sym = nullptr; // note, we don't set the symbol. Question, then when, if ever, will we set it?
 		parseTreeContexts.emplace(parseTree, context);
 	}
 

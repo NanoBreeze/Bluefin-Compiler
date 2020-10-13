@@ -31,12 +31,12 @@ namespace bluefin {
 
 		void declare(shared_ptr<Symbol> symbol, ParseTree* context=nullptr);
 
-		/*
-		Find the name in the curr scope, if not, find in its 
-		parent scope, and continue bubbling upwards. 
-		If not found, return nullptr
-		*/
+		//Find the name in the curr scope, if not, find in its parent scope, and continue bubbling upwards, 
+		// including up to global scope
 		shared_ptr<Symbol> resolve(const string name, const shared_ptr<Scope> scope) const;
+
+		// Searches in the structSym and its parent classes. Don't search in global scope
+		shared_ptr<Symbol> SymbolTable::resolveMember(const string memberName, const shared_ptr<StructSymbol> structSym) const;
 
 		/* 
 		Why might somebody want the current scope?
@@ -45,7 +45,7 @@ namespace bluefin {
 		*/
 		inline shared_ptr<Scope> getCurrScope() const { return currScope; }
 
-		shared_ptr<Symbol> getSymbolMatchingType(Type type);
+		shared_ptr<Symbol> getSymbolMatchingType(Type type) const;
 
 		void saveParseTreeWithCurrentScope(ParseTree*);
 
