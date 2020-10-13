@@ -32,8 +32,6 @@ namespace bluefin {
 	class Resolution : public bluefinBaseListener
 	{
 	public:
-		// For testing, we'll pass in an adapter of a symbol table
-		// TODO: find some way to decouple testing of output from Resolution
 		Resolution(map<ParseTree*, shared_ptr<Scope>> scopes, SymbolTable& symTab) : 
 			scopes{ scopes },  symbolTable{symTab}
 		{}
@@ -51,7 +49,6 @@ namespace bluefin {
 
 	private:
 		map<ParseTree*, shared_ptr<Scope>> scopes;
-		pair<shared_ptr<Symbol>, shared_ptr<Scope>> resolve(const string name, shared_ptr<Scope> startScope);
 
 		SymbolTable& symbolTable;
 		/* 
@@ -79,8 +76,5 @@ namespace bluefin {
 
 		void broadcastEvent(SuccessEvent, shared_ptr<Symbol>, shared_ptr<StructSymbol> structSym = nullptr);
 		void broadcastEvent(ErrorEvent, string, shared_ptr<StructSymbol> structSym=nullptr);
-
-		pair<shared_ptr<Symbol>, shared_ptr<Scope>> resolveImpl(const string name, shared_ptr<Scope> startScope);	
-
 	};
 }

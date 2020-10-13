@@ -7,10 +7,12 @@ using std::dynamic_pointer_cast;
 
 // Eg) int a = 5; Here, we want to resolve "int". The type can be either a user-defined type or built-in type
 // In the past, such resolution was done in Declaration pass, but now we move it into Resolution pass
+// Note: the symbol corresponding typeName is always at global scope
 void Resolution::enterVarDecl(bluefinParser::VarDeclContext* ctx) {
-	const string typeName = ctx->type()->getText();
+	const string typeName = ctx->type()->getText(); 
+	shared_ptr<Scope> scope = symbolTable.getScope(ctx); 
 	try {
-		shared_ptr<Symbol> typeSymbol = symbolTable.resolve(typeName);
+		shared_ptr<Symbol> typeSymbol = symbolTable.resolve(typeName, scope);
 		assert(typeSymbol != nullptr);
 		broadcastEvent(SuccessEvent::RESOLVED_SYMBOL, typeSymbol);
 
@@ -25,8 +27,9 @@ void Resolution::enterVarDecl(bluefinParser::VarDeclContext* ctx) {
 
 void Resolution::enterParam(bluefinParser::ParamContext* ctx) {
 	const string typeName = ctx->type()->getText();
+	shared_ptr<Scope> scope = symbolTable.getScope(ctx); 
 	try {
-		shared_ptr<Symbol> typeSymbol = symbolTable.resolve(typeName);
+		shared_ptr<Symbol> typeSymbol = symbolTable.resolve(typeName, scope);
 		assert(typeSymbol != nullptr);
 		broadcastEvent(SuccessEvent::RESOLVED_SYMBOL, typeSymbol);
 		
@@ -41,8 +44,9 @@ void Resolution::enterParam(bluefinParser::ParamContext* ctx) {
 
 void Resolution::enterFuncDef(bluefinParser::FuncDefContext* ctx) {
 	const string typeName = ctx->type()->getText();
+	shared_ptr<Scope> scope = symbolTable.getScope(ctx); 
 	try {
-		shared_ptr<Symbol> typeSymbol = symbolTable.resolve(typeName);
+		shared_ptr<Symbol> typeSymbol = symbolTable.resolve(typeName, scope);
 		assert(typeSymbol != nullptr);
 		broadcastEvent(SuccessEvent::RESOLVED_SYMBOL, typeSymbol);
 		
@@ -57,33 +61,30 @@ void Resolution::enterFuncDef(bluefinParser::FuncDefContext* ctx) {
 
 void Resolution::enterPrimaryId(bluefinParser::PrimaryIdContext* ctx)
 {
-	if (scopes.find(ctx) == scopes.end()) {
-		broadcastEvent(ErrorEvent::UNRESOLVED_SYMBOL, ctx->ID()->getText());
-	}
-	else {
-		pair<shared_ptr<Symbol>, shared_ptr<Scope>> resolvedSymAndScope = resolve(ctx->ID()->getText(), scopes.at(ctx));
-		shared_ptr<Symbol> resolvedSym = resolvedSymAndScope.first;
-		shared_ptr<Scope> scope = resolvedSymAndScope.second;
+	string varName = ctx->ID()->getText();
+	shared_ptr<Scope> scopeContainingId = symbolTable.getScope(ctx);
+	try {
+		shared_ptr<Symbol> sym = symbolTable.resolve(varName, scopeContainingId);
+		// Alternatively, instead of scopeContainingId->getEnclosingScope(), we can check if the scopeContianingId is a method (currently, no easy way of doing that w/o looking at struct)
+		assert(sym->getName() == varName);
+		broadcastEvent(SuccessEvent::RESOLVED_SYMBOL, sym);
 
-
-		if (resolvedSym) { // TODO: if not resolved, not good!
-
-			// remove illegal forward referencing. Allow forward referencing only if the resolved symbol is also inside the struct. 
-			// Otherwise, compare ctx position with resolved sym's location
-			if (!dynamic_pointer_cast<StructSymbol>(scope) && ctx->getStart()->getTokenIndex() < resolvedSym->getTokenIndex()) {
-				broadcastEvent(ErrorEvent::ILLEGAL_FORWARD_REFERENCE, resolvedSym->getName());
-
-				return;
-			}
-
-			if (resolvedSym->getType().isUserDefinedType()) {
-				shared_ptr<StructSymbol> structSym = dynamic_pointer_cast<StructSymbol>(symbolTable.getSymbolMatchingType(resolvedSym->getType()));
-				//assert(structSym != nullptr);
-				// ^^^ In testing, we may deliberate test negative cases by supplying invalid structs In such a case, don't crash the test
-				if (structSym)
-					structSymbolStack.push(structSym);
-			}
+		shared_ptr<Scope> scopeContainingResolvedSym = symbolTable.getScope(sym);
+		if (!dynamic_pointer_cast<StructSymbol>(scopeContainingResolvedSym) && ctx->getStart()->getTokenIndex() < sym->getTokenIndex()) {
+			broadcastEvent(ErrorEvent::ILLEGAL_FORWARD_REFERENCE, sym->getName());
+			return;
 		}
+
+		if (sym->getType().isUserDefinedType()) {
+			shared_ptr<StructSymbol> structSym = dynamic_pointer_cast<StructSymbol>(symbolTable.getSymbolMatchingType(sym->getType()));
+			//assert(structSym != nullptr);
+			// ^^^ In testing, we may deliberate test negative cases by supplying invalid structs In such a case, don't crash the test
+			if (structSym)
+				structSymbolStack.push(structSym);
+		}
+	}
+	catch (UnresolvedSymbolException e) {
+		broadcastEvent(ErrorEvent::UNRESOLVED_SYMBOL, varName);
 	}
 }
 
@@ -120,14 +121,24 @@ void Resolution::exitMemberAccess(bluefinParser::MemberAccessContext* ctx)
 	// TODO: Currently fails silent, make unsilent failure, expect to find a struct to be on stack
 }
 
+// NOTE: We want to check if we're making the func call inside a struct's method. If so, then it's okay for
+// the method to be declared later in the struct than the current pos
 void Resolution::enterFuncCall(bluefinParser::FuncCallContext* ctx)
 {
-	pair<shared_ptr<Symbol>, shared_ptr<Scope>> resolvedSymAndScope = resolve(ctx->ID()->getText(), scopes.at(ctx));
-	shared_ptr<Symbol> resolvedSym = resolvedSymAndScope.first;
-	shared_ptr<Scope> scope = resolvedSymAndScope.second;
+	string varName = ctx->ID()->getText();
+	shared_ptr<Scope> scopeContainingFuncCall = symbolTable.getScope(ctx);
+	try {
+		shared_ptr<Symbol> sym = symbolTable.resolve(varName, scopeContainingFuncCall);
+		assert(sym->getName() == varName);
+		broadcastEvent(SuccessEvent::RESOLVED_SYMBOL, sym);
 
-	if (!dynamic_pointer_cast<StructSymbol>(scope) && ctx->getStart()->getTokenIndex() < resolvedSym->getTokenIndex()) {
-		broadcastEvent(ErrorEvent::ILLEGAL_FORWARD_REFERENCE, resolvedSym->getName());
+		shared_ptr<Scope> scopeContainingResolvedSym = symbolTable.getScope(sym);
+		if (!dynamic_pointer_cast<StructSymbol>(scopeContainingResolvedSym) && ctx->getStart()->getTokenIndex() < sym->getTokenIndex()) {
+			broadcastEvent(ErrorEvent::ILLEGAL_FORWARD_REFERENCE, sym->getName());
+		}
+	}
+	catch (UnresolvedSymbolException e) {
+		broadcastEvent(ErrorEvent::UNRESOLVED_SYMBOL, varName);
 	}
 }
 
@@ -140,12 +151,13 @@ void Resolution::exitMethodCall(bluefinParser::MethodCallContext* ctx)
 
 	if (structSymbolStack.empty())
 	{
-		shared_ptr<Symbol> sym = resolve(ctx->expr()->getText(), scopes.at(ctx->expr())).first;
-		if (sym->getType().isUserDefinedType()) {
+		string varName = ctx->ID()->getText();
+		shared_ptr<Scope> s = symbolTable.getScope(ctx);
+		try {
+			shared_ptr<Symbol> sym = symbolTable.resolve(varName, s);
 			structSym = dynamic_pointer_cast<StructSymbol>(symbolTable.getSymbolMatchingType(sym->getType()));
-			//assert(structSym != nullptr);
-			// ^^^ In testing, we may deliberate test negative cases by supplying invalid structs In such a case, don't crash the test
 		}
+		catch (UnresolvedSymbolException e) {}
 	}
 	else {
 
@@ -177,24 +189,6 @@ void Resolution::detachEventObserver(shared_ptr<EventObserver> observer)
 	}
 }
 
-
-// TODO: refactor, right now, this is identical to SymbolTableTestWrapper::resolve
-pair<shared_ptr<Symbol>, shared_ptr<Scope>> Resolution::resolve(const string name, shared_ptr<Scope> startScope) {
-
-	pair<shared_ptr<Symbol>, shared_ptr<Scope>> resolvedSymAndScope;
-
-	try {
-		resolvedSymAndScope = resolveImpl(name, startScope);
-		broadcastEvent(SuccessEvent::RESOLVED_SYMBOL, resolvedSymAndScope.first);
-		assert(resolvedSymAndScope.first->getName() == name);
-	}
-	catch (UnresolvedSymbolException e) {
-		broadcastEvent(ErrorEvent::UNRESOLVED_SYMBOL, name);
-	}
-
-	return resolvedSymAndScope;
-}
-
 void Resolution::broadcastEvent(SuccessEvent e, shared_ptr<Symbol> sym, shared_ptr<StructSymbol> structSym)
 {
 	for ( shared_ptr<EventObserver> obs : eventObservers) {
@@ -207,18 +201,3 @@ void Resolution::broadcastEvent(ErrorEvent e, string symName, shared_ptr<StructS
 		obs->onEvent(e, symName, structSym);
 	}
 }
-
-pair<shared_ptr<Symbol>, shared_ptr<Scope>> Resolution::resolveImpl(const string name, shared_ptr<Scope> startScope) {
-	shared_ptr<Scope> scope = startScope;
-
-	do {
-		shared_ptr<Symbol> sym = scope->resolve(name);
-		if (sym) { 
-			return { sym, scope }; 
-		}
-	} while (scope = scope->getParentScope());
-
-	throw UnresolvedSymbolException(name);
-}
-
-

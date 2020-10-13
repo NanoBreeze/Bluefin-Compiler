@@ -226,9 +226,9 @@ namespace SymbolTableTests {
 		symtab.declare(symA);
 		symtab.declare(symB);
 
-		shared_ptr<Symbol> resA = symtab.resolve("a");
-		shared_ptr<Symbol> resA2 = symtab.resolve("a");
-		shared_ptr<Symbol> resB = symtab.resolve("b");
+		shared_ptr<Symbol> resA = symtab.resolve("a", symtab.getCurrScope());
+		shared_ptr<Symbol> resA2 = symtab.resolve("a", symtab.getCurrScope());
+		shared_ptr<Symbol> resB = symtab.resolve("b", symtab.getCurrScope());
 
 		ASSERT_EQ(resA, symA);
 		ASSERT_EQ(resA2, symA);
@@ -249,13 +249,13 @@ namespace SymbolTableTests {
 		shared_ptr<Symbol> symA2 = make_shared<VariableSymbol>("a", Type::INT(), 0);
 		symtab.declare(symA2);
 
-		shared_ptr<Symbol> resA2 = symtab.resolve("a");
-		shared_ptr<Symbol> resB = symtab.resolve("b");
+		shared_ptr<Symbol> resA2 = symtab.resolve("a", symtab.getCurrScope());
+		shared_ptr<Symbol> resB = symtab.resolve("b", symtab.getCurrScope());
 		ASSERT_EQ(resA2, symA2);
 		ASSERT_EQ(resB, symB);
 
 		symtab.exitScope();
-		shared_ptr<Symbol> resA = symtab.resolve("a");
+		shared_ptr<Symbol> resA = symtab.resolve("a", symtab.getCurrScope());
 		ASSERT_EQ(resA, symA);
 	}
 
@@ -270,7 +270,7 @@ namespace SymbolTableTests {
 		symtab.declare(symB);
 
 		symtab.enterScope("Second");
-		EXPECT_THROW(symtab.resolve("c"), UnresolvedSymbolException);
+		EXPECT_THROW(symtab.resolve("c", symtab.getCurrScope()), UnresolvedSymbolException);
 	}
 
 	TEST(SymbolTable, StructResolveMember) {
@@ -293,7 +293,7 @@ namespace SymbolTableTests {
 		symtab.exitScope();
 
 		// A a;
-		shared_ptr<Symbol> resolveA = symtab.resolve("A");
+		shared_ptr<Symbol> resolveA = symtab.resolve("A", symtab.getCurrScope());
 		ASSERT_EQ(resolveA, structA);
 		shared_ptr<Symbol> declarea = make_shared<VariableSymbol>("a", structA->getType(), 0);
 		symtab.declare(declarea);
@@ -319,7 +319,7 @@ namespace SymbolTableTests {
 		symtab.exitScope();
 
 		// A a;
-		shared_ptr<Symbol> resolveA = symtab.resolve("A");
+		shared_ptr<Symbol> resolveA = symtab.resolve("A", symtab.getCurrScope());
 		ASSERT_EQ(resolveA, structA);
 		shared_ptr<Symbol> declarea = make_shared<VariableSymbol>("a", structA->getType(), 0);
 		symtab.declare(declarea);
