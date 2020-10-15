@@ -75,14 +75,7 @@ void Resolution::enterPrimaryId(bluefinParser::PrimaryIdContext* ctx)
 			return;
 		}
 
-		if (sym->getType().isUserDefinedType()) {
-			shared_ptr<StructSymbol> structSym = dynamic_pointer_cast<StructSymbol>(symbolTable.getSymbolMatchingType(sym->getType()));
-			//assert(structSym != nullptr);
-			// ^^^ In testing, we may deliberate test negative cases by supplying invalid structs In such a case, don't crash the test
-			// eg) a.b, if "a" doesn't exist, we don't push it onto the stack
-			if (structSym)
-				structSymbolStack.push(structSym);
-		}
+		symbolTable.updateParseTreeContextWithResolvedSym(ctx, sym);
 	}
 	catch (UnresolvedSymbolException e) {
 		broadcastEvent(ErrorEvent::UNRESOLVED_SYMBOL, varName);
@@ -91,31 +84,43 @@ void Resolution::enterPrimaryId(bluefinParser::PrimaryIdContext* ctx)
 
 void Resolution::exitMemberAccess(bluefinParser::MemberAccessContext* ctx)
 {
-	if (!structSymbolStack.empty()) {
-		shared_ptr<StructSymbol> s = structSymbolStack.top();
-		structSymbolStack.pop();
-		string memName = ctx->ID()->getText();
-
-		try {
-			shared_ptr<Symbol> resMemSym = symbolTable.resolveMember(memName, s); //.s->resolve(memName);
-
-			broadcastEvent(SuccessEvent::RESOLVED_SYMBOL, resMemSym, s);
-			if (resMemSym->getType().isUserDefinedType()) {
-				shared_ptr<StructSymbol> structSym = dynamic_pointer_cast<StructSymbol>(symbolTable.getSymbolMatchingType(resMemSym->getType()));
-				//assert(structSym != nullptr);
-				// ^^^ In testing, we may deliberate test negative cases by supplying invalid structs In such a case, don't crash the test
-				if (structSym)
-					structSymbolStack.push(structSym);
-			}
-		}
-		catch (UnresolvedSymbolException e) {
-			broadcastEvent(ErrorEvent::UNRESOLVED_SYMBOL, memName, s);
-		}
+	// I want to refactor this method, especially all the try catch statements.
+	string memName = ctx->ID()->getText();
+	shared_ptr<Symbol> leftSymbol = symbolTable.getResolvedSymbol(ctx->expr());
+	if (leftSymbol == nullptr) { // the left symbol can't be resolved (eg, a.b). Then the primaryId would have already broadcasted it can't resolve the symbol.
+		// For multichained one, eg, a.b.c, if ctx->expr() refers to 'b', then b couldn't be resolved, then the previous invocation of exitMemberAccess(..)
+		//  must have also already broadcasted the unresolved symbol, so nothing to do here.
+		// Ideally, we should still broadcast an unresolved event and create a filterer to decide which ones to show the user
+		return;
 	}
 
-	// The stack may be empty if the StructSymbol weren't resolved, in which case it wouldn't be put onto the stack
-	// eg) a.b, if "a" doesn't exist, it wouldn't have been pushed onto the stack // so we can't access it
-	// TODO: Should there be a broadcast here?
+	shared_ptr<StructSymbol> structSym;
+	// this can throw an exception. Check if the leftSymbol's type resolves to an actual Struct definition
+	// Eg)  UndefinedType blah;
+	//		blah.here; (the type of blah's VarSym is "UndefinedType", which doesn't have a matching one.
+	try {
+		structSym = dynamic_pointer_cast<StructSymbol>(symbolTable.getSymbolMatchingType(leftSymbol->getType()));
+	}
+	catch (UnresolvedStructDefException e) {
+		broadcastEvent(ErrorEvent::UNRESOLVED_STRUCTDEF_TO_MATCH_TYPE, leftSymbol->getName());
+		return; 
+	}
+
+
+	if (structSym) { // the type of the leftward symbol (eg, the 'a' in 'a.b') is a struct and its StructSymbol exists. Now check that the id is a member
+		try {
+			shared_ptr<Symbol> resMemSym = symbolTable.resolveMember(memName, structSym);
+			broadcastEvent(SuccessEvent::RESOLVED_SYMBOL, resMemSym, structSym);
+			symbolTable.updateParseTreeContextExternalStructMember(ctx, structSym, resMemSym);
+		}
+		catch (UnresolvedSymbolException e) {
+			broadcastEvent(ErrorEvent::UNRESOLVED_SYMBOL, memName, structSym);
+		}
+	}
+	else { // the VarSym that corresponds to 'a' in 'a.b' has a valid Type, but it doesn't correspond to a StructSym
+		// eg, int a; a.b;
+		broadcastEvent(ErrorEvent::BUILTINTYPE_CANNOT_HAVE_MEMBER, structSym->getName());
+	}
 }
 
 // NOTE: We want to check if we're making the func call inside a struct's method. If so, then it's okay for
@@ -133,42 +138,58 @@ void Resolution::enterFuncCall(bluefinParser::FuncCallContext* ctx)
 		if (!dynamic_pointer_cast<StructSymbol>(scopeContainingResolvedSym) && ctx->getStart()->getTokenIndex() < sym->getTokenIndex()) {
 			broadcastEvent(ErrorEvent::ILLEGAL_FORWARD_REFERENCE, sym->getName());
 		}
+ 
+		symbolTable.updateParseTreeContextWithResolvedSym(ctx, sym);
 	}
 	catch (UnresolvedSymbolException e) {
 		broadcastEvent(ErrorEvent::UNRESOLVED_SYMBOL, varName);
 	}
 }
 
-// eg, a.b(), 'a' must be a struct type. In non-chained cased, we can easily resolve 'a'. No memberAccess involved
-// but if chained, eg, a.b.c(), we need to pass the struct to each other with the structSymbolStack, memberAccess involved
-// can we chanin method calls like a.b().c(); I feel that should be valid logically but my impl doesn't handle that.
+/* In the past, we used a stack of StructSymbol. Now, we use a map of ParseTree* with corresponding Context values. When something is resolved fine, the Context
+values are changed; otherwise, the Context values remain nullptr.
+eg, a.b().c, 'a' must resolve to a VarSym. If it doesn't, the primaryId would have already reported the error, and in extMethodCall, we simply exit.
+We then get the Type of the VarSym and call symbolTable::getSymbolMatchingType(..) to get the StructSym. If the StructSym doesn't exist, report an error and exit.
+We then try to resolve b as a member of the StructSym. If it can't be resolved, report an error. If it can, in this case, it will be a FunctionSymbol. Great, now update the ParseTree* entry with the variable of resolved.
+For the '.c' part, exitMemberAccess(..) will be called. It gets the symbol resolved from the ParseTree* that corresponded to b(). It also gets the Type (a FunctionSymbol's 
+Type is its return type, in this case, we expect it to correspond to a StructSym), and tries to resolve 'c' from the StructSym. 
+*/
 void Resolution::exitMethodCall(bluefinParser::MethodCallContext* ctx)
 {
+	// Basically identical to exitMemberAccess
+	// I want to refactor this method, especially all the try catch statements.
+	string memName = ctx->ID()->getText();
+	shared_ptr<Symbol> leftSymbol = symbolTable.getResolvedSymbol(ctx->expr());
+	if (leftSymbol == nullptr) { 
+		return;
+	}
+
 	shared_ptr<StructSymbol> structSym;
-	string methodName = ctx->ID()->getText();
-
-	if (structSymbolStack.empty())
-	{
-		shared_ptr<Scope> s = symbolTable.getScope(ctx);
-		try {
-			shared_ptr<Symbol> sym = symbolTable.resolve(methodName, s);
-			structSym = dynamic_pointer_cast<StructSymbol>(symbolTable.getSymbolMatchingType(sym->getType()));
-		}
-		catch (UnresolvedSymbolException e) {}
-	}
-	else {
-
-		structSym = structSymbolStack.top();
-		structSymbolStack.pop();
-	}
-
-	// TODO: Define what happens if symbol not resolved or no struct symbol on stack.
+	// this can throw an exception
+	// Eg)  UndefinedType blah;
+	//		blah.here; (the type of blah's VarSym is "UndefinedType", which doesn't have a matching one.
 	try {
-		shared_ptr<Symbol> methodSym = symbolTable.resolveMember(methodName, structSym); //structSym->resolve(methodName); // method
-		broadcastEvent(SuccessEvent::RESOLVED_SYMBOL, methodSym, structSym);
+		structSym = dynamic_pointer_cast<StructSymbol>(symbolTable.getSymbolMatchingType(leftSymbol->getType()));
 	}
-	catch (UnresolvedSymbolException e) {
-		broadcastEvent(ErrorEvent::UNRESOLVED_SYMBOL, ctx->ID()->getText(), structSym);
+	catch (UnresolvedStructDefException e) {
+		broadcastEvent(ErrorEvent::UNRESOLVED_STRUCTDEF_TO_MATCH_TYPE, leftSymbol->getName());
+		return; 
+	}
+
+
+	if (structSym) { // the type of the leftward symbol (eg, the 'a' in 'a.b') is a struct and its StructSymbol exists. Now check that the id is a member
+		try {
+			shared_ptr<Symbol> resMemSym = symbolTable.resolveMember(memName, structSym);
+			broadcastEvent(SuccessEvent::RESOLVED_SYMBOL, resMemSym, structSym);
+			symbolTable.updateParseTreeContextExternalStructMember(ctx, structSym, resMemSym);
+		}
+		catch (UnresolvedSymbolException e) {
+			broadcastEvent(ErrorEvent::UNRESOLVED_SYMBOL, memName, structSym);
+		}
+	}
+	else { // the VarSym that corresponds to 'a' in 'a.b' has a valid Type, but it doesn't correspond to a StructSym
+		// eg, int a; a.b;
+		broadcastEvent(ErrorEvent::BUILTINTYPE_CANNOT_HAVE_MEMBER, structSym->getName());
 	}
 }
 
@@ -187,13 +208,13 @@ void Resolution::detachEventObserver(shared_ptr<EventObserver> observer)
 
 void Resolution::broadcastEvent(SuccessEvent e, shared_ptr<Symbol> sym, shared_ptr<StructSymbol> structSym)
 {
-	for ( shared_ptr<EventObserver> obs : eventObservers) {
+	for (shared_ptr<EventObserver> obs : eventObservers) {
 		obs->onEvent(e, sym, structSym);
 	}
 }
 
 void Resolution::broadcastEvent(ErrorEvent e, string symName, shared_ptr<StructSymbol> structSym) {
-	for ( shared_ptr<EventObserver> obs : eventObservers) {
+	for (shared_ptr<EventObserver> obs : eventObservers) {
 		obs->onEvent(e, symName, structSym);
 	}
 }

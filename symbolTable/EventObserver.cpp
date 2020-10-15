@@ -78,6 +78,12 @@ void EventObserver::onEvent(ErrorEvent errorEvent, string symName, shared_ptr<St
 	case ErrorEvent::ILLEGAL_FORWARD_REFERENCE:
 		output += "resolve - " + symName + " - " "ILLEGAL_FORWARD_REFERENCE\n";
 		break;
+	case ErrorEvent::UNRESOLVED_STRUCTDEF_TO_MATCH_TYPE:
+		output += "resolve - " + symName + " - " "UNRESOLVED_STRUCTDEF_TO_MATCH_TYPE\n";
+		break;
+	case ErrorEvent::BUILTINTYPE_CANNOT_HAVE_MEMBER:
+		output += "resolve - " + symName + " - " "BUILTINTYPE_CANNOT_HAVE_MEMBER\n";
+		break;
 	default:
 		assert(false);
 	}

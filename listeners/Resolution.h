@@ -48,27 +48,6 @@ namespace bluefin {
 
 	private:
 		SymbolTable& symbolTable;
-		/* 
-		The purpose of this stack is to enable resolution of struct members. Since each 
-		listener's return type is void, there's no implicit way for the child of a node 
-		to return a value to its parent. We can't use the call stack so we create an 
-		explicit stack. An example of the tree for a.b: 
-										  stmtExpr
-							expr:memberAccess		;
-						expr:primaryId	.	b
-								a
-
-		1. We want to resolve 'a' as a StructSymbol
-		2. Resolve 'b' as a member of 'a'
-		We pass the resolution of 'a' to memberAccess so it can resolve 'b' from 'a' with a stack
-
-		If primaryId's category is a StructSymbol, push onto stack
-		memberAccess must pop from the stack to get the first component, which, ofc, we expect to be a StructSymbol.
-		If a.b is a struct, then we must should it onto the stack
-		TODO: To Verify. At the end of a stmExpr, we expect that the stack is empty (# of uses = # of resolved)
-		*/
-
-		stack<shared_ptr<StructSymbol>> structSymbolStack;
 		vector<shared_ptr<EventObserver>> eventObservers;
 
 		void broadcastEvent(SuccessEvent, shared_ptr<Symbol>, shared_ptr<StructSymbol> structSym = nullptr);

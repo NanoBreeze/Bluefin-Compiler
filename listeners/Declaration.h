@@ -49,6 +49,8 @@ namespace bluefin {
 		void exitBlock(bluefinParser::BlockContext*) override;
 		void exitFuncDef(bluefinParser::FuncDefContext*) override;
 		void enterFuncCall(bluefinParser::FuncCallContext*) override;
+		void enterMemberAccess(bluefinParser::MemberAccessContext*) override;
+		void enterMethodCall(bluefinParser::MethodCallContext*) override;
 
 		inline ErrorCollector getErrorCollector() const { return errCollector; }
 		void attachEventObserver(shared_ptr<EventObserver>);

@@ -196,6 +196,16 @@ void Declaration::enterFuncCall(bluefinParser::FuncCallContext* ctx)
 	symbolTable.saveParseTreeWithCurrentScope(ctx);
 }
 
+void Declaration::enterMemberAccess(bluefinParser::MemberAccessContext* ctx)
+{
+	symbolTable.saveParseTree(ctx);
+}
+
+void Declaration::enterMethodCall(bluefinParser::MethodCallContext* ctx)
+{
+	symbolTable.saveParseTree(ctx);
+}
+
 void Declaration::enterBlock(bluefinParser::BlockContext* ctx)
 {
 	symbolTable.enterScope();

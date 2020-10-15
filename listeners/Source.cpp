@@ -10,7 +10,6 @@ using std::endl;
 
 using namespace antlr4;
 
-
 int main() {
 	cout << "Hello" << endl;
 

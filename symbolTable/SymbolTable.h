@@ -49,6 +49,20 @@ namespace bluefin {
 
 		void saveParseTreeWithCurrentScope(ParseTree*);
 
+		void saveParseTree(ParseTree*);
+
+		// this function should be used only to add a new ParseTree* key with its Context
+		void addParseTreeContext(ParseTree*, shared_ptr<Scope>, shared_ptr<Symbol>);
+
+		void updateParseTreeContextExternalStructMember(ParseTree*, shared_ptr<StructSymbol> structSym, shared_ptr<Symbol> resSym);
+
+		// The ParseTree* key/value must already exist.
+		void updateParseTreeContextWithResolvedSym(ParseTree*, shared_ptr<Symbol> resolvedSym);
+
+		shared_ptr<Symbol> getSymbol(ParseTree*) const;
+
+		shared_ptr<Symbol> getResolvedSymbol(ParseTree*) const;
+
 		shared_ptr<Scope> getScope(ParseTree*) const;
 
 		shared_ptr<Scope> getScope(shared_ptr<Symbol>) const; // alternatively, we can make each Symbol contain a weak ref to its contianing scope
@@ -63,10 +77,16 @@ namespace bluefin {
 		(Resolution and type promotion) can access the scope info. Note, to resolve struct member access
 		we must store the StructSymbol as a scope (eg, for a.b.c, we must store the StructSymbol for a.b 
 		inside the context to later resolve c)
+		Some ParseTree* do not have a dedicated symbol (eg, unlike VarDecl, which will create a Symbol, a 
+		primaryId doesn't actually create one). Some can only be resolved into a Symbol. To avoid confusing 
+		the two, we also create a resolvedSym field
+		NOTE: This also elminiates the need for structSymbolStack. 
+		Note 2: Although this works, this design may need to be refactored b/c not all ParseTree* have all three fields filled
 		*/
 		struct Context {
-			shared_ptr<Scope> scope; // the scope that the Symbol is in
+			shared_ptr<Scope> scope; // the scope that the Symbol (or ParseTree*) is in
 			shared_ptr<Symbol> sym;
+			shared_ptr<Symbol> resolvedSym; 
 		};
 		unordered_map<ParseTree*, Context> parseTreeContexts;
 	};

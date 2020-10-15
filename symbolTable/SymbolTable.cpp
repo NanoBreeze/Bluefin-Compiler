@@ -81,14 +81,54 @@ namespace bluefin {
 		if (typeSymbols.find(type) != typeSymbols.end())
 			return typeSymbols.at(type);
 
-		throw UnresolvedSymbolException(type.type2str());
+		throw UnresolvedStructDefException(type.type2str()); // eg, for UndefinedType blah;, the `Type` attribute corresponding to 
+		// blah's VariableSym is set to Type{"UndefinedType"}. When calling this method with it, we want to return the StructSymbol for "UndefinedType"
+		// and throw an exception if we can't find it
 	}
 
 	void SymbolTable::saveParseTreeWithCurrentScope(ParseTree* parseTree) {
-		Context context;
+		assert (parseTreeContexts.count(parseTree) == 0); 
+		Context context = {};
 		context.scope = currScope; 
-		context.sym = nullptr; // note, we don't set the symbol. Question, then when, if ever, will we set it?
+		// note, we don't set the symbol nor resolvedSym. Question, then when, if ever, will we set it?
 		parseTreeContexts.emplace(parseTree, context);
+	}
+
+	void SymbolTable::saveParseTree(ParseTree* parseTree)
+	{
+		assert (parseTreeContexts.count(parseTree) == 0); 
+		Context context = {};
+		parseTreeContexts.emplace(parseTree, context);
+	}
+
+	void SymbolTable::addParseTreeContext(ParseTree* parseTree, shared_ptr<Scope> scope, shared_ptr<Symbol> sym)
+	{
+		assert (parseTreeContexts.count(parseTree) == 0); 
+		Context context = {};
+		context.scope = scope;
+		context.sym = sym;
+		parseTreeContexts.emplace(parseTree, context);
+	}
+
+	void SymbolTable::updateParseTreeContextExternalStructMember(ParseTree* parseTree, shared_ptr<StructSymbol> structSym, shared_ptr<Symbol> resSym)
+	{
+		parseTreeContexts.at(parseTree).resolvedSym = resSym;
+		parseTreeContexts.at(parseTree).scope = structSym;
+	}
+
+	void SymbolTable::updateParseTreeContextWithResolvedSym(ParseTree* parseTree, shared_ptr<Symbol> resolvedSym)
+	{
+		parseTreeContexts.at(parseTree).resolvedSym = resolvedSym;
+	}
+
+	shared_ptr<Symbol> SymbolTable::getSymbol(ParseTree* parseTree) const
+	{
+		return parseTreeContexts.at(parseTree).sym;
+	}
+
+	shared_ptr<Symbol> SymbolTable::getResolvedSymbol(ParseTree* parseTree) const
+	{
+		return parseTreeContexts.at(parseTree).resolvedSym;
 	}
 
 	shared_ptr<Scope> SymbolTable::getScope(ParseTree* parseTree) const {

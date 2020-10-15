@@ -43,6 +43,22 @@ namespace bluefin {
 		const string undefinedId;
 	};
 
+	class UnresolvedStructDefException : public exception
+	{
+	public:
+		UnresolvedStructDefException(const string typeName) :
+			typeName{ typeName }
+		{}
+
+		const char* what() const override {
+			return
+				("This typename could not be resolved. A struct definition must exist for " + typeName).c_str();
+		}
+
+	private:
+		const string typeName;
+	};
+
 
 	class VoidVariableDeclException : public exception
 	{

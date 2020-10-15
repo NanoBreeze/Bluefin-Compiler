@@ -14,12 +14,21 @@ declare - f - c_function - t_float
 enterScope - Level 2
 declare - x - c_var - t_float
 exitScope - Level 2
+declare - getFirst - c_function - t_First
+enterScope - Level 2
+exitScope - Level 2
 declare - first - c_var - t_First
 exitScope - Level 1
 declare - main - c_function - t_int
 enterScope - Level 1
 declare - fir - c_var - t_First
+declare - blah - c_var - t_UndefinedType
 declare - second - c_var - t_Second
+declare - third - c_var - t_Third
+exitScope - Level 1
+declare - Third - c_struct - t_Third
+setCurrentScope - Level 1
+declare - a - c_var - t_int
 exitScope - Level 1
 resolve - int - c_builtinType - t_int
 resolve - bool - c_builtinType - t_bool
@@ -31,15 +40,23 @@ resolve - float - c_builtinType - t_float
 resolve - a - c_var - t_float
 resolve - c - c_var - t_float
 resolve - First - c_struct - t_First
+resolve - first - c_var - t_First
+resolve - First - c_struct - t_First
 resolve - int - c_builtinType - t_int
 resolve - First - c_struct - t_First
 resolve - fir - c_var - t_First
 resolve - First::f - c_function - t_bool
 resolve - fir - c_var - t_First
 resolve - First::a - c_var - t_int
+resolve - UndefinedType - UNRESOLVED
+resolve - blah - c_var - t_UndefinedType
+resolve - blah - UNRESOLVED_STRUCTDEF_TO_MATCH_TYPE
 resolve - Second - c_struct - t_Second
 resolve - second - c_var - t_Second
 resolve - Second::a - c_var - t_float
+resolve - second - c_var - t_Second
+resolve - Second::a - c_var - t_float
+resolve - a - UNRESOLVED_STRUCTDEF_TO_MATCH_TYPE
 resolve - second - c_var - t_Second
 resolve - Second::first - c_var - t_First
 resolve - First::a - c_var - t_int
@@ -54,9 +71,25 @@ resolve - First::f - c_function - t_bool
 resolve - second - c_var - t_Second
 resolve - Second::oops - UNRESOLVED
 resolve - second - c_var - t_Second
+resolve - Second::oops - UNRESOLVED
+resolve - second - c_var - t_Second
 resolve - Second::g - UNRESOLVED
 resolve - second - c_var - t_Second
 resolve - Second::oops - UNRESOLVED
 resolve - second - c_var - t_Second
 resolve - Second::first - c_var - t_First
 resolve - First::oops - UNRESOLVED
+resolve - second - c_var - t_Second
+resolve - Second::getFirst - c_function - t_First
+resolve - First::f - c_function - t_bool
+resolve - second - c_var - t_Second
+resolve - Second::getFirst - c_function - t_First
+resolve - First::a - c_var - t_int
+resolve - c - c_var - t_float
+resolve - c - UNRESOLVED_STRUCTDEF_TO_MATCH_TYPE
+resolve - e - UNRESOLVED
+resolve - Third - c_struct - t_Third
+resolve - Third - ILLEGAL_FORWARD_REFERENCE
+resolve - third - c_var - t_Third
+resolve - Third::a - c_var - t_int
+resolve - int - c_builtinType - t_int

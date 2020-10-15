@@ -25,6 +25,9 @@ namespace bluefin {
 
 		inline shared_ptr<StructSymbol> getSuperClass() const { return superClass; }
 
+		using Symbol::getName; // both Scope and Symbol have "getName()". If user calls StructSymbol::getName()
+		// refer to the Symbol's
+
 	private:
 		shared_ptr<StructSymbol> superClass;
 
