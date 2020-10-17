@@ -2125,11 +2125,12 @@ bluefinParser::ExprContext* bluefinParser::expr(int precedence) {
 
           if (!(precpred(_ctx, 7))) throw FailedPredicateException(this, "precpred(_ctx, 7)");
           setState(178);
+          dynamic_cast<MultiExprContext *>(_localctx)->op = _input->LT(1);
           _la = _input->LA(1);
           if (!(_la == bluefinParser::T__18
 
           || _la == bluefinParser::T__19)) {
-          _errHandler->recoverInline(this);
+            dynamic_cast<MultiExprContext *>(_localctx)->op = _errHandler->recoverInline(this);
           }
           else {
             _errHandler->reportMatch(this);
@@ -2148,11 +2149,12 @@ bluefinParser::ExprContext* bluefinParser::expr(int precedence) {
 
           if (!(precpred(_ctx, 6))) throw FailedPredicateException(this, "precpred(_ctx, 6)");
           setState(181);
+          dynamic_cast<AddExprContext *>(_localctx)->op = _input->LT(1);
           _la = _input->LA(1);
           if (!(_la == bluefinParser::T__16
 
           || _la == bluefinParser::T__20)) {
-          _errHandler->recoverInline(this);
+            dynamic_cast<AddExprContext *>(_localctx)->op = _errHandler->recoverInline(this);
           }
           else {
             _errHandler->reportMatch(this);
@@ -2171,13 +2173,14 @@ bluefinParser::ExprContext* bluefinParser::expr(int precedence) {
 
           if (!(precpred(_ctx, 5))) throw FailedPredicateException(this, "precpred(_ctx, 5)");
           setState(184);
+          dynamic_cast<RelExprContext *>(_localctx)->op = _input->LT(1);
           _la = _input->LA(1);
           if (!((((_la & ~ 0x3fULL) == 0) &&
             ((1ULL << _la) & ((1ULL << bluefinParser::T__21)
             | (1ULL << bluefinParser::T__22)
             | (1ULL << bluefinParser::T__23)
             | (1ULL << bluefinParser::T__24))) != 0))) {
-          _errHandler->recoverInline(this);
+            dynamic_cast<RelExprContext *>(_localctx)->op = _errHandler->recoverInline(this);
           }
           else {
             _errHandler->reportMatch(this);
@@ -2196,11 +2199,12 @@ bluefinParser::ExprContext* bluefinParser::expr(int precedence) {
 
           if (!(precpred(_ctx, 4))) throw FailedPredicateException(this, "precpred(_ctx, 4)");
           setState(187);
+          dynamic_cast<EqualityExprContext *>(_localctx)->op = _input->LT(1);
           _la = _input->LA(1);
           if (!(_la == bluefinParser::T__25
 
           || _la == bluefinParser::T__26)) {
-          _errHandler->recoverInline(this);
+            dynamic_cast<EqualityExprContext *>(_localctx)->op = _errHandler->recoverInline(this);
           }
           else {
             _errHandler->reportMatch(this);

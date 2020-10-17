@@ -59,10 +59,10 @@ expr : INT                                  # primaryInt
      | expr '.' ID '(' argList? ')'         # methodCall
      | expr '.' ID                          # memberAccess
      | op=('-' | '!') expr                  # unaryExpr
-     | expr ('*' | '/') expr                # multiExpr
-     | expr ('+' | '-') expr                # addExpr
-     | expr ('<' | '<=' | '>' | '>=') expr  # relExpr
-     | expr ('==' | '!=') expr              # equalityExpr
+     | expr op=('*' | '/') expr                # multiExpr
+     | expr op=('+' | '-') expr                # addExpr
+     | expr op=('<' | '<=' | '>' | '>=') expr  # relExpr
+     | expr op=('==' | '!=') expr              # equalityExpr
      | expr ('&&') expr                     # logicalANDExpr
      | expr ('||') expr                     # logicalORExpr
      |<assoc=right> expr '=' expr           # simpleAssignExpr
