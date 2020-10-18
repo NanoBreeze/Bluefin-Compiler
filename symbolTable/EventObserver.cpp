@@ -84,6 +84,62 @@ void EventObserver::onEvent(ErrorEvent errorEvent, string symName, shared_ptr<St
 	case ErrorEvent::BUILTINTYPE_CANNOT_HAVE_MEMBER:
 		output += "resolve - " + symName + " - " "BUILTINTYPE_CANNOT_HAVE_MEMBER\n";
 		break;
+	case ErrorEvent::FOUND_RESOLVED_SYMBOL_BUT_NOT_FUNCSYM:
+		if (structSym) {
+			const string structTypeName = structSym->getType().type2str();
+			output += "resolve - " + structTypeName + "::" + symName + " - " "FOUND_RESOLVED_SYMBOL_BUT_NOT_FUNCSYM\n";
+		}
+		else {
+			output += "resolve - " + symName + " - " "FOUND_RESOLVED_SYMBOL_BUT_NOT_FUNCSYM\n";
+		}
+		break;
+	case ErrorEvent::FOUND_RESOLVED_SYMBOL_BUT_NOT_VARSYM:
+		if (structSym) {
+			const string structTypeName = structSym->getType().type2str();
+			output += "resolve - " + structTypeName + "::" + symName + " - " "FOUND_RESOLVED_SYMBOL_BUT_NOT_VARSYM\n";
+		}
+		else {
+			output += "resolve - " + symName + " - " "FOUND_RESOLVED_SYMBOL_BUT_NOT_VARSYM\n";
+		}
+		break;
+	default:
+		assert(false);
+	}
+}
+
+void EventObserver::onEvent(SimpleTypeErrorEvent typeEventError, Type lhs, Type rhs) {
+	switch (typeEventError) {
+	case SimpleTypeErrorEvent::IF_STATEMENT_NOT_BOOL:
+		typeOutput += "If statement. Expected: 'bool', Found: '" + lhs.type2str() + "'\n";
+		break;
+	case SimpleTypeErrorEvent::WHILE_STATEMENT_NOT_BOOL:
+		typeOutput += "While statement. Expected: 'bool', Found: '" + lhs.type2str() + "'\n";
+		break;
+	case SimpleTypeErrorEvent::MISSING_RETURN_STATEMENT:
+		typeOutput += "Return statement missing. Expected: '" + lhs.type2str() + "'\n";
+		break;
+
+		/*
+	case SimpleTypeErrorEvent::INCOMPATIBLE_ASSIGNMENT_TYPE:
+		typeOutput += "Incompatible assignment. Expected: '" + lhsTypeName + "', Found: '" + rhsTypeName + "'\n";
+		break;
+		*/
+	default:
+		assert(false);
+	}
+}
+
+void EventObserver::onEvent(OperatorTypeErrorEvent operatorTypeErrorEvent, string op, Type lhs, Type rhs) {
+	switch (operatorTypeErrorEvent) {
+	case OperatorTypeErrorEvent::INCOMPATIBLE_BINARY_OPERATOR_OPERAND:
+		typeOutput += "Operator '" + op + "' cannot be applied to '" + lhs.type2str() + "' and '" + rhs.type2str() + "'\n";
+		break;
+	case OperatorTypeErrorEvent::INCOMPATIBLE_UNARY_OPERATOR_OPERAND:
+		typeOutput += "Operator '" + op + "' cannot be applied to '" + lhs.type2str() + "'\n";
+		break;
+	case OperatorTypeErrorEvent::RETURN_INVALID_TYPE:
+		typeOutput += "Return type invalid. Expected: '" + lhs.type2str() + "', Found: '" + rhs.type2str() + "'\n";
+		break;
 	default:
 		assert(false);
 	}
@@ -104,3 +160,4 @@ string EventObserver::getSymbolCategory(shared_ptr<Symbol> symbol) const
 		return "struct";
 	}
 }
+

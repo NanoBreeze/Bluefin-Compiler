@@ -1,6 +1,7 @@
 #include "Resolution.h"
 
 #include "../symbolTable/Exceptions.h"
+#include "../symbolTable/FunctionSymbol.h"
 
 using namespace bluefin;
 using std::dynamic_pointer_cast;
@@ -67,6 +68,13 @@ void Resolution::enterPrimaryId(bluefinParser::PrimaryIdContext* ctx)
 		shared_ptr<Symbol> sym = symbolTable.resolve(varName, scopeContainingId);
 		// Alternatively, instead of scopeContainingId->getEnclosingScope(), we can check if the scopeContianingId is a method (currently, no easy way of doing that w/o looking at struct)
 		assert(sym->getName() == varName);
+
+		// Now, since this is a primary id, we expect the resolved symbol can't be a functionSymbol
+		// Otherwise, it's like this example: void f() {} int main() {f;}, which isn't right
+		if (dynamic_pointer_cast<FunctionSymbol>(sym)) {
+			broadcastEvent(ErrorEvent::FOUND_RESOLVED_SYMBOL_BUT_NOT_VARSYM, varName);
+			return;
+		}
 		broadcastEvent(SuccessEvent::RESOLVED_SYMBOL, sym);
 
 		shared_ptr<Scope> scopeContainingResolvedSym = symbolTable.getScope(sym);
@@ -110,6 +118,11 @@ void Resolution::exitMemberAccess(bluefinParser::MemberAccessContext* ctx)
 	if (structSym) { // the type of the leftward symbol (eg, the 'a' in 'a.b') is a struct and its StructSymbol exists. Now check that the id is a member
 		try {
 			shared_ptr<Symbol> resMemSym = symbolTable.resolveMember(memName, structSym);
+
+			if (dynamic_pointer_cast<FunctionSymbol>(resMemSym)) {
+				broadcastEvent(ErrorEvent::FOUND_RESOLVED_SYMBOL_BUT_NOT_VARSYM, memName, structSym);
+				return;
+			}
 			broadcastEvent(SuccessEvent::RESOLVED_SYMBOL, resMemSym, structSym);
 			symbolTable.updateParseTreeContextExternalStructMember(ctx, structSym, resMemSym);
 		}
@@ -125,6 +138,7 @@ void Resolution::exitMemberAccess(bluefinParser::MemberAccessContext* ctx)
 
 // NOTE: We want to check if we're making the func call inside a struct's method. If so, then it's okay for
 // the method to be declared later in the struct than the current pos
+// To make life easier for DecorateExprWithTypes, here, we must check that not only is the resolved symbol resolved
 void Resolution::enterFuncCall(bluefinParser::FuncCallContext* ctx)
 {
 	string varName = ctx->ID()->getText();
@@ -132,11 +146,18 @@ void Resolution::enterFuncCall(bluefinParser::FuncCallContext* ctx)
 	try {
 		shared_ptr<Symbol> sym = symbolTable.resolve(varName, scopeContainingFuncCall);
 		assert(sym->getName() == varName);
+
+		if (dynamic_pointer_cast<FunctionSymbol>(sym) == nullptr) {
+			broadcastEvent(ErrorEvent::FOUND_RESOLVED_SYMBOL_BUT_NOT_FUNCSYM, varName);
+			return;
+		}
+
 		broadcastEvent(SuccessEvent::RESOLVED_SYMBOL, sym);
 
 		shared_ptr<Scope> scopeContainingResolvedSym = symbolTable.getScope(sym);
 		if (!dynamic_pointer_cast<StructSymbol>(scopeContainingResolvedSym) && ctx->getStart()->getTokenIndex() < sym->getTokenIndex()) {
 			broadcastEvent(ErrorEvent::ILLEGAL_FORWARD_REFERENCE, sym->getName());
+			return;
 		}
  
 		symbolTable.updateParseTreeContextWithResolvedSym(ctx, sym);
@@ -180,6 +201,10 @@ void Resolution::exitMethodCall(bluefinParser::MethodCallContext* ctx)
 	if (structSym) { // the type of the leftward symbol (eg, the 'a' in 'a.b') is a struct and its StructSymbol exists. Now check that the id is a member
 		try {
 			shared_ptr<Symbol> resMemSym = symbolTable.resolveMember(memName, structSym);
+			if (dynamic_pointer_cast<FunctionSymbol>(resMemSym) == nullptr) {
+				broadcastEvent(ErrorEvent::FOUND_RESOLVED_SYMBOL_BUT_NOT_FUNCSYM, memName, structSym);
+				return;
+			}
 			broadcastEvent(SuccessEvent::RESOLVED_SYMBOL, resMemSym, structSym);
 			symbolTable.updateParseTreeContextExternalStructMember(ctx, structSym, resMemSym);
 		}

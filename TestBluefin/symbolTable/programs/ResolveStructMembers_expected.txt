@@ -48,6 +48,8 @@ resolve - fir - c_var - t_First
 resolve - First::f - c_function - t_bool
 resolve - fir - c_var - t_First
 resolve - First::a - c_var - t_int
+resolve - fir - c_var - t_First
+resolve - First::a - FOUND_RESOLVED_SYMBOL_BUT_NOT_FUNCSYM
 resolve - UndefinedType - UNRESOLVED
 resolve - blah - c_var - t_UndefinedType
 resolve - blah - UNRESOLVED_STRUCTDEF_TO_MATCH_TYPE
@@ -85,6 +87,10 @@ resolve - First::f - c_function - t_bool
 resolve - second - c_var - t_Second
 resolve - Second::getFirst - c_function - t_First
 resolve - First::a - c_var - t_int
+resolve - second - c_var - t_Second
+resolve - Second::getFirst - FOUND_RESOLVED_SYMBOL_BUT_NOT_VARSYM
+resolve - second - c_var - t_Second
+resolve - Second::getFirst - FOUND_RESOLVED_SYMBOL_BUT_NOT_VARSYM
 resolve - c - c_var - t_float
 resolve - c - UNRESOLVED_STRUCTDEF_TO_MATCH_TYPE
 resolve - e - UNRESOLVED

@@ -22,6 +22,7 @@ int main() {
 	First fir;
 	fir.f();
 	fir.a = 1;
+	fir.a();
 	UndefinedType blah;
 	blah.here;
 	Second second;
@@ -38,6 +39,8 @@ int main() {
 	second.first.oops = 9;
 	second.getFirst().f();
 	second.getFirst().a;
+	second.getFirst;
+	second.getFirst.a;
 
 	c.d;
 	e.d();
