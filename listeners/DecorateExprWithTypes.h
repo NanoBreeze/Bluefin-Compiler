@@ -10,14 +10,9 @@
 #include "../symbolTable/Exceptions.h"
 #include "../symbolTable/Scope.h"
 #include "../symbolTable/TypeContext.h"
+#include "../symbolTable/EventObserver.h"
 
 using bluefin::TypeContext;
-
-// TODO: Adding this specialization here mostly so that Testbluefin can link to this. 
-// Wtihout this, it complains that the ParseTreeProperty<...> implementation can't be found,
-// This is b/c it's not linked to the implementation, as the implementation of
-// templates are generated elsewhere, it seems
-
 
 namespace bluefin {
 
@@ -26,13 +21,11 @@ namespace bluefin {
 	using std::pair;
 	using std::dynamic_pointer_cast;
 	using std::shared_ptr;
-	using BTS = BuiltinTypeSymbol;
 
 	class DecorateExprWithTypes : public bluefinBaseListener
 	{
 	public:
 
-		// For testing, we'll pass in an adapter of a symbol table
 		DecorateExprWithTypes(SymbolFactory& factory, SymbolTable& symTab) :
 			symbolFactory{ factory }, symbolTable{ symTab }, currFuncDefCtx{ nullptr }
 		{}
@@ -66,27 +59,45 @@ namespace bluefin {
 		void exitFuncDef(bluefinParser::FuncDefContext*) override;
 
 		inline map<ParseTree*, TypeContext> getTypeContexts() { return typeContexts; }
+		void attachEventObserver(shared_ptr<EventObserver>);
+		void detachEventObserver(shared_ptr<EventObserver>); // is this even called? If arg not found, no error would be thrown
 
 	private:
 		SymbolFactory& symbolFactory;
 		SymbolTable& symbolTable;
 
+		/* ==== How to compute type
+		1. When we visit a primaryId, compute its type
+		2. When we visit a non-terminal expression node, check children nodes (operands) have compatible type for this operator. 
+	       Just because they have same type doesn't mean they are compatible with operator. eg) a + b; is not compatible if 'a' and 'b' are both structs. 
+			a) If compatible, set both node's promoteTo type and set own node's evalType to the promoteToType
+			b) If one of the node's evalType is null, then an error must have already occured. Set this node's evalType to null and don't broadcast error (don't want to duplicate it)
+			c) If not compatible, broadcast error and set its own node's evalType to null
+		3. For return statements, also check the type of the expr matches the (return) type of function
+		4. For if/while statements, check that the expr has binary type
+		5. Verify that for VarDecl, rhs and lhs match
+		6. Verify function call parameter types. Also verify that the symbol indeed resolves to a FunctionSymbol. For StructSymbol, it should already have 
+			been resolved in Resolution phase.
+		NOTE: if a subexpression has an error, it will be broadcasted. Its parents' errors won't be broadcasted, to
+		avoid too many unnecessary errors going around.
+		*/
 		map<ParseTree*, TypeContext> typeContexts; // stores the type associated with expressions and functions. Enables type checking
+
 		bluefinParser::FuncDefContext* currFuncDefCtx;
+		bool currFuncDefHasDirectReturnStmt;
 
-		// ==== How to update type
-		// 1. When we visit a primary, compute its type
-		// 2. When we visit a non-terminal 
-		//      a) For arithmetic expr, compute its own type from its children's type. Then check whether this expression has compatible types
-		//			THen compute its children's promoteTo type
-		//		b) For equality and relational, compute children's promotTo type and set own type to bool. Same wtih promoteTo type (since that won't change)
-		Type getArithmeticExprType(Type left, Type right);
+		vector<shared_ptr<EventObserver>> eventObservers;
+
 		Type getPromotionType(Type left, Type right);
+		bool isBinaryOperatorOperandCompatible(string op, Type lhs, Type rhs) const;
+		bool isUnaryOperatorOperandCompatible(string op, Type lhs) const;
 
-		bool areBothBoolType(Type left, Type right) const;
-		bool areArithmeticallyCompatible(Type left, Type right) const;
-		bool isAssignmentCompatible(Type left, Type right) const;
+		bool isSubExprTypeUsable(Type) const; // a helper to support our type computing algo
+		Type getUnusableType() const; // same as above
 
+		void broadcastEvent(SimpleTypeErrorEvent, Type lhs, Type rhs = Type{ "" });
+		void broadcastEvent(OperatorTypeErrorEvent, string op, Type lhs, Type rhs = Type{ "" });
+		void broadcastEvent(FunctionCallTypeErrorEvent, string funcName, size_t argCount, size_t paramCount, bool isMethod);
 
 		// can't use pair with unordered_map here b/c pair doesn't have a hash key
 		const map<pair<Type, Type>, Type> arithmeticExprType{

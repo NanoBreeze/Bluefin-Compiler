@@ -38,15 +38,18 @@ namespace bluefin {
 	enum class SimpleTypeErrorEvent {
 		IF_STATEMENT_NOT_BOOL,
 		WHILE_STATEMENT_NOT_BOOL,
-		//INCOMPATIBLE_ASSIGNMENT_TYPE // for return type, func param, vardecl
 		MISSING_RETURN_STATEMENT,
-		//RETURN_INVALID_TYPE
+		RETURN_INVALID_TYPE,
+		INCOMPATIBLE_ARG_PARAM_TYPE
 	};
 
 	enum class OperatorTypeErrorEvent {
 		INCOMPATIBLE_BINARY_OPERATOR_OPERAND, // eg, a + 5, where `a` is a user-defined type
 		INCOMPATIBLE_UNARY_OPERATOR_OPERAND, // eg, -a, where `a` is a user-defined type
-		RETURN_INVALID_TYPE
+	};
+
+	enum class FunctionCallTypeErrorEvent {
+		ARGS_AND_PARAMS_COUNT_DIFFER // calling a function whose resolved symbol has diff. number of params
 	};
 
 	// In the future, if our program gets more complex, we may need to inherit from EventObserver and let 
@@ -60,6 +63,7 @@ namespace bluefin {
 		void onEvent(ErrorEvent, string symName, shared_ptr<StructSymbol> sym = nullptr);
 		void onEvent(SimpleTypeErrorEvent, Type lhs, Type rhs = Type{ "" }); // admittedly, the syntax is quite ugly
 		void onEvent(OperatorTypeErrorEvent, string op, Type lhs, Type rhs = Type{ "" }); // admittedly, the syntax is quite ugly
+		void onEvent(FunctionCallTypeErrorEvent, string funcName, size_t argCount, size_t paramCount, bool isMethod);
 
 		string getOutput() const { return output; }
 		string getTypeOutput() const { return typeOutput; }

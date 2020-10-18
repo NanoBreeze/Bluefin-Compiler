@@ -25,6 +25,7 @@ namespace bluefin {
 		static Type BOOL() { return Type{ "bool" }; }
 		static Type FLOAT() { return Type{ "float" }; }
 		static Type STRING() { return Type{ "string" }; }
+		static Type VOID() { return Type{ "void" }; }
 
 		string type2str() const {
 			return name;
@@ -52,7 +53,7 @@ namespace bluefin {
 		return lhs.type2str() != rhs.type2str();
 	}
 
-	inline bool operator <(const Type& lhs, const Type& rhs) {
+	inline bool operator <(const Type& lhs, const Type& rhs) { // why is this needed?
 		return lhs.type2str() < rhs.type2str();
 	}
 }

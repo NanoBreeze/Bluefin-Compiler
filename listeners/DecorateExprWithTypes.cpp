@@ -20,34 +20,24 @@ so calling symbolTable::resolve(..) should not throw an exception
 
 //=============== listener methods for expressions
 void DecorateExprWithTypes::exitPrimaryInt(bluefinParser::PrimaryIntContext* ctx) {
-
-	typeContexts.emplace(ctx, 
-		TypeContext { Type::INT() } 
-	); // what is this monstrosity?
+	typeContexts.emplace(ctx, TypeContext { Type::INT() } ); 
 }
 
 void DecorateExprWithTypes::exitPrimaryFloat(bluefinParser::PrimaryFloatContext* ctx) {
-	typeContexts.emplace(ctx, 
-		TypeContext { Type::FLOAT() }
-	);
+	typeContexts.emplace(ctx, TypeContext { Type::FLOAT() } );
 }
 
 void DecorateExprWithTypes::exitPrimaryString(bluefinParser::PrimaryStringContext* ctx) {
-	typeContexts.emplace(ctx,
-		TypeContext { Type::STRING() }
-	);
+	typeContexts.emplace(ctx, TypeContext { Type::STRING() } );
 }
 
 void DecorateExprWithTypes::exitPrimaryBool(bluefinParser::PrimaryBoolContext* ctx) {
-	typeContexts.emplace(ctx,
-		TypeContext { Type::BOOL() }
-	);
+	typeContexts.emplace(ctx, TypeContext { Type::BOOL() } );
 }
 
 void DecorateExprWithTypes::exitPrimaryId(bluefinParser::PrimaryIdContext* ctx) {
 	string varName = ctx->ID()->getText();
-	shared_ptr<Scope> scope = symbolTable.getScope(ctx);
-	shared_ptr<Symbol> resolvedSym = symbolTable.resolve(varName, scope);
+	shared_ptr<Symbol> resolvedSym = symbolTable.getResolvedSymbol(ctx);
 
 	typeContexts.emplace(ctx, TypeContext { resolvedSym->getType() });
 }
@@ -63,9 +53,8 @@ void DecorateExprWithTypes::exitFuncCall(bluefinParser::FuncCallContext* ctx) {
 	string funcName = ctx->ID()->getText();
 	shared_ptr<Scope> scope = symbolTable.getScope(ctx);
 
-	if (shared_ptr<FunctionSymbol> fSym = 
-		dynamic_pointer_cast<FunctionSymbol>(symbolTable.resolve(funcName, scope))) {
-		
+	if (shared_ptr<FunctionSymbol> fSym = dynamic_pointer_cast<FunctionSymbol>(symbolTable.getResolvedSymbol(ctx))) {
+
 		typeContexts.emplace(ctx, TypeContext { fSym->getType() });
 
 		// check that the number of arguments matches the number of params
@@ -79,21 +68,33 @@ void DecorateExprWithTypes::exitFuncCall(bluefinParser::FuncCallContext* ctx) {
 				ParseTree* curArgCtx = ctx->argList()->expr(i);
 				TypeContext& curArgTypeCxt = typeContexts.at(curArgCtx);
 
-				if (isAssignmentCompatible(curParamType, curArgTypeCxt.getEvalType())) {
-					curArgTypeCxt.setPromotionType(
-						getPromotionType(curParamType, curArgTypeCxt.getEvalType()));
+				if (isSubExprTypeUsable(curArgTypeCxt.getEvalType())) {
+					if (isBinaryOperatorOperandCompatible("=", curParamType, curArgTypeCxt.getEvalType())) {
+						curArgTypeCxt.setPromotionType(getPromotionType(curArgTypeCxt.getEvalType(), curParamType));
+
+						typeContexts.emplace(ctx, TypeContext { curArgTypeCxt.getPromotionType() });
+					}
+					else {
+						typeContexts.emplace(ctx, TypeContext { getUnusableType() });
+						broadcastEvent(SimpleTypeErrorEvent::INCOMPATIBLE_ARG_PARAM_TYPE, curParamType, curArgTypeCxt.getEvalType());
+						return;
+					}
 				}
 				else {
-					cerr << "Argument and param must have compatible types" << endl;
+					return; // if a subexpr, which makes up one of the arguments had failed, don't broadcast the function error. 
+					// We want the user to fix that one first
 				}
 			}
 		}
 		else {
-			cerr << "Function call " << ctx->ID()->getText() << " doesn't have same number of args as function param" << endl;
+			broadcastEvent(FunctionCallTypeErrorEvent::ARGS_AND_PARAMS_COUNT_DIFFER, ctx->ID()->getText(), numArgs, params.size(), false);
+			typeContexts.emplace(ctx, TypeContext { getUnusableType() });
 		}
 	}
 	else {
 		cerr << "func call must be a function type. Eg, for f(1,2), f must be a FunctionSymbol" << endl;
+		typeContexts.emplace(ctx, TypeContext { getUnusableType() });
+		throw std::exception("At this point, all FunctionSymbol should have already resolved in Resolution stage. This exception should not be possible. ");
 	}
 }
 
@@ -120,45 +121,51 @@ void bluefin::DecorateExprWithTypes::exitMethodCall(bluefinParser::MethodCallCon
 					ParseTree* curArgCtx = ctx->argList()->expr(i);
 					TypeContext& curArgTypeCxt = typeContexts.at(curArgCtx);
 
-					if (isAssignmentCompatible(curParamType, curArgTypeCxt.getEvalType())) {
-						curArgTypeCxt.setPromotionType(
-							getPromotionType(curParamType, curArgTypeCxt.getEvalType()));
+					if (isSubExprTypeUsable(curArgTypeCxt.getEvalType())) {
+						if (isBinaryOperatorOperandCompatible("=", curParamType, curArgTypeCxt.getEvalType())) {
+							curArgTypeCxt.setPromotionType(getPromotionType(curArgTypeCxt.getEvalType(), curParamType));
 
-						typeContexts.emplace(ctx, TypeContext{ methodSym->getType() });
+							typeContexts.emplace(ctx, TypeContext { curArgTypeCxt.getPromotionType() });
+						}
+						else {
+							typeContexts.emplace(ctx, TypeContext { getUnusableType() });
+							broadcastEvent(SimpleTypeErrorEvent::INCOMPATIBLE_ARG_PARAM_TYPE, curParamType, curArgTypeCxt.getEvalType());
+							return;
+						}
 					}
 					else {
-						cerr << "Argument and param must have compatible types" << endl;
+						return;
 					}
 				}
 			}
 			else {
-				cerr << "Method call " << ctx->ID()->getText() << " doesn't have same number of args as function param" << endl;
+				broadcastEvent(FunctionCallTypeErrorEvent::ARGS_AND_PARAMS_COUNT_DIFFER, ctx->ID()->getText(), numArgs, params.size(), true);
 			}
 		}
 		else {
 			cerr << "method call must be a function type. Eg, for f(1,2), f must be a FunctionSymbol" << endl;
+			throw std::exception("At this point, all FunctionSymbol should have already resolved in Resolution stage. This exception should not be possible. ");
 		}
 	}
 	else {
 		cerr << "id must be a struct type. Eg, x.y, x must be a struct type" << endl;
+		throw std::exception("At this point, all struct members should have already resolved in Resolution stage. This exception should not be possible. ");
 	}
-
 }
 
 void DecorateExprWithTypes::exitUnaryExpr(bluefinParser::UnaryExprContext* ctx) {
 	Type subExprType = typeContexts.at(ctx->expr()).getEvalType();
-
-	if (ctx->op->getText() == "!") {
-		if (subExprType == Type::BOOL()) {
-			cerr << "Bad unary ! operand type" << endl;
+	if (isSubExprTypeUsable(subExprType)) {
+		if (isUnaryOperatorOperandCompatible(ctx->op->getText(), subExprType)) {
+			typeContexts.emplace(ctx, TypeContext { subExprType });
+		}
+		else {
+			broadcastEvent(OperatorTypeErrorEvent::INCOMPATIBLE_UNARY_OPERATOR_OPERAND, ctx->op->getText(), subExprType);
 		}
 	}
-	else { // - (negative)
-		if (subExprType != Type::INT() && subExprType != Type::FLOAT()) {
-			cerr << "Bad unary - operand type" << endl;
-		}
+	else {
+		typeContexts.emplace(ctx, TypeContext { getUnusableType() });
 	}
-	typeContexts.emplace(ctx, TypeContext { subExprType });
 }
 
 void DecorateExprWithTypes::exitMultiExpr(bluefinParser::MultiExprContext* ctx) {
@@ -166,129 +173,166 @@ void DecorateExprWithTypes::exitMultiExpr(bluefinParser::MultiExprContext* ctx) 
 	TypeContext& leftTypeContext = typeContexts.at(ctx->expr(0));
 	TypeContext& rightTypeContext = typeContexts.at(ctx->expr(1));
 
-	if (areArithmeticallyCompatible(leftTypeContext.getEvalType(), rightTypeContext.getEvalType())) {
-		leftTypeContext.setPromotionType(
-			getPromotionType(leftTypeContext.getEvalType(), rightTypeContext.getEvalType()));
-		rightTypeContext.setPromotionType(
-			getPromotionType(rightTypeContext.getEvalType(), leftTypeContext.getEvalType()));
+	if (isSubExprTypeUsable(leftTypeContext.getEvalType()) && isSubExprTypeUsable(rightTypeContext.getEvalType())) {
+		if (isBinaryOperatorOperandCompatible(ctx->op->getText(), leftTypeContext.getEvalType(), rightTypeContext.getEvalType())) {
+			leftTypeContext.setPromotionType(
+				getPromotionType(leftTypeContext.getEvalType(), rightTypeContext.getEvalType()));
+			rightTypeContext.setPromotionType(
+				getPromotionType(rightTypeContext.getEvalType(), leftTypeContext.getEvalType()));
 
-		Type exprType = getArithmeticExprType(leftTypeContext.getEvalType(), rightTypeContext.getEvalType());
-		typeContexts.emplace(ctx, TypeContext { exprType });
+			Type typeOfCurrentExpr = getPromotionType(leftTypeContext.getPromotionType(), rightTypeContext.getPromotionType());
+			typeContexts.emplace(ctx, TypeContext { typeOfCurrentExpr });
+		}
+		else {
+			typeContexts.emplace(ctx, TypeContext { getUnusableType() });
+			broadcastEvent(OperatorTypeErrorEvent::INCOMPATIBLE_BINARY_OPERATOR_OPERAND, ctx->op->getText(), leftTypeContext.getEvalType(), rightTypeContext.getEvalType());
+		}
 	}
 	else {
-		cerr << "Bad multiExpr operand types" << endl;
+		typeContexts.emplace(ctx, TypeContext { getUnusableType() });
 	}
 }
 
 void DecorateExprWithTypes::exitAddExpr(bluefinParser::AddExprContext* ctx) {
+
 	TypeContext& leftTypeContext = typeContexts.at(ctx->expr(0));
 	TypeContext& rightTypeContext = typeContexts.at(ctx->expr(1));
 
-	if (areArithmeticallyCompatible(leftTypeContext.getEvalType(), rightTypeContext.getEvalType())) {
-		leftTypeContext.setPromotionType(
-			getPromotionType(leftTypeContext.getEvalType(), rightTypeContext.getEvalType()));
-		rightTypeContext.setPromotionType(
-			getPromotionType(rightTypeContext.getEvalType(), leftTypeContext.getEvalType()));
+	if (isSubExprTypeUsable(leftTypeContext.getEvalType()) && isSubExprTypeUsable(rightTypeContext.getEvalType())) {
+		if (isBinaryOperatorOperandCompatible(ctx->op->getText(), leftTypeContext.getEvalType(), rightTypeContext.getEvalType())) {
+			leftTypeContext.setPromotionType(
+				getPromotionType(leftTypeContext.getEvalType(), rightTypeContext.getEvalType()));
+			rightTypeContext.setPromotionType(
+				getPromotionType(rightTypeContext.getEvalType(), leftTypeContext.getEvalType()));
 
-		Type exprType = getArithmeticExprType(leftTypeContext.getEvalType(), rightTypeContext.getEvalType());
-		typeContexts.emplace(ctx, TypeContext { exprType });
+			Type typeOfCurrentExpr = getPromotionType(leftTypeContext.getPromotionType(), rightTypeContext.getPromotionType());
+			typeContexts.emplace(ctx, TypeContext { typeOfCurrentExpr });
+		}
+		else {
+			typeContexts.emplace(ctx, TypeContext { getUnusableType() });
+			broadcastEvent(OperatorTypeErrorEvent::INCOMPATIBLE_BINARY_OPERATOR_OPERAND, ctx->op->getText(), leftTypeContext.getEvalType(), rightTypeContext.getEvalType());
+		}
 	}
 	else {
-		cerr << "Bad addExpr operand types" << endl;
+		typeContexts.emplace(ctx, TypeContext { getUnusableType() });
 	}
 }
 
 void DecorateExprWithTypes::exitRelExpr(bluefinParser::RelExprContext* ctx) {
-	typeContexts.emplace(ctx,
-		TypeContext { Type::BOOL() }
-	);
-
-	// may need to promote children's type. eg, float > int
 	TypeContext& leftTypeContext = typeContexts.at(ctx->expr(0));
 	TypeContext& rightTypeContext = typeContexts.at(ctx->expr(1));
 
-	if (areArithmeticallyCompatible(leftTypeContext.getEvalType(), rightTypeContext.getEvalType())) {
-		leftTypeContext.setPromotionType(
-			getPromotionType(leftTypeContext.getEvalType(), rightTypeContext.getEvalType()));
-		rightTypeContext.setPromotionType(
-			getPromotionType(rightTypeContext.getEvalType(), leftTypeContext.getEvalType()));
+	if (isSubExprTypeUsable(leftTypeContext.getEvalType()) && isSubExprTypeUsable(rightTypeContext.getEvalType())) {
+		if (isBinaryOperatorOperandCompatible(ctx->op->getText(), leftTypeContext.getEvalType(), rightTypeContext.getEvalType())) {
+			leftTypeContext.setPromotionType(
+				getPromotionType(leftTypeContext.getEvalType(), rightTypeContext.getEvalType()));
+			rightTypeContext.setPromotionType(
+				getPromotionType(rightTypeContext.getEvalType(), leftTypeContext.getEvalType()));
+
+			typeContexts.emplace(ctx, TypeContext{ Type::BOOL() });
+		}
+		else {
+			typeContexts.emplace(ctx, TypeContext{ getUnusableType() });
+			broadcastEvent(OperatorTypeErrorEvent::INCOMPATIBLE_BINARY_OPERATOR_OPERAND, ctx->op->getText(), leftTypeContext.getEvalType(), rightTypeContext.getEvalType());
+		}
 	}
 	else {
-		cerr << "Bad relExpr operand types" << endl;
+		typeContexts.emplace(ctx, TypeContext{ getUnusableType() });
 	}
 }
 
 void DecorateExprWithTypes::exitEqualityExpr(bluefinParser::EqualityExprContext* ctx) {
-	typeContexts.emplace(ctx,
-		TypeContext { Type::BOOL() }
-	);
 
-	// may need to convert children's type. eg, float > int
 	TypeContext& leftTypeContext = typeContexts.at(ctx->expr(0));
 	TypeContext& rightTypeContext = typeContexts.at(ctx->expr(1));
 
-	// if lhs and rhs are both the same type or can be promoted to match each other (aka, arithmetically compatible), then they are valid semantics
-	if (leftTypeContext.getEvalType() == rightTypeContext.getEvalType() ||	
-		areArithmeticallyCompatible(leftTypeContext.getEvalType(), rightTypeContext.getEvalType())) {
+	if (isSubExprTypeUsable(leftTypeContext.getEvalType()) && isSubExprTypeUsable(rightTypeContext.getEvalType())) {
+		if (isBinaryOperatorOperandCompatible(ctx->op->getText(), leftTypeContext.getEvalType(), rightTypeContext.getEvalType())) {
+			leftTypeContext.setPromotionType(
+				getPromotionType(leftTypeContext.getEvalType(), rightTypeContext.getEvalType()));
+			rightTypeContext.setPromotionType(
+				getPromotionType(rightTypeContext.getEvalType(), leftTypeContext.getEvalType()));
 
-		leftTypeContext.setPromotionType(
-			getPromotionType(leftTypeContext.getEvalType(), rightTypeContext.getEvalType()));
-		rightTypeContext.setPromotionType(
-			getPromotionType(rightTypeContext.getEvalType(), leftTypeContext.getEvalType()));
+			typeContexts.emplace(ctx, TypeContext{ Type::BOOL() });
+		}
+		else {
+			typeContexts.emplace(ctx, TypeContext{ getUnusableType() });
+			broadcastEvent(OperatorTypeErrorEvent::INCOMPATIBLE_BINARY_OPERATOR_OPERAND, ctx->op->getText(), leftTypeContext.getEvalType(), rightTypeContext.getEvalType());
+		}
 	}
 	else {
-		cerr << "Bad equalityExpr operand types" << endl;
+		typeContexts.emplace(ctx, TypeContext{ getUnusableType() });
 	}
-
 }
 
 void DecorateExprWithTypes::exitLogicalANDExpr(bluefinParser::LogicalANDExprContext* ctx) {
-	typeContexts.emplace(ctx,
-		TypeContext { Type::BOOL() }
-	);
 
 	TypeContext& leftTypeContext = typeContexts.at(ctx->expr(0));
 	TypeContext& rightTypeContext = typeContexts.at(ctx->expr(1));
+	
 
-	if (areBothBoolType(leftTypeContext.getEvalType(), rightTypeContext.getEvalType())) {
-		//
+	if (isSubExprTypeUsable(leftTypeContext.getEvalType()) && isSubExprTypeUsable(rightTypeContext.getEvalType())) {
+		if (isBinaryOperatorOperandCompatible("&&", leftTypeContext.getEvalType(), rightTypeContext.getEvalType())) {
+			leftTypeContext.setPromotionType(
+				getPromotionType(leftTypeContext.getEvalType(), rightTypeContext.getEvalType()));
+			rightTypeContext.setPromotionType(
+				getPromotionType(rightTypeContext.getEvalType(), leftTypeContext.getEvalType()));
+
+			typeContexts.emplace(ctx, TypeContext{ Type::BOOL() });
+		}
+		else {
+			typeContexts.emplace(ctx, TypeContext{ getUnusableType() });
+			broadcastEvent(OperatorTypeErrorEvent::INCOMPATIBLE_BINARY_OPERATOR_OPERAND, "&&", leftTypeContext.getEvalType(), rightTypeContext.getEvalType());
+		}
 	}
 	else {
-		cerr << "Bad logicalANDExpr not good operand types" << endl;
+		typeContexts.emplace(ctx, TypeContext{ getUnusableType() });
 	}
 }
 
 void DecorateExprWithTypes::exitLogicalORExpr(bluefinParser::LogicalORExprContext* ctx) {
-	typeContexts.emplace(ctx,
-		TypeContext { Type::BOOL() }
-	);
-
 	TypeContext& leftTypeContext = typeContexts.at(ctx->expr(0));
 	TypeContext& rightTypeContext = typeContexts.at(ctx->expr(1));
 
-	if (areBothBoolType(leftTypeContext.getEvalType(), rightTypeContext.getEvalType())) {
-		//
+	if (isSubExprTypeUsable(leftTypeContext.getEvalType()) && isSubExprTypeUsable(rightTypeContext.getEvalType())) {
+		if (isBinaryOperatorOperandCompatible("||", leftTypeContext.getEvalType(), rightTypeContext.getEvalType())) {
+			leftTypeContext.setPromotionType(
+				getPromotionType(leftTypeContext.getEvalType(), rightTypeContext.getEvalType()));
+			rightTypeContext.setPromotionType(
+				getPromotionType(rightTypeContext.getEvalType(), leftTypeContext.getEvalType()));
+
+			typeContexts.emplace(ctx, TypeContext{ Type::BOOL() });
+		}
+		else {
+			typeContexts.emplace(ctx, TypeContext{ getUnusableType() });
+			broadcastEvent(OperatorTypeErrorEvent::INCOMPATIBLE_BINARY_OPERATOR_OPERAND, "||", leftTypeContext.getEvalType(), rightTypeContext.getEvalType());
+		}
 	}
 	else {
-		cerr << "Bad logicalORExpr not good operand types" << endl;
+		typeContexts.emplace(ctx, TypeContext{ getUnusableType() });
 	}
-
 }
 
 void DecorateExprWithTypes::exitSimpleAssignExpr(bluefinParser::SimpleAssignExprContext* ctx) {
-
 	TypeContext& leftTypeContext = typeContexts.at(ctx->expr(0));
 	TypeContext& rightTypeContext = typeContexts.at(ctx->expr(1));
 
-	if (isAssignmentCompatible(leftTypeContext.getEvalType(), rightTypeContext.getEvalType())) {
-		rightTypeContext.setPromotionType(
-			getPromotionType(rightTypeContext.getEvalType(), leftTypeContext.getEvalType()));
+	if (isSubExprTypeUsable(leftTypeContext.getEvalType()) && isSubExprTypeUsable(rightTypeContext.getEvalType())) {
+		if (isBinaryOperatorOperandCompatible("=", leftTypeContext.getEvalType(), rightTypeContext.getEvalType())) {
+			leftTypeContext.setPromotionType(
+				getPromotionType(leftTypeContext.getEvalType(), rightTypeContext.getEvalType()));
+			rightTypeContext.setPromotionType(
+				getPromotionType(rightTypeContext.getEvalType(), leftTypeContext.getEvalType()));
 
-		Type exprType = getArithmeticExprType(leftTypeContext.getEvalType(), rightTypeContext.getEvalType());
-		typeContexts.emplace(ctx, TypeContext { exprType });
+			typeContexts.emplace(ctx, TypeContext{ leftTypeContext.getEvalType() });
+		}
+		else {
+			typeContexts.emplace(ctx, TypeContext{ getUnusableType() });
+			broadcastEvent(OperatorTypeErrorEvent::INCOMPATIBLE_BINARY_OPERATOR_OPERAND, "=", leftTypeContext.getEvalType(), rightTypeContext.getEvalType());
+		}
 	}
 	else {
-		cerr << "Bad assignment expr" << endl;
+		typeContexts.emplace(ctx, TypeContext{ getUnusableType() });
 	}
 }
 
@@ -298,20 +342,18 @@ void DecorateExprWithTypes::exitMemberAccess(bluefinParser::MemberAccessContext*
 	// put type of member. Eg, first.a could have type int
 	TypeContext& typeContext = typeContexts.at(ctx->expr());
 	if (typeContext.getEvalType().isUserDefinedType()) {
-		shared_ptr<StructSymbol> structSym = dynamic_pointer_cast<StructSymbol>(symbolTable.getSymbolMatchingType(typeContext.getEvalType()));
-		//assert(structSym != nullptr);
-		// ^^^ In testing, we may deliberate test negative cases by supplying invalid structs In such a case, don't crash the test
+		shared_ptr<StructSymbol> structSym = dynamic_pointer_cast<StructSymbol>(symbolTable.getSymbolMatchingType(typeContext.getEvalType())); // at this point, we expect this to pass
 
 		Type memberType = structSym->resolve(ctx->ID()->getText())->getType();
 		typeContexts.emplace(ctx, TypeContext { memberType });
 	}
 	else {
 		cerr << "id must be a struct type. Eg, x.y, x must be a struct type" << endl;
+		throw std::exception("At this point, all struct members should have already resolved in Resolution stage. This exception should not be possible. ");
 	}
 }
 
-// It doesn't make sense for a var declaration to have a type (the varsymbol can though)
-// b/c it would have no meaning. 
+// It doesn't make sense for a var declaration to have a type (the varsymbol can though) // b/c it would have no meaning. 
 // However, the rhs variable may need to be promoted
 // eg, float a = 56
 void DecorateExprWithTypes::exitVarDecl(bluefinParser::VarDeclContext* ctx) {
@@ -319,97 +361,172 @@ void DecorateExprWithTypes::exitVarDecl(bluefinParser::VarDeclContext* ctx) {
 
 		// find type of the variable
 		string varName = ctx->ID()->getText();
-		shared_ptr<Scope> scope = symbolTable.getScope(ctx); // scopeOfPrimaryIdsVarDeclAndFuncDefs.at(ctx);
-		shared_ptr<Symbol> resolvedSym = symbolTable.resolve(varName, scope); // resolve(ctx->ID()->getText(), scope);
+		shared_ptr<Symbol> sym = symbolTable.getSymbol(ctx);
 
 		TypeContext& rightTypeContext = typeContexts.at(ctx->expr());
 
-		if (isAssignmentCompatible(resolvedSym->getType(), rightTypeContext.getEvalType())) {
-			
-			// promotion is only possible for arithmetically compatible types.
-			// TODO: I feel this layer of abstraction requires some thinking. What if promotion should be allowed in diff contexts
-			if (areArithmeticallyCompatible(resolvedSym->getType(), rightTypeContext.getEvalType())) {
-				rightTypeContext.setPromotionType(
-					getPromotionType(rightTypeContext.getEvalType(), resolvedSym->getType()));
+		if (isSubExprTypeUsable(rightTypeContext.getEvalType())) {
+			if (isBinaryOperatorOperandCompatible("=", sym->getType(), rightTypeContext.getEvalType())) {
+
+				// promote rhs type only if it isn't a user-defined type
+				if (!sym->getType().isUserDefinedType())
+					rightTypeContext.setPromotionType(getPromotionType(rightTypeContext.getEvalType(), sym->getType()));
+
+				//Don't place ctx into typeContexts b/c it's a VarDecl, so it wouldn't make sense anyways
+			}
+			else {
+				typeContexts.emplace(ctx, TypeContext{ getUnusableType() });
+				broadcastEvent(OperatorTypeErrorEvent::INCOMPATIBLE_BINARY_OPERATOR_OPERAND, "=", sym->getType(), rightTypeContext.getEvalType());
 			}
 		}
-		else {
-			cerr << "Bad varDecl expr" << endl;
-		}
+		// else {} if not usable, the expr's error would have already broadcasted, so no need to broadcast it again
 	}
 }
 
 // sets and unsets the current funcDefContext so that a return expr can compare its type with its enclosing function's type
 void DecorateExprWithTypes::enterFuncDef(bluefinParser::FuncDefContext* ctx) {
 	currFuncDefCtx = ctx;
+	currFuncDefHasDirectReturnStmt = false;
 }
 
 void DecorateExprWithTypes::exitFuncDef(bluefinParser::FuncDefContext* ctx) {
+	Type funcRetType = symbolTable.getSymbol(currFuncDefCtx)->getType();
+	if (funcRetType != Type::VOID() && !currFuncDefHasDirectReturnStmt) //ensure that non-void function contains a return statement directly inside it
+		broadcastEvent(SimpleTypeErrorEvent::MISSING_RETURN_STATEMENT, funcRetType);
+
 	currFuncDefCtx = nullptr;
 }
 
 /* We're assuming a return statement will only occur within a function*/
+// match expr type with the function's return type
 void DecorateExprWithTypes::exitStmtReturn(bluefinParser::StmtReturnContext* ctx)  { 
-	// match expr type with the function's return type
+
+	Type funcRetType = symbolTable.getSymbol(currFuncDefCtx)->getType();
 
 	// How do we get a stmtReturn's enclosing function?
 	if (ctx->expr()) {
 		string enclosingFuncName = currFuncDefCtx->ID()->getText();
 		shared_ptr<Scope> scopeOfFunc = symbolTable.getScope(currFuncDefCtx); 
 		TypeContext& retTypeCtx = typeContexts.at(ctx->expr());
-		shared_ptr<Symbol> enclosingFuncSym = symbolTable.resolve(enclosingFuncName, scopeOfFunc); 
-		Type funcRetType = enclosingFuncSym->getType();
 
-		if (isAssignmentCompatible(funcRetType, retTypeCtx.getEvalType())) {
-			retTypeCtx.setPromotionType(getPromotionType(funcRetType, retTypeCtx.getEvalType()));
+		if (isSubExprTypeUsable(retTypeCtx.getEvalType())) {
+			if (isBinaryOperatorOperandCompatible("=", funcRetType, retTypeCtx.getEvalType())) {
+				retTypeCtx.setPromotionType(getPromotionType(funcRetType, retTypeCtx.getEvalType()));
+			}
+			else {
+				broadcastEvent(SimpleTypeErrorEvent::RETURN_INVALID_TYPE, funcRetType, retTypeCtx.getEvalType());
+			}
 		}
-		else {
-			cerr << "Function return type and return expression's type must match" << endl;
+		// else {} the expr has problems inside it, which has already been reported, so no need to report the return expr problem
+	}
+	else {
+		// Check the current function's return type. If it's void, then ok for return to not contain expr. But if function's return type
+		// is not void, then this "return" statement is missing an expr
+		if (symbolTable.getSymbol(currFuncDefCtx)->getType() != Type::VOID()) {
+			broadcastEvent(SimpleTypeErrorEvent::RETURN_INVALID_TYPE, funcRetType, Type::VOID());
 		}
 	}
+
+	if (ctx->parent->parent == currFuncDefCtx)
+		currFuncDefHasDirectReturnStmt = true;	// this return statement is directly inside the current function, so MISSING_RETURN_STATEMENT won't appear
 }
 
-
 void DecorateExprWithTypes::exitStmtIf(bluefinParser::StmtIfContext* ctx) {
-	if (typeContexts.at(ctx->expr()).getEvalType() != Type::BOOL()) {
-		cerr << "if (expr) ... should be bool" << endl;
+	TypeContext& subExpr = typeContexts.at(ctx->expr());
+
+	if (isSubExprTypeUsable(subExpr.getEvalType())) {
+		if (typeContexts.at(ctx->expr()).getEvalType() != Type::BOOL()) {
+			broadcastEvent(SimpleTypeErrorEvent::IF_STATEMENT_NOT_BOOL, typeContexts.at(ctx->expr()).getEvalType());
+		}
 	}
+	// if not usable type, the error for that had already been broadcasted, so don't broadcast an if statement error again
 }
 
 void DecorateExprWithTypes::exitStmtWhile(bluefinParser::StmtWhileContext* ctx) {
-	if (typeContexts.at(ctx->expr()).getEvalType() != Type::BOOL()) {
-		cerr << "if (expr) ... should be bool" << endl;
+	TypeContext& subExpr = typeContexts.at(ctx->expr());
+
+	if (isSubExprTypeUsable(subExpr.getEvalType())) {
+		if (typeContexts.at(ctx->expr()).getEvalType() != Type::BOOL()) {
+			broadcastEvent(SimpleTypeErrorEvent::WHILE_STATEMENT_NOT_BOOL, typeContexts.at(ctx->expr()).getEvalType());
+		}
 	}
 }
 
-
-bool DecorateExprWithTypes::areBothBoolType(Type left, Type right) const {
-	return left == Type::BOOL() && right == Type::BOOL();
-}
-
-// Arithmetics (+,-,*,/) are allowed only on float and int
-bool DecorateExprWithTypes::areArithmeticallyCompatible(Type left, Type right) const {
-	return (left == Type::INT() || left == Type::FLOAT()) &&
-		(right == Type::INT() || right == Type::FLOAT());
-}
-
-// used for simple assignment and for varDecl (eg, int a = 5;)
-// Two types can be assignable if they are the same possibility or the rhs can be promoted to the lhs
-bool DecorateExprWithTypes::isAssignmentCompatible(Type left, Type right) const {
-	if (left == right) {
-		return true;
-	}
-
-	// check if rhs can be promoted to lhs. The only promotion in this program is int->float, so then
-	// we'll just check if lhs is float and rhs is int
-	return left == Type::FLOAT() && right == Type::INT();
-}
-
-Type DecorateExprWithTypes::getArithmeticExprType(Type left, Type right) {
-	return arithmeticExprType.at({ left, right });
-}
 
 Type DecorateExprWithTypes::getPromotionType(Type left, Type right) {
 	return promotionFromTo.at({ left, right });
 }
 
+bool DecorateExprWithTypes::isUnaryOperatorOperandCompatible(string op, Type type) const {
+
+	assert(op == "-" || op == "!");
+
+	if (op == "!") {
+		return type == Type::BOOL();
+	}
+	else if (op == "-") {
+		return type == Type::FLOAT() || type == Type::INT();
+	}
+	throw std::exception("Only two unary operators allowed. This exception should never be thrown");
+	return false;
+}
+
+bool DecorateExprWithTypes::isBinaryOperatorOperandCompatible(string op, Type lhs, Type rhs) const {
+	assert(op == "*" || op == "/" || op == "+" || op == "-" || op == "<" || op == ">" || op == "<=" || op == ">=" ||
+		op == "==" || op == "!=" || op == "&&" || op == "||" || op == "=");
+
+	if (op == "*" || op == "/" || op == "+" || op == "-" || op == "<" || op == ">" || op == "<=" || op == ">=") {
+		// only allowed if both lhs and rhs are either int or float
+		return (lhs == Type::INT() || lhs == Type::FLOAT()) && (rhs == Type::INT() || rhs == Type::FLOAT());
+	}
+	else if (op == "&&" || op == "||") {
+		return lhs == Type::BOOL() && rhs == Type::BOOL();
+	}
+	else if (op == "=") {
+		if (lhs == rhs) return true;
+		return lhs == Type::FLOAT() && rhs == Type::INT();
+	}
+	else { //== or !=
+		// valid only if exact same type, or they're both int/floats
+		if (lhs == rhs) return true;
+		return (lhs == Type::INT() || lhs == Type::FLOAT()) && (rhs == Type::INT() || rhs == Type::FLOAT());
+	}
+}
+
+bool DecorateExprWithTypes::isSubExprTypeUsable(Type type) const {
+	// If the type is empty, then it's not usable. If it's not empty, then usable
+	return type != Type{ "" };
+}
+
+Type DecorateExprWithTypes::getUnusableType() const {
+	return Type{ "" };
+}
+
+void DecorateExprWithTypes::broadcastEvent(SimpleTypeErrorEvent e, Type lhs, Type rhs) {
+	for ( shared_ptr<EventObserver> obs : eventObservers) {
+		obs->onEvent(e, lhs, rhs);
+	}
+}
+
+void DecorateExprWithTypes::broadcastEvent(OperatorTypeErrorEvent e, string op, Type lhs, Type rhs) {
+	for ( shared_ptr<EventObserver> obs : eventObservers) {
+		obs->onEvent(e, op, lhs, rhs);
+	}
+}
+
+void DecorateExprWithTypes::broadcastEvent(FunctionCallTypeErrorEvent e, string funcName, size_t argCount, size_t paramCount, bool isMethod) {
+	for ( shared_ptr<EventObserver> obs : eventObservers) {
+		obs->onEvent(e, funcName, argCount, paramCount, isMethod);
+	}
+}
+
+void DecorateExprWithTypes::attachEventObserver(shared_ptr<EventObserver> observer) {
+	eventObservers.push_back(observer);
+}
+
+void DecorateExprWithTypes::detachEventObserver(shared_ptr<EventObserver> observer) {
+	auto it = std::find(eventObservers.begin(), eventObservers.end(), observer);
+	if (it != eventObservers.end()) {
+		eventObservers.erase(it); 
+	}
+}

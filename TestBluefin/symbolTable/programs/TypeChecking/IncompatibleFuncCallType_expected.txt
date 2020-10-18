@@ -1,0 +1,5 @@
+Function call argument type invalid. Expected: 'int', Found: 'float'
+Function call foo(..) has 3 arguments but definition expects 2
+Function call foo(..) has 1 arguments but definition expects 2
+Method call foo(..) has 1 arguments but definition expects 2
+Function call argument type invalid. Expected: 'bool', Found: 'int'

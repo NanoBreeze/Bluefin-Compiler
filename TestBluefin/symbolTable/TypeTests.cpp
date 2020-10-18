@@ -25,7 +25,7 @@ namespace SymbolTableTests {
 	using namespace antlr4;
 
 
-	void validateTypeChecking(const string programFile, const string expectedOutputFile) {
+	void validateTypeChecking(const string programFile, const string expectedOutputFile, bool useEventObserverInsteadOfPostOrderStr=false) {
 		string pathPrefix = "../TestBluefin/symbolTable/programs/TypeChecking/";
 
 		ifstream file(pathPrefix + programFile);
@@ -43,14 +43,21 @@ namespace SymbolTableTests {
 		walker.walk(&resolutionListener, tree);
 
 		DecorateExprWithTypes decorateExprListener(symFact, symTab);
+		shared_ptr<EventObserver> obs = make_shared<EventObserver>();
+		decorateExprListener.attachEventObserver(obs);
 		walker.walk(&decorateExprListener, tree);
 
 		string symbolTypesStr;
 		PostOrderPrintType printTypeListener(symbolTypesStr, decorateExprListener.getTypeContexts());
 		walker.walk(&printTypeListener, tree);
 
+		string typeProgramOutput = obs->getTypeOutput();
 		string expectedOutput = readFile(pathPrefix + expectedOutputFile);
-		ASSERT_EQ(symbolTypesStr, expectedOutput);
+
+		if (useEventObserverInsteadOfPostOrderStr)
+			ASSERT_EQ(typeProgramOutput, expectedOutput);
+		else
+			ASSERT_EQ(symbolTypesStr, expectedOutput);
 	}
 
 	TEST(Types, Program_ExprTypesForPrimaries) {
@@ -99,6 +106,26 @@ namespace SymbolTableTests {
 
 	TEST(Types, Program_ExprTypesForReturnStmt) {
 		validateTypeChecking("ExprTypesForReturnStmt.bf", "ExprTypesForReturnStmt_expected.txt");
+	}
+
+	TEST(Types, Program_IncompatibleReturnType) {
+		validateTypeChecking("IncompatibleReturnType.bf", "IncompatibleReturnType_expected.txt", true);
+	}
+
+	TEST(Types, Program_IncompatibleOperatorOperandType) {
+		validateTypeChecking("IncompatibleOperatorOperandsType.bf", "IncompatibleOperatorOperandsType_expected.txt", true);
+	}
+
+	TEST(Types, Program_IncompatibleIfWhileExprType) {
+		validateTypeChecking("IncompatibleIfWhileExprType.bf", "IncompatibleIfWhileExprType_expected.txt", true);
+	}
+
+	TEST(Types, Program_IncompatibleVarDeclType) {
+		validateTypeChecking("IncompatibleVarDeclType.bf", "IncompatibleVarDeclType_expected.txt", true);
+	}
+
+	TEST(Types, Program_IncompatibleFuncCallType) {
+		validateTypeChecking("IncompatibleFuncCallType.bf", "IncompatibleFuncCallType_expected.txt", true);
 	}
 
 }

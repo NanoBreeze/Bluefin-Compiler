@@ -1,0 +1,6 @@
+Return type invalid. Expected: 'void', Found: 'int'
+Return type invalid. Expected: 'int', Found: 'void'
+Return statement missing. Expected: 'int'
+Return type invalid. Expected: 'int', Found: 'bool'
+Operator '*' cannot be applied to 'int' and 'bool'
+Return type invalid. Expected: 'A', Found: 'B'

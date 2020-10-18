@@ -118,6 +118,12 @@ void EventObserver::onEvent(SimpleTypeErrorEvent typeEventError, Type lhs, Type 
 	case SimpleTypeErrorEvent::MISSING_RETURN_STATEMENT:
 		typeOutput += "Return statement missing. Expected: '" + lhs.type2str() + "'\n";
 		break;
+	case SimpleTypeErrorEvent::RETURN_INVALID_TYPE:
+		typeOutput += "Return type invalid. Expected: '" + lhs.type2str() + "', Found: '" + rhs.type2str() + "'\n";
+		break;
+	case SimpleTypeErrorEvent::INCOMPATIBLE_ARG_PARAM_TYPE:
+		typeOutput += "Function call argument type invalid. Expected: '" + lhs.type2str() + "', Found: '" + rhs.type2str() + "'\n";
+		break;
 
 		/*
 	case SimpleTypeErrorEvent::INCOMPATIBLE_ASSIGNMENT_TYPE:
@@ -137,12 +143,23 @@ void EventObserver::onEvent(OperatorTypeErrorEvent operatorTypeErrorEvent, strin
 	case OperatorTypeErrorEvent::INCOMPATIBLE_UNARY_OPERATOR_OPERAND:
 		typeOutput += "Operator '" + op + "' cannot be applied to '" + lhs.type2str() + "'\n";
 		break;
-	case OperatorTypeErrorEvent::RETURN_INVALID_TYPE:
-		typeOutput += "Return type invalid. Expected: '" + lhs.type2str() + "', Found: '" + rhs.type2str() + "'\n";
+	default:
+		assert(false);
+	}
+}
+
+void EventObserver::onEvent(FunctionCallTypeErrorEvent funcCallTypeErrorEvent, string funcName, size_t argCount, size_t paramCount, bool isMethod) {
+	switch (funcCallTypeErrorEvent) {
+	case FunctionCallTypeErrorEvent::ARGS_AND_PARAMS_COUNT_DIFFER:
+		if (isMethod)
+			typeOutput += "Method call " + funcName + "(..) has " + to_string(argCount) + " arguments but definition expects " + to_string(paramCount) + "\n";
+		else 
+			typeOutput += "Function call " + funcName + "(..) has " + to_string(argCount) + " arguments but definition expects " + to_string(paramCount) + "\n";
 		break;
 	default:
 		assert(false);
 	}
+
 }
 
 string EventObserver::getSymbolCategory(shared_ptr<Symbol> symbol) const
