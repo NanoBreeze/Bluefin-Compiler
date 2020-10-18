@@ -9,6 +9,7 @@ struct Base {
 };
 
 struct Der extends Base {
+	bool a;
 	void g() {}
 };
 
