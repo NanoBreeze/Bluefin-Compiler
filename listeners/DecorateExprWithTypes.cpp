@@ -75,7 +75,7 @@ void DecorateExprWithTypes::exitFuncCall(bluefinParser::FuncCallContext* ctx) {
 						typeContexts.emplace(ctx, TypeContext { curArgTypeCxt.getPromotionType() });
 					}
 					else {
-						typeContexts.emplace(ctx, TypeContext { getUnusableType() });
+						typeContexts.emplace(ctx, TypeContext { Type::getUnusableType() });
 						broadcastEvent(SimpleTypeErrorEvent::INCOMPATIBLE_ARG_PARAM_TYPE, curParamType, curArgTypeCxt.getEvalType());
 						return;
 					}
@@ -88,12 +88,12 @@ void DecorateExprWithTypes::exitFuncCall(bluefinParser::FuncCallContext* ctx) {
 		}
 		else {
 			broadcastEvent(FunctionCallTypeErrorEvent::ARGS_AND_PARAMS_COUNT_DIFFER, ctx->ID()->getText(), numArgs, params.size(), false);
-			typeContexts.emplace(ctx, TypeContext { getUnusableType() });
+			typeContexts.emplace(ctx, TypeContext { Type::getUnusableType() });
 		}
 	}
 	else {
 		cerr << "func call must be a function type. Eg, for f(1,2), f must be a FunctionSymbol" << endl;
-		typeContexts.emplace(ctx, TypeContext { getUnusableType() });
+		typeContexts.emplace(ctx, TypeContext { Type::getUnusableType() });
 		throw std::exception("At this point, all FunctionSymbol should have already resolved in Resolution stage. This exception should not be possible. ");
 	}
 }
@@ -128,7 +128,7 @@ void bluefin::DecorateExprWithTypes::exitMethodCall(bluefinParser::MethodCallCon
 							typeContexts.emplace(ctx, TypeContext { curArgTypeCxt.getPromotionType() });
 						}
 						else {
-							typeContexts.emplace(ctx, TypeContext { getUnusableType() });
+							typeContexts.emplace(ctx, TypeContext { Type::getUnusableType() });
 							broadcastEvent(SimpleTypeErrorEvent::INCOMPATIBLE_ARG_PARAM_TYPE, curParamType, curArgTypeCxt.getEvalType());
 							return;
 						}
@@ -164,7 +164,7 @@ void DecorateExprWithTypes::exitUnaryExpr(bluefinParser::UnaryExprContext* ctx) 
 		}
 	}
 	else {
-		typeContexts.emplace(ctx, TypeContext { getUnusableType() });
+		typeContexts.emplace(ctx, TypeContext { Type::getUnusableType() });
 	}
 }
 
@@ -184,12 +184,12 @@ void DecorateExprWithTypes::exitMultiExpr(bluefinParser::MultiExprContext* ctx) 
 			typeContexts.emplace(ctx, TypeContext { typeOfCurrentExpr });
 		}
 		else {
-			typeContexts.emplace(ctx, TypeContext { getUnusableType() });
+			typeContexts.emplace(ctx, TypeContext { Type::getUnusableType() });
 			broadcastEvent(OperatorTypeErrorEvent::INCOMPATIBLE_BINARY_OPERATOR_OPERAND, ctx->op->getText(), leftTypeContext.getEvalType(), rightTypeContext.getEvalType());
 		}
 	}
 	else {
-		typeContexts.emplace(ctx, TypeContext { getUnusableType() });
+		typeContexts.emplace(ctx, TypeContext { Type::getUnusableType() });
 	}
 }
 
@@ -209,12 +209,12 @@ void DecorateExprWithTypes::exitAddExpr(bluefinParser::AddExprContext* ctx) {
 			typeContexts.emplace(ctx, TypeContext { typeOfCurrentExpr });
 		}
 		else {
-			typeContexts.emplace(ctx, TypeContext { getUnusableType() });
+			typeContexts.emplace(ctx, TypeContext { Type::getUnusableType() });
 			broadcastEvent(OperatorTypeErrorEvent::INCOMPATIBLE_BINARY_OPERATOR_OPERAND, ctx->op->getText(), leftTypeContext.getEvalType(), rightTypeContext.getEvalType());
 		}
 	}
 	else {
-		typeContexts.emplace(ctx, TypeContext { getUnusableType() });
+		typeContexts.emplace(ctx, TypeContext { Type::getUnusableType() });
 	}
 }
 
@@ -232,12 +232,12 @@ void DecorateExprWithTypes::exitRelExpr(bluefinParser::RelExprContext* ctx) {
 			typeContexts.emplace(ctx, TypeContext{ Type::BOOL() });
 		}
 		else {
-			typeContexts.emplace(ctx, TypeContext{ getUnusableType() });
+			typeContexts.emplace(ctx, TypeContext{ Type::getUnusableType() });
 			broadcastEvent(OperatorTypeErrorEvent::INCOMPATIBLE_BINARY_OPERATOR_OPERAND, ctx->op->getText(), leftTypeContext.getEvalType(), rightTypeContext.getEvalType());
 		}
 	}
 	else {
-		typeContexts.emplace(ctx, TypeContext{ getUnusableType() });
+		typeContexts.emplace(ctx, TypeContext{ Type::getUnusableType() });
 	}
 }
 
@@ -256,12 +256,12 @@ void DecorateExprWithTypes::exitEqualityExpr(bluefinParser::EqualityExprContext*
 			typeContexts.emplace(ctx, TypeContext{ Type::BOOL() });
 		}
 		else {
-			typeContexts.emplace(ctx, TypeContext{ getUnusableType() });
+			typeContexts.emplace(ctx, TypeContext{ Type::getUnusableType() });
 			broadcastEvent(OperatorTypeErrorEvent::INCOMPATIBLE_BINARY_OPERATOR_OPERAND, ctx->op->getText(), leftTypeContext.getEvalType(), rightTypeContext.getEvalType());
 		}
 	}
 	else {
-		typeContexts.emplace(ctx, TypeContext{ getUnusableType() });
+		typeContexts.emplace(ctx, TypeContext{ Type::getUnusableType() });
 	}
 }
 
@@ -269,7 +269,6 @@ void DecorateExprWithTypes::exitLogicalANDExpr(bluefinParser::LogicalANDExprCont
 
 	TypeContext& leftTypeContext = typeContexts.at(ctx->expr(0));
 	TypeContext& rightTypeContext = typeContexts.at(ctx->expr(1));
-	
 
 	if (isSubExprTypeUsable(leftTypeContext.getEvalType()) && isSubExprTypeUsable(rightTypeContext.getEvalType())) {
 		if (isBinaryOperatorOperandCompatible("&&", leftTypeContext.getEvalType(), rightTypeContext.getEvalType())) {
@@ -281,12 +280,12 @@ void DecorateExprWithTypes::exitLogicalANDExpr(bluefinParser::LogicalANDExprCont
 			typeContexts.emplace(ctx, TypeContext{ Type::BOOL() });
 		}
 		else {
-			typeContexts.emplace(ctx, TypeContext{ getUnusableType() });
+			typeContexts.emplace(ctx, TypeContext{ Type::getUnusableType() });
 			broadcastEvent(OperatorTypeErrorEvent::INCOMPATIBLE_BINARY_OPERATOR_OPERAND, "&&", leftTypeContext.getEvalType(), rightTypeContext.getEvalType());
 		}
 	}
 	else {
-		typeContexts.emplace(ctx, TypeContext{ getUnusableType() });
+		typeContexts.emplace(ctx, TypeContext{ Type::getUnusableType() });
 	}
 }
 
@@ -304,12 +303,12 @@ void DecorateExprWithTypes::exitLogicalORExpr(bluefinParser::LogicalORExprContex
 			typeContexts.emplace(ctx, TypeContext{ Type::BOOL() });
 		}
 		else {
-			typeContexts.emplace(ctx, TypeContext{ getUnusableType() });
+			typeContexts.emplace(ctx, TypeContext{ Type::getUnusableType() });
 			broadcastEvent(OperatorTypeErrorEvent::INCOMPATIBLE_BINARY_OPERATOR_OPERAND, "||", leftTypeContext.getEvalType(), rightTypeContext.getEvalType());
 		}
 	}
 	else {
-		typeContexts.emplace(ctx, TypeContext{ getUnusableType() });
+		typeContexts.emplace(ctx, TypeContext{ Type::getUnusableType() });
 	}
 }
 
@@ -327,12 +326,12 @@ void DecorateExprWithTypes::exitSimpleAssignExpr(bluefinParser::SimpleAssignExpr
 			typeContexts.emplace(ctx, TypeContext{ leftTypeContext.getEvalType() });
 		}
 		else {
-			typeContexts.emplace(ctx, TypeContext{ getUnusableType() });
+			typeContexts.emplace(ctx, TypeContext{ Type::getUnusableType() });
 			broadcastEvent(OperatorTypeErrorEvent::INCOMPATIBLE_BINARY_OPERATOR_OPERAND, "=", leftTypeContext.getEvalType(), rightTypeContext.getEvalType());
 		}
 	}
 	else {
-		typeContexts.emplace(ctx, TypeContext{ getUnusableType() });
+		typeContexts.emplace(ctx, TypeContext{ Type::getUnusableType() });
 	}
 }
 
@@ -375,7 +374,7 @@ void DecorateExprWithTypes::exitVarDecl(bluefinParser::VarDeclContext* ctx) {
 				//Don't place ctx into typeContexts b/c it's a VarDecl, so it wouldn't make sense anyways
 			}
 			else {
-				typeContexts.emplace(ctx, TypeContext{ getUnusableType() });
+				typeContexts.emplace(ctx, TypeContext{ Type::getUnusableType() });
 				broadcastEvent(OperatorTypeErrorEvent::INCOMPATIBLE_BINARY_OPERATOR_OPERAND, "=", sym->getType(), rightTypeContext.getEvalType());
 			}
 		}
@@ -453,7 +452,17 @@ void DecorateExprWithTypes::exitStmtWhile(bluefinParser::StmtWhileContext* ctx) 
 }
 
 
+// If both types are built in types, use the lookup table to find promotion type
+// otherwise, the promotion type is whichever one is the base type of the other
 Type DecorateExprWithTypes::getPromotionType(Type left, Type right) {
+	if (left.isUserDefinedType()) {
+		assert(right.isUserDefinedType());
+		// get their base type
+		if (symbolTable.isParentType(left, right)) {
+			return right;
+		}
+		return left;
+	}
 	return promotionFromTo.at({ left, right });
 }
 
@@ -484,6 +493,9 @@ bool DecorateExprWithTypes::isBinaryOperatorOperandCompatible(string op, Type lh
 	}
 	else if (op == "=") {
 		if (lhs == rhs) return true;
+		if (symbolTable.isParentType(rhs, lhs)) return true; // child can be assigned to parent but not vice versa
+		// eg) parent = child; // ok, but child = parent; // not ok. So, ok if lhs is parent of rhs
+
 		return lhs == Type::FLOAT() && rhs == Type::INT();
 	}
 	else { //== or !=
@@ -495,11 +507,7 @@ bool DecorateExprWithTypes::isBinaryOperatorOperandCompatible(string op, Type lh
 
 bool DecorateExprWithTypes::isSubExprTypeUsable(Type type) const {
 	// If the type is empty, then it's not usable. If it's not empty, then usable
-	return type != Type{ "" };
-}
-
-Type DecorateExprWithTypes::getUnusableType() const {
-	return Type{ "" };
+	return type != Type::getUnusableType();
 }
 
 void DecorateExprWithTypes::broadcastEvent(SimpleTypeErrorEvent e, Type lhs, Type rhs) {

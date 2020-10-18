@@ -21,6 +21,8 @@ namespace bluefin {
 	{
 	public:
 
+		static Type getUnusableType() { return Type{ "" }; } // since we don't use pointer to Type, we can't assign Type to null. This is 
+		// used to represent one. Used a lot by DecorateExprWithTypes.cpp
 		static Type INT() { return Type{ "int" }; }
 		static Type BOOL() { return Type{ "bool" }; }
 		static Type FLOAT() { return Type{ "float" }; }

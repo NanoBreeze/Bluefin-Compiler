@@ -20,6 +20,12 @@ namespace bluefin {
 		currScope->declare(BuiltinTypeSymbol::INT());
 		currScope->declare(BuiltinTypeSymbol::FLOAT());
 		currScope->declare(BuiltinTypeSymbol::VOID());
+
+		parentTypes.emplace(Type::BOOL(), Type::getUnusableType());
+		parentTypes.emplace(Type::INT(), Type::getUnusableType());
+		parentTypes.emplace(Type::FLOAT(), Type::getUnusableType());
+		parentTypes.emplace(Type::STRING(), Type::getUnusableType());
+		parentTypes.emplace(Type::VOID(), Type::getUnusableType());
 	}
 
 	void SymbolTable::enterScope(const string scopeName) {
@@ -147,9 +153,27 @@ namespace bluefin {
 
 	void SymbolTable::addUserDefinedType(shared_ptr<StructSymbol> structSym) {
 		if (typeSymbols.count(structSym->getType())) {
+			assert(parentTypes.count(structSym->getType()) == 1);  // since parentTypes shared same key as typeSymbols
 			throw RedeclarationException(structSym->getType().type2str());
 		}
 
 		typeSymbols.emplace(structSym->getType(), structSym);
+
+		Type parentType = (structSym->getSuperClass()) ? structSym->getSuperClass()->getType() : Type::getUnusableType();
+		parentTypes.emplace(structSym->getType(), parentType);
+	}
+
+	bool SymbolTable::isParentType(const Type child, const Type parent) const {
+		// both types must be valid types that are already in the table (so they already have valid corresponding StructSym)
+		assert(parentTypes.count(child) == 1 && parentTypes.count(parent) == 1);
+
+		Type nextParent = child;
+		while (nextParent != Type::getUnusableType()) {
+			if (parentTypes.at(nextParent) == parent) {
+				return true;
+			}
+			nextParent = parentTypes.at(nextParent);
+		}
+		return false;
 	}
 }

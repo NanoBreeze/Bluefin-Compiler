@@ -16,8 +16,21 @@ struct A {
 	}
 };
 
+struct B extends A{};
+struct C extends B{};
+struct D {
+	void foo(B b) {}
+};
+
+void paramA(A a) {}
+void paramB(B b) {}
+void paramD(D d) {}
+
 int main() {
 	A a;
+	B b;
+	C c;
+	D d;
 
 	foo(6.2, true); // narrowing for '6.2' is not allowed
 
@@ -34,6 +47,14 @@ int main() {
 	foo(a.foo(5, 1), false); // a.foo(..)'s second arg, 1, is supposed to be a bool type
 
 	//int b = a.f; already caught before type checking
+
+	paramA(c); //ok
+	
+	paramB(a); // 'a' is not a child type of B
+
+	paramD(a); // incompatible
+
+	d.foo(c); // ok
 
 	return 0;
 }

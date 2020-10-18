@@ -93,7 +93,6 @@ namespace bluefin {
 		bool isUnaryOperatorOperandCompatible(string op, Type lhs) const;
 
 		bool isSubExprTypeUsable(Type) const; // a helper to support our type computing algo
-		Type getUnusableType() const; // same as above
 
 		void broadcastEvent(SimpleTypeErrorEvent, Type lhs, Type rhs = Type{ "" });
 		void broadcastEvent(OperatorTypeErrorEvent, string op, Type lhs, Type rhs = Type{ "" });

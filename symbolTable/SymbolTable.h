@@ -47,6 +47,8 @@ namespace bluefin {
 
 		shared_ptr<Symbol> getSymbolMatchingType(Type type) const;
 
+		bool isParentType(const Type child, const Type parent) const;
+
 		void saveParseTreeWithCurrentScope(ParseTree*);
 
 		void saveParseTree(ParseTree*);
@@ -72,6 +74,8 @@ namespace bluefin {
 
 		shared_ptr<Scope> currScope; // shared_ptr b/c it can refer to the same scope as a StructSymbol's
 		unordered_map<Type, shared_ptr<Symbol>> typeSymbols;
+		unordered_map<Type, Type> parentTypes; // the key is the child, value is the parent. This helps us determine inheritance structure based on Type
+		// Used for typechecking
 
 		/* Declaration stores the symbol and scope associated with ParseTree contexts, so that future passes
 		(Resolution and type promotion) can access the scope info. Note, to resolve struct member access
@@ -90,5 +94,4 @@ namespace bluefin {
 		};
 		unordered_map<ParseTree*, Context> parseTreeContexts;
 	};
-
 }

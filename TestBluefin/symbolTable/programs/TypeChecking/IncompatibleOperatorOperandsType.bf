@@ -6,9 +6,17 @@ Verifies error messages when the unary or binary operator is not compatible with
 struct A {};
 struct B {};
 
+struct C extends A {};
+struct D extends A {};
+struct E extends C {};
+
 int main() {
 	A a;
 	B b;
+	C structC;
+	D structD;
+	E structE;
+
 	int c;
 
 	-5; //ok
@@ -34,6 +42,14 @@ int main() {
 	c = 5.3; // narrowing not allowed
 
 	c = 5*7/3; //allowed
+
+	structC = a; // cannot assign base type to child instance
+
+	A aaa = structE; // ok
+
+	E bad = a; // cannot assign child to parent
+
+	structC = structD; // they both extend A but that doesn't mean they can be assigned to each other
 
 	return 0;
 }

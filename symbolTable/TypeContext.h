@@ -16,13 +16,12 @@ namespace bluefin {
 		inline void setPromotionType(Type type) { promotionType = type; }
 	
 	private:
-		Type evalType; // If there were no user-defined types (struct)
-		// or if struct didn't inherit from Type, then can use enum instead. We do need the type2str to get the exact 
+		Type evalType; // We do need the type2str to get the exact 
 		// user-defined type, and the struct as a subtype b/c it contains its own scope for members
 
-		Type promotionType; // since only builtin types can be promoted (for now), so no need for actual type object
-		// TODO: some types can't be promoted by language rules (eg, bool), so we should
-		// separate promotable ones into a different kind of type context
-		// TODO 2: How to handle polymorphism withi promotionType? To think, if this is even possible
+		Type promotionType; // builtin types can be promoted (eg, int => float) 
+		// For inheritance, a child type can be 'promoted' into a parent type. eg) Base b = der; 
+		// some types can't be promoted by language rules (eg, bool), so this value may stay fixed
+		// Maybe somehow separate promotable ones into a different kind of type context
 	};
 }

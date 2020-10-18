@@ -36,8 +36,19 @@ struct A {
 };
 
 struct B {};
+struct C extends A {};
 
 A returnA() {
 	B b;
 	return b; // Since B doesn't inherit from A, this is invalid
+}
+
+A returnParent() {
+	C c;
+	return c; //ok because C is A's subtype
+}
+
+C returnChild() {
+	A a;
+	return a; //invalid, can't assign child to parent
 }
