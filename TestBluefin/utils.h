@@ -4,7 +4,7 @@
 #include <istream>
 #include <memory>
 #include "../generated/bluefin/bluefinParser.h"
-#include "../../symbolTable/Symbol.h"
+#include "../symbolTable/Symbol.h"
 
 #include "antlr4-runtime.h"
 

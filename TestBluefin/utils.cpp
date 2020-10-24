@@ -5,10 +5,10 @@
 #include "utils.h"
 #include "../generated/bluefin/bluefinLexer.h"
 #include "../generated/bluefin/bluefinParser.h"
-#include "../../symbolTable/BuiltinTypeSymbol.h"
-#include "../../symbolTable/VariableSymbol.h"
-#include "../../symbolTable/FunctionSymbol.h"
-#include "../../symbolTable/StructSymbol.h"
+#include "../symbolTable/BuiltinTypeSymbol.h"
+#include "../symbolTable/VariableSymbol.h"
+#include "../symbolTable/FunctionSymbol.h"
+#include "../symbolTable/StructSymbol.h"
 
 using namespace antlr4;
 using namespace std;
