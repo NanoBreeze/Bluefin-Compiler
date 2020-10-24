@@ -18,6 +18,62 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <assert.h>
+
+#include "../symbolTable/SymbolTable.h"
+
+using namespace bluefin;
+using namespace llvm;
+
+static std::unique_ptr<LLVMContext> TheContext;
+static std::unique_ptr<Module> TheModule;
+static std::unique_ptr<IRBuilder<>> Builder;
+//static std::map<std::string, Value*> NamedValues;
+
+
+
+CodeGeneration::CodeGeneration(SymbolTable& symTab) : symbolTable{ symTab }	{
+    // Open a new context and module.
+    TheContext = std::make_unique<LLVMContext>();
+    TheModule = std::make_unique<Module>("bluefinTrying", *TheContext);
+
+    // Create a new builder for the module.
+    Builder = std::make_unique<IRBuilder<>>(*TheContext);
+
+}
+
+void CodeGeneration::enterFuncDef(bluefinParser::FuncDefContext* ctx) {
+    shared_ptr<Symbol> funcSym = symbolTable.getSymbol(ctx);
+    Type retType = funcSym->getType();
+
+    assert(retType.isUserDefinedType() == false); // for now, only allow some types to be generated
+
+    FunctionType* FT = nullptr;
+    if (retType == Type::BOOL()) {
+        FT = FunctionType::get(llvm::Type::getInt1Ty(*TheContext), false);
+    }
+    else if (retType == Type::FLOAT()) {
+        FT = FunctionType::get(llvm::Type::getFloatTy(*TheContext), false);
+    }
+    else if (retType == Type::INT()) {
+        FT = FunctionType::get(llvm::Type::getInt32Ty(*TheContext), false);
+    }
+    else if (retType == Type::VOID()) {
+        FT = FunctionType::get(llvm::Type::getVoidTy(*TheContext), false);
+    }
+
+    Function* F = Function::Create(FT, Function::ExternalLinkage, funcSym->getName(), TheModule.get());
+
+    bool isErr = verifyFunction(*F);
+    BasicBlock* BB = BasicBlock::Create(*TheContext, "entry", F);
+    Builder->SetInsertPoint(BB);
+}
+
+void CodeGeneration::dump() {
+    TheModule->dump();
+}
+
+#if 0
 
 #define EOF -1
 using namespace llvm;
@@ -627,3 +683,4 @@ static void MainLoop() {
 }
 */
 
+#endif

@@ -32,19 +32,13 @@ namespace bluefin {
 	class CodeGeneration : public bluefinBaseListener
 	{
 	public:
-		CodeGeneration(SymbolTable& symTab) : symbolTable{symTab}
-		{}
+		CodeGeneration(SymbolTable& symTab);
 
-		void enterVarDecl(bluefinParser::VarDeclContext * ctx) override;
-		void enterParam(bluefinParser::ParamContext * ctx) override;
 		void enterFuncDef(bluefinParser::FuncDefContext * ctx) override;
-		void enterPrimaryId(bluefinParser::PrimaryIdContext*) override;
-		void exitMemberAccess(bluefinParser::MemberAccessContext*) override;
-		void enterFuncCall(bluefinParser::FuncCallContext*) override;
-		void exitMethodCall(bluefinParser::MethodCallContext*) override;
 
 		void attachEventObserver(shared_ptr<EventObserver>);
 		void detachEventObserver(shared_ptr<EventObserver>); // is this even called? If arg not found, no error would be thrown
+		void dump();
 
 	private:
 		SymbolTable& symbolTable;
