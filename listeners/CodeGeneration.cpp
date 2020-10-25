@@ -21,9 +21,14 @@
 #include <assert.h>
 
 #include "../symbolTable/SymbolTable.h"
+#include "../symbolTable/FunctionSymbol.h"
 
 using namespace bluefin;
 using namespace llvm;
+
+using LLVMType = llvm::Type;
+
+using std::dynamic_pointer_cast;
 
 static std::unique_ptr<LLVMContext> TheContext;
 static std::unique_ptr<Module> TheModule;
@@ -43,33 +48,117 @@ CodeGeneration::CodeGeneration(SymbolTable& symTab) : symbolTable{ symTab }	{
 }
 
 void CodeGeneration::enterFuncDef(bluefinParser::FuncDefContext* ctx) {
-    shared_ptr<Symbol> funcSym = symbolTable.getSymbol(ctx);
-    Type retType = funcSym->getType();
+    shared_ptr<FunctionSymbol> funcSym = dynamic_pointer_cast<FunctionSymbol>(symbolTable.getSymbol(ctx));
+    assert(funcSym != nullptr);
 
-    assert(retType.isUserDefinedType() == false); // for now, only allow some types to be generated
+    Type retType = funcSym->getType();
+    assert(retType.isUserDefinedType() == false && retType != Type::STRING()); // for now, only allow some types to be generated
+
+    vector<LLVMType*> paramTypes;
+    vector<shared_ptr<Symbol>> params = funcSym->getParams();
+    for (const auto param : params) {
+        Type paramType = param->getType();
+		assert(paramType.isUserDefinedType() == false && paramType != Type::STRING() && paramType != Type::VOID()); // for now, only allow some types to be generated
+        if (paramType == Type::BOOL())
+            paramTypes.push_back(LLVMType::getInt1Ty(*TheContext));
+        else if (paramType == Type::FLOAT())
+            paramTypes.push_back(LLVMType::getFloatTy(*TheContext));
+        else if (paramType == Type::INT())
+            paramTypes.push_back(LLVMType::getInt32Ty(*TheContext));
+    }
 
     FunctionType* FT = nullptr;
     if (retType == Type::BOOL()) {
-        FT = FunctionType::get(llvm::Type::getInt1Ty(*TheContext), false);
+        FT = FunctionType::get(LLVMType::getInt1Ty(*TheContext), paramTypes, false);
     }
     else if (retType == Type::FLOAT()) {
-        FT = FunctionType::get(llvm::Type::getFloatTy(*TheContext), false);
+        FT = FunctionType::get(LLVMType::getFloatTy(*TheContext), paramTypes, false);
     }
     else if (retType == Type::INT()) {
-        FT = FunctionType::get(llvm::Type::getInt32Ty(*TheContext), false);
+        FT = FunctionType::get(LLVMType::getInt32Ty(*TheContext), paramTypes, false);
     }
     else if (retType == Type::VOID()) {
-        FT = FunctionType::get(llvm::Type::getVoidTy(*TheContext), false);
+        FT = FunctionType::get(LLVMType::getVoidTy(*TheContext), paramTypes, false);
     }
 
     Function* F = Function::Create(FT, Function::ExternalLinkage, funcSym->getName(), TheModule.get());
 
-    bool isErr = verifyFunction(*F);
+    // Add the values to resolvedSymsAndValues
+    for (int i = 0; i < params.size(); i++) {
+        resolvedSymAndValues.emplace(params[i], F->getArg(i));
+    }
+
     BasicBlock* BB = BasicBlock::Create(*TheContext, "entry", F);
     Builder->SetInsertPoint(BB);
+
+    /*
+
+    Value* left = ConstantFP::get(*TheContext, APFloat(23.0));
+    Value* right = ConstantFP::get(*TheContext, APFloat(55.9));
+    Value* addExpr = Builder->CreateFAdd(left, right, "addtemp");
+
+    Constant* nullValue = Constant::getNullValue(left->getType());
+    ///
+    Builder->CreateFCmpOLE(left, right);
+    */
+
+    Builder->CreateRetVoid();
+
+    bool isErr = verifyFunction(*F);
+}
+
+void CodeGeneration::enterPrimaryBool(bluefinParser::PrimaryBoolContext* ctx)
+{
+    string text = ctx->BOOL()->getText();
+    assert(text == "true" || text == "false");
+
+    ConstantInt* constantInt = nullptr;
+    if (text == "true")
+		constantInt = Builder->getTrue();
+    else 
+		constantInt = Builder->getFalse();
+
+    values.emplace(ctx, constantInt);
+}
+
+void CodeGeneration::enterPrimaryInt(bluefinParser::PrimaryIntContext* ctx)
+{
+    string text = ctx->INT()->getText();
+    int i32Val = std::stoi(text);
+
+    values.emplace(ctx, Builder->getInt32(i32Val));
+}
+
+void CodeGeneration::enterPrimaryId(bluefinParser::PrimaryIdContext* ctx)
+{
+	string varName = ctx->ID()->getText();
+	shared_ptr<Symbol> resolvedSym = symbolTable.getResolvedSymbol(ctx);
+    Value* val = resolvedSymAndValues.at(resolvedSym);
+
+    values.emplace(ctx, val);
+}
+
+void CodeGeneration::exitAddExpr(bluefinParser::AddExprContext* ctx)
+{
+    Value* left = values.at(ctx->expr(0));
+    Value* right = values.at(ctx->expr(1));
+
+    string opText = ctx->op->getText();
+    assert(opText == "+" || opText == "-");
+
+    // for now, only int
+    Value* expr = nullptr;
+    if (opText == "+") 
+        expr = Builder->CreateAdd(left, right, "addtmp");
+    else 
+        expr = Builder->CreateSub(left, right, "subtmp");
+
+    values.emplace(ctx, expr);
 }
 
 void CodeGeneration::dump() {
+    //TheModule->print(errs(), nullptr);
+
     TheModule->dump();
 }
 
