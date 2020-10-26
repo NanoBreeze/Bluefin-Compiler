@@ -1,0 +1,18 @@
+; ModuleID = 'ExprForIntLiterals.bf'
+source_filename = "ExprForIntLiterals.bf"
+
+define void @foo(i32 %val) {
+entry:
+  %addtmp = add i32 %val, 5
+  %multmp = mul i32 81, %val
+  %subtmp = sub i32 %addtmp, %multmp
+  %divtmp = sdiv i32 %val, 3
+  %subtmp1 = sub i32 %subtmp, %divtmp
+  %cmpSGTtmp = icmp sgt i32 %val, 5
+  %cmpSGEtmp = icmp sge i32 %val, 5
+  %cmpSLTtmp = icmp slt i32 %val, 5
+  %cmpSLEtmp = icmp sle i32 %val, 5
+  %cmpEQtmp = icmp eq i32 %val, 5
+  %cmpNEtmp = icmp ne i32 %val, 5
+  %negtmp = sub i32 0, %val
+}

@@ -11,7 +11,9 @@
 #include "../symbolTable/StructSymbol.h"
 #include "../symbolTable/Scope.h"
 
-#include "llvm/IR/Value.h"
+#include "llvm/IR/IRBuilder.h"
+#include "llvm/IR/LLVMContext.h"
+#include "llvm/IR/Module.h"
 
 
 namespace bluefin {
@@ -21,9 +23,10 @@ namespace bluefin {
 	using std::stack;
 	using std::pair;
 	using std::vector;
+	using std::unique_ptr;
 	using antlr4::tree::ParseTree;
 
-	class EventObserver;
+	class llvm::Value;
 
 	/*
 	Resolves symbol references. To do so we need the appropriate scope associated with the contexts. 
@@ -35,27 +38,30 @@ namespace bluefin {
 	class CodeGeneration : public bluefinBaseListener
 	{
 	public:
-		CodeGeneration(SymbolTable& symTab);
+		CodeGeneration(SymbolTable& symTab, const string moduleName);
 
 		void enterFuncDef(bluefinParser::FuncDefContext*) override;
 		void enterPrimaryBool(bluefinParser::PrimaryBoolContext*) override;
 		void enterPrimaryInt(bluefinParser::PrimaryIntContext*) override;
 		//void enterPrimaryFloat(bluefinParser::PrimaryFloatContext*) override;
 		void enterPrimaryId(bluefinParser::PrimaryIdContext*) override;
+		void exitUnaryExpr(bluefinParser::UnaryExprContext*) override;
+		void exitMultiExpr(bluefinParser::MultiExprContext*) override;
 		void exitAddExpr(bluefinParser::AddExprContext*) override;
+		void exitRelExpr(bluefinParser::RelExprContext*) override;
+		void exitEqualityExpr(bluefinParser::EqualityExprContext*) override;
+		//void exitLogicalANDExpr(bluefinParser::LogicalANDExprContext*) override;
+		//void exitLogicalORExpr(bluefinParser::LogicalORExprContext*) override;
 
-		void attachEventObserver(shared_ptr<EventObserver>);
-		void detachEventObserver(shared_ptr<EventObserver>); // is this even called? If arg not found, no error would be thrown
-		void dump();
+		string dump();
 
 	private:
 		SymbolTable& symbolTable;
 		map<ParseTree*, llvm::Value*> values; // stores the type associated ctx node with the LLVM value
 		map<shared_ptr<Symbol>, llvm::Value*> resolvedSymAndValues; // this is clumsy. It is used to resolve the Value associated with a primaryId. eg) a+6;
 
-		vector<shared_ptr<EventObserver>> eventObservers;
-
-		void broadcastEvent(SuccessEvent, shared_ptr<Symbol>, shared_ptr<StructSymbol> structSym = nullptr);
-		void broadcastEvent(ErrorEvent, string, shared_ptr<StructSymbol> structSym=nullptr);
+		unique_ptr<llvm::LLVMContext> TheContext;
+		unique_ptr<llvm::Module> TheModule;
+		unique_ptr<llvm::IRBuilder<>> Builder;
 	};
 }

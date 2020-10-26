@@ -21,7 +21,7 @@ namespace CodeGenTests {
 	using namespace antlr4;
 
 	void validateCodeGen(const string programFile, const string expectedOutputFile) {
-		string pathPrefix = "../../TestBluefin/codegen/programs/";
+		string pathPrefix = "codegen/programs/";
 
 		ifstream file(pathPrefix + programFile);
 		tree::ParseTree* tree = SymbolTableTests::createParseTree(file);
@@ -41,22 +41,24 @@ namespace CodeGenTests {
 		resolutionListener.attachEventObserver(obs);
 		walker.walk(&resolutionListener, tree);
 
-		CodeGeneration generator(symTab);
+		CodeGeneration generator(symTab, programFile);
 		walker.walk(&generator, tree);
-		generator.dump();
+		string output = generator.dump();
 
 
-		//string expectedOutput = SymbolTableTests::readFile(pathPrefix + expectedOutputFile);
-		//string output = obs->getOutput();
-		//std::cout << "OUTPUT:" << std::endl;
-		//std::cerr << "OUTPUT:" << std::endl;
-		//std::cout << output << std::endl;
-		//std::cout << "EXPECTED:" << std::endl;
-		//std::cout << expectedOutput << std::endl;
-		ASSERT_EQ("one", "two");
+		string expectedOutput = SymbolTableTests::readFile(pathPrefix + expectedOutputFile);
+		std::cout << "OUTPUT:" << std::endl;
+		std::cout << output << std::endl;
+		std::cout << "EXPECTED:" << std::endl;
+		std::cout << expectedOutput << std::endl;
+		ASSERT_EQ(output, expectedOutput);
 	}
 
 	TEST(CodeGen, Program_BasicFuncDef) {
-		validateCodeGen("basicFuncDef.bf", "ExternalResolution_expected.txt");
+		validateCodeGen("BasicFuncDef.bf", "BasicFuncDef_expected.txt");
+	}
+
+	TEST(CodeGen, Program_ExprForIntLiterals) {
+		validateCodeGen("ExprForIntLiterals.bf", "ExprForIntLiterals_expected.txt");
 	}
 }

@@ -30,17 +30,11 @@ using LLVMType = llvm::Type;
 
 using std::dynamic_pointer_cast;
 
-static std::unique_ptr<LLVMContext> TheContext;
-static std::unique_ptr<Module> TheModule;
-static std::unique_ptr<IRBuilder<>> Builder;
-//static std::map<std::string, Value*> NamedValues;
 
-
-
-CodeGeneration::CodeGeneration(SymbolTable& symTab) : symbolTable{ symTab }	{
+CodeGeneration::CodeGeneration(SymbolTable& symTab, const string moduleName) : symbolTable{ symTab }	{
     // Open a new context and module.
     TheContext = std::make_unique<LLVMContext>();
-    TheModule = std::make_unique<Module>("bluefinTrying", *TheContext);
+    TheModule = std::make_unique<Module>(moduleName, *TheContext);
 
     // Create a new builder for the module.
     Builder = std::make_unique<IRBuilder<>>(*TheContext);
@@ -83,28 +77,18 @@ void CodeGeneration::enterFuncDef(bluefinParser::FuncDefContext* ctx) {
 
     Function* F = Function::Create(FT, Function::ExternalLinkage, funcSym->getName(), TheModule.get());
 
-    // Add the values to resolvedSymsAndValues
+    // Add the values to resolvedSymsAndValues, and set the param names for LLVM's code generation (to avoid awkward names like %0, %1)
     for (int i = 0; i < params.size(); i++) {
         resolvedSymAndValues.emplace(params[i], F->getArg(i));
+        F->getArg(i)->setName(params[i]->getName());
     }
 
     BasicBlock* BB = BasicBlock::Create(*TheContext, "entry", F);
     Builder->SetInsertPoint(BB);
 
-    /*
+    //Builder->CreateRetVoid();
 
-    Value* left = ConstantFP::get(*TheContext, APFloat(23.0));
-    Value* right = ConstantFP::get(*TheContext, APFloat(55.9));
-    Value* addExpr = Builder->CreateFAdd(left, right, "addtemp");
-
-    Constant* nullValue = Constant::getNullValue(left->getType());
-    ///
-    Builder->CreateFCmpOLE(left, right);
-    */
-
-    Builder->CreateRetVoid();
-
-    bool isErr = verifyFunction(*F);
+    //bool isErr = verifyFunction(*F);
 }
 
 void CodeGeneration::enterPrimaryBool(bluefinParser::PrimaryBoolContext* ctx)
@@ -138,6 +122,41 @@ void CodeGeneration::enterPrimaryId(bluefinParser::PrimaryIdContext* ctx)
     values.emplace(ctx, val);
 }
 
+void CodeGeneration::exitUnaryExpr(bluefinParser::UnaryExprContext* ctx)
+{
+    Value* val = values.at(ctx->expr());
+
+    string opText = ctx->op->getText();
+    assert(opText == "!" || opText == "-");
+
+    // TODO: handle !
+    Value* expr = nullptr;
+    if (opText == "-")
+        expr = Builder->CreateNeg(val, "negtmp");
+    else
+        assert(false);
+        
+    values.emplace(ctx, expr);
+}
+
+void CodeGeneration::exitMultiExpr(bluefinParser::MultiExprContext* ctx)
+{
+    Value* left = values.at(ctx->expr(0));
+    Value* right = values.at(ctx->expr(1));
+
+    string opText = ctx->op->getText();
+    assert(opText == "*" || opText == "/");
+
+    // for now, only int. TODO: add float
+    Value* expr = nullptr;
+    if (opText == "*")
+        expr = Builder->CreateMul(left, right, "multmp");
+    else
+        expr = Builder->CreateSDiv(left, right, "divtmp");
+
+    values.emplace(ctx, expr);
+}
+
 void CodeGeneration::exitAddExpr(bluefinParser::AddExprContext* ctx)
 {
     Value* left = values.at(ctx->expr(0));
@@ -156,10 +175,55 @@ void CodeGeneration::exitAddExpr(bluefinParser::AddExprContext* ctx)
     values.emplace(ctx, expr);
 }
 
-void CodeGeneration::dump() {
-    //TheModule->print(errs(), nullptr);
+void CodeGeneration::exitRelExpr(bluefinParser::RelExprContext* ctx)
+{
+    Value* left = values.at(ctx->expr(0));
+    Value* right = values.at(ctx->expr(1));
 
-    TheModule->dump();
+    string opText = ctx->op->getText();
+    assert(opText == "<" || opText == "<=" || opText == ">" || opText == ">=");
+
+    Value* expr = nullptr;
+    if (opText == "<") 
+        expr = Builder->CreateICmpSLT(left, right, "cmpSLTtmp");
+    else if (opText == "<=")
+        expr = Builder->CreateICmpSLE(left, right, "cmpSLEtmp");
+    else if (opText == ">") 
+        expr = Builder->CreateICmpSGT(left, right, "cmpSGTtmp");
+    else 
+        expr = Builder->CreateICmpSGE(left, right, "cmpSGEtmp");
+
+    values.emplace(ctx, expr);
+}
+
+void CodeGeneration::exitEqualityExpr(bluefinParser::EqualityExprContext* ctx)
+{
+    Value* left = values.at(ctx->expr(0));
+    Value* right = values.at(ctx->expr(1));
+
+    string opText = ctx->op->getText();
+    assert(opText == "==" || opText == "!=");
+
+    // for now, only int
+    Value* expr = nullptr;
+    if (opText == "==")
+        expr = Builder->CreateICmpEQ(left, right, "cmpEQtmp");
+    else
+        expr = Builder->CreateICmpNE(left, right, "cmpNEtmp");
+
+    values.emplace(ctx, expr);
+}
+
+string CodeGeneration::dump() {
+
+    string str;
+    raw_string_ostream stream(str);
+    
+    TheModule->print(stream, nullptr);
+    stream.flush();
+    return str;
+
+    //TheModule->dump();
 }
 
 #if 0

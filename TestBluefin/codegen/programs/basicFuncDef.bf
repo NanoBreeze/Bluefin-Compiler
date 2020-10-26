@@ -1,11 +1,13 @@
+/*
+Verifies basic function definitions, especially return type and param types
+TODO: handle string and user-defined struct type
+*/
 
-bool hi() {
-	false;
-}
-
+bool hi() { }
 
 void hey(bool a, float b, int c) {
-	c+5;
-
-	3-7;
 }
+
+float foo(float a) {}
+
+int bar() {}
