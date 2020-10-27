@@ -15,4 +15,6 @@ entry:
   %cmpEQtmp = icmp eq i32 %val, 5
   %cmpNEtmp = icmp ne i32 %val, 5
   %negtmp = sub i32 0, %val
+  %addtmp2 = add i32 %val, 3
+  %multmp3 = mul i32 %addtmp2, 3
 }

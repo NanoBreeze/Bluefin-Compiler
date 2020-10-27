@@ -16,4 +16,6 @@ void foo(int val) {
 	val != 5;
 	-val;
 
+	(val+3)*3;
+
 }

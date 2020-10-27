@@ -122,6 +122,12 @@ void CodeGeneration::enterPrimaryId(bluefinParser::PrimaryIdContext* ctx)
     values.emplace(ctx, val);
 }
 
+void CodeGeneration::exitPrimaryParenth(bluefinParser::PrimaryParenthContext* ctx)
+{
+    Value* val = values.at(ctx->expr());
+    values.emplace(ctx, val); // place same Value* as its child (which the parenth surrounds)
+}
+
 void CodeGeneration::exitUnaryExpr(bluefinParser::UnaryExprContext* ctx)
 {
     Value* val = values.at(ctx->expr());

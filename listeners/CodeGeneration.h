@@ -45,6 +45,8 @@ namespace bluefin {
 		void enterPrimaryInt(bluefinParser::PrimaryIntContext*) override;
 		//void enterPrimaryFloat(bluefinParser::PrimaryFloatContext*) override;
 		void enterPrimaryId(bluefinParser::PrimaryIdContext*) override;
+		void exitPrimaryParenth(bluefinParser::PrimaryParenthContext*) override;
+
 		void exitUnaryExpr(bluefinParser::UnaryExprContext*) override;
 		void exitMultiExpr(bluefinParser::MultiExprContext*) override;
 		void exitAddExpr(bluefinParser::AddExprContext*) override;
