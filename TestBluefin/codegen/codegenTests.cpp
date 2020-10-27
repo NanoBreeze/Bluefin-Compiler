@@ -61,4 +61,8 @@ namespace CodeGenTests {
 	TEST(CodeGen, Program_ExprForIntLiterals) {
 		validateCodeGen("ExprForIntLiterals.bf", "ExprForIntLiterals_expected.txt");
 	}
+
+	TEST(CodeGen, Program_ExprForBool) {
+		validateCodeGen("ExprForBool.bf", "ExprForBool_expected.txt");
+	}
 }

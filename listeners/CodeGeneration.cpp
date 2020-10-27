@@ -134,7 +134,7 @@ void CodeGeneration::exitUnaryExpr(bluefinParser::UnaryExprContext* ctx)
     if (opText == "-")
         expr = Builder->CreateNeg(val, "negtmp");
     else
-        assert(false);
+        expr = Builder->CreateNot(val, "nottmp");
         
     values.emplace(ctx, expr);
 }
@@ -211,6 +211,24 @@ void CodeGeneration::exitEqualityExpr(bluefinParser::EqualityExprContext* ctx)
     else
         expr = Builder->CreateICmpNE(left, right, "cmpNEtmp");
 
+    values.emplace(ctx, expr);
+}
+
+void CodeGeneration::exitLogicalANDExpr(bluefinParser::LogicalANDExprContext* ctx)
+{
+    Value* left = values.at(ctx->expr(0));
+    Value* right = values.at(ctx->expr(1));
+
+    Value* expr = Builder->CreateAnd(left, right, "andtmp");
+    values.emplace(ctx, expr);
+}
+
+void CodeGeneration::exitLogicalORExpr(bluefinParser::LogicalORExprContext* ctx)
+{
+    Value* left = values.at(ctx->expr(0));
+    Value* right = values.at(ctx->expr(1));
+
+    Value* expr = Builder->CreateOr(left, right, "ortmp");
     values.emplace(ctx, expr);
 }
 

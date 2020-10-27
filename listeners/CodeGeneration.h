@@ -50,8 +50,8 @@ namespace bluefin {
 		void exitAddExpr(bluefinParser::AddExprContext*) override;
 		void exitRelExpr(bluefinParser::RelExprContext*) override;
 		void exitEqualityExpr(bluefinParser::EqualityExprContext*) override;
-		//void exitLogicalANDExpr(bluefinParser::LogicalANDExprContext*) override;
-		//void exitLogicalORExpr(bluefinParser::LogicalORExprContext*) override;
+		void exitLogicalANDExpr(bluefinParser::LogicalANDExprContext*) override;
+		void exitLogicalORExpr(bluefinParser::LogicalORExprContext*) override;
 
 		string dump();
 

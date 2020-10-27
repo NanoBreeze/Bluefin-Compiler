@@ -1,0 +1,11 @@
+; ModuleID = 'ExprForBool.bf'
+source_filename = "ExprForBool.bf"
+
+define void @hi(i1 %a, i1 %b) {
+entry:
+  %andtmp = and i1 %a, %b
+  %ortmp = or i1 %a, %b
+  %andtmp1 = and i1 %a, %b
+  %ortmp2 = or i1 %b, %a
+  %nottmp = xor i1 %a, true
+}
