@@ -15,5 +15,5 @@ int main() {
 	float x = 5+first.a;
 	
 	Second second;
-	float y = second.one.a;
+	float y = second.one.a; // this is supposed to be a bug. Not caught here but will be caught in IncompatibleVarDeclType
 }

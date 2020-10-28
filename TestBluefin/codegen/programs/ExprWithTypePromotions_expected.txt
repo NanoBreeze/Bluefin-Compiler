@@ -1,0 +1,36 @@
+; ModuleID = 'ExprWithTypePromotions.bf'
+source_filename = "ExprWithTypePromotions.bf"
+
+define void @foo(i32 %val) {
+entry:
+  %casttmp = sitofp i32 %val to float
+  %addtmp = fadd float %casttmp, 5.000000e+00
+  %casttmp1 = sitofp i32 %val to float
+  %multmp = fmul float 9.500000e+00, %casttmp1
+  %subtmp = fsub float %addtmp, %multmp
+  %divtmp = sdiv i32 %val, 2
+  %casttmp2 = sitofp i32 %divtmp to float
+  %subtmp3 = fsub float %subtmp, %casttmp2
+  %addtmp4 = add i32 %val, 5
+  %casttmp5 = sitofp i32 %addtmp4 to float
+  %casttmp6 = sitofp i32 %val to float
+  %multmp7 = fmul float 9.500000e+00, %casttmp6
+  %subtmp8 = fsub float %casttmp5, %multmp7
+  %casttmp9 = sitofp i32 %val to float
+  %cmpFGTtmp = fcmp ogt float %casttmp9, 5.000000e+00
+  %casttmp10 = sitofp i32 %val to float
+  %cmpFGEtmp = fcmp oge float %casttmp10, 5.000000e+00
+  %casttmp11 = sitofp i32 %val to float
+  %cmpFLTtmp = fcmp olt float %casttmp11, 5.000000e+00
+  %casttmp12 = sitofp i32 %val to float
+  %cmpFLEtmp = fcmp ole float %casttmp12, 5.000000e+00
+  %casttmp13 = sitofp i32 %val to float
+  %cmpEQtmp = fcmp oeq float %casttmp13, 5.000000e+00
+  %casttmp14 = sitofp i32 %val to float
+  %cmpNEtmp = fcmp one float %casttmp14, 5.000000e+00
+  %negtmp = sub i32 0, %val
+  %cmpSGTtmp = icmp sgt i32 %negtmp, 3
+  %casttmp15 = sitofp i32 %val to float
+  %cmpFLTtmp16 = fcmp olt float %casttmp15, 5.000000e+00
+  %cmpEQtmp17 = icmp eq i1 %cmpSGTtmp, %cmpFLTtmp16
+}

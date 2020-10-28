@@ -74,4 +74,8 @@ namespace CodeGenTests {
 	TEST(CodeGen, Program_ExprForBool) {
 		validateCodeGen("ExprForBool.bf", "ExprForBool_expected.txt");
 	}
+
+	TEST(CodeGen, Program_ExprWithTypePromotions) {
+		validateCodeGen("ExprWithTypePromotions.bf", "ExprWithTypePromotions_expected.txt");
+	}
 }

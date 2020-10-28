@@ -98,14 +98,6 @@ namespace bluefin {
 		void broadcastEvent(OperatorTypeErrorEvent, string op, Type lhs, Type rhs = Type{ "" });
 		void broadcastEvent(FunctionCallTypeErrorEvent, string funcName, size_t argCount, size_t paramCount, bool isMethod);
 
-		// can't use pair with unordered_map here b/c pair doesn't have a hash key
-		const map<pair<Type, Type>, Type> arithmeticExprType{
-			{{ Type::INT(), Type::INT()}, Type::INT()},
-			{{ Type::INT(), Type::FLOAT()}, Type::FLOAT()},
-			{{ Type::FLOAT(), Type::INT()}, Type::FLOAT()},
-			{{ Type::FLOAT(), Type::FLOAT()}, Type::FLOAT()}
-		};
-
 		const map<pair<Type, Type>, Type> promotionFromTo{
 			{{Type::BOOL(), Type::BOOL()}, Type::BOOL()},
 			{{Type::INT(), Type::FLOAT()}, Type::FLOAT()},

@@ -107,10 +107,16 @@ void CodeGeneration::enterPrimaryBool(bluefinParser::PrimaryBoolContext* ctx)
 
 void CodeGeneration::enterPrimaryInt(bluefinParser::PrimaryIntContext* ctx)
 {
+    // Since an integer could be automatically promoted to a float (eg, 3+4.5), 
+    // Instead of creating an integer, we check if it would be promoted and if so, create a float instead
+    // This way, we don't need to turn our ConstantInt Value* into a float later in exitAddExpr or other methods
     string text = ctx->INT()->getText();
     int i32Val = std::stoi(text);
 
-    values.emplace(ctx, Builder->getInt32(i32Val));
+    if (typeContexts.at(ctx).getPromotionType() == Type::INT()) // stay as an int. eg) 3+4
+		values.emplace(ctx, Builder->getInt32(i32Val));
+    else
+		values.emplace(ctx, ConstantFP::get(*TheContext, APFloat((float)i32Val)));
 }
 
 void CodeGeneration::enterPrimaryFloat(bluefinParser::PrimaryFloatContext* ctx)
@@ -123,9 +129,15 @@ void CodeGeneration::enterPrimaryFloat(bluefinParser::PrimaryFloatContext* ctx)
 
 void CodeGeneration::enterPrimaryId(bluefinParser::PrimaryIdContext* ctx)
 {
+    /* For primary IDs, they may need to go thru type promotion. 
+    * Eg) int a; a + 6.5;, in which the primaryId 'a' is promoted from int to float
+    * This means we must look not only at the existing type, but also that specific TypeContext's promotion type and cast it
+    */
 	string varName = ctx->ID()->getText();
 	shared_ptr<Symbol> resolvedSym = symbolTable.getResolvedSymbol(ctx);
     Value* val = resolvedSymAndValues.at(resolvedSym);
+    if (typeContexts.at(ctx).getPromotionType() == Type::FLOAT())
+		val = Builder->CreateCast(llvm::Instruction::CastOps::SIToFP, val, LLVMType::getFloatTy(*TheContext), "casttmp");
 
     values.emplace(ctx, val);
 }
@@ -166,7 +178,8 @@ void CodeGeneration::exitMultiExpr(bluefinParser::MultiExprContext* ctx)
     ParseTree* rightParseTree = ctx->expr(1);
     assert(typeContexts.at(leftParseTree).getPromotionType() == typeContexts.at(rightParseTree).getPromotionType());
     assert(typeContexts.at(ctx).getEvalType() == typeContexts.at(rightParseTree).getPromotionType());
-    Type exprType = typeContexts.at(ctx).getPromotionType();
+    Type exprEvalType = typeContexts.at(ctx).getEvalType();
+    Type exprPromoType = typeContexts.at(ctx).getPromotionType();
 
     Value* left = values.at(leftParseTree);
     Value* right = values.at(rightParseTree);
@@ -177,16 +190,23 @@ void CodeGeneration::exitMultiExpr(bluefinParser::MultiExprContext* ctx)
     // for now, only int. TODO: add float
     Value* expr = nullptr;
     if (opText == "*") {
-        if (exprType == Type::INT())
+        if (exprEvalType == Type::INT())
 			expr = Builder->CreateMul(left, right, "multmp");
         else
 			expr = Builder->CreateFMul(left, right, "multmp");
     }
     else {
-        if (exprType == Type::INT())
+        if (exprEvalType == Type::INT())
 			expr = Builder->CreateSDiv(left, right, "divtmp");
         else
 			expr = Builder->CreateFDiv(left, right, "divtmp");
+    }
+
+    // The *'s expr node may have a promotion type of float, whereas the individual subnodes' promotion type is to int
+    // eg) int val; a*2.0 - val/2, for val/2, both have promotion type to int, but the expression is float, so 
+    // we need to convert the final expr to float
+    if (exprPromoType == Type::FLOAT() && exprEvalType == Type::INT()) { // cast left and right to float
+        expr = Builder->CreateCast(llvm::Instruction::CastOps::SIToFP, expr, LLVMType::getFloatTy(*TheContext), "casttmp");
     }
 
     values.emplace(ctx, expr);
@@ -198,7 +218,8 @@ void CodeGeneration::exitAddExpr(bluefinParser::AddExprContext* ctx)
     ParseTree* rightParseTree = ctx->expr(1);
     assert(typeContexts.at(leftParseTree).getPromotionType() == typeContexts.at(rightParseTree).getPromotionType());
     assert(typeContexts.at(ctx).getEvalType() == typeContexts.at(rightParseTree).getPromotionType());
-    Type exprType = typeContexts.at(ctx).getPromotionType();
+    Type exprEvalType = typeContexts.at(ctx).getEvalType();
+    Type exprPromoType = typeContexts.at(ctx).getPromotionType();
 
     Value* left = values.at(leftParseTree);
     Value* right = values.at(rightParseTree);
@@ -209,17 +230,22 @@ void CodeGeneration::exitAddExpr(bluefinParser::AddExprContext* ctx)
     // for now, only int
     Value* expr = nullptr;
     if (opText == "+") {
-        if (exprType == Type::INT())
+        if (exprEvalType == Type::INT())
             expr = Builder->CreateAdd(left, right, "addtmp");
         else 
 			expr = Builder->CreateFAdd(left, right, "addtmp");
     }
     else {
-        if (exprType == Type::INT())
+        if (exprEvalType == Type::INT())
             expr = Builder->CreateSub(left, right, "subtmp");
         else
 			expr = Builder->CreateFSub(left, right, "subtmp");
     }
+
+    if (exprPromoType == Type::FLOAT() && exprEvalType == Type::INT()) { // cast left and right to float
+        expr = Builder->CreateCast(llvm::Instruction::CastOps::SIToFP, expr, LLVMType::getFloatTy(*TheContext), "casttmp");
+    }
+
     values.emplace(ctx, expr);
 }
 
@@ -227,10 +253,6 @@ void CodeGeneration::exitRelExpr(bluefinParser::RelExprContext* ctx)
 {
     ParseTree* leftParseTree = ctx->expr(0);
     ParseTree* rightParseTree = ctx->expr(1);
-
-    TypeContext a = typeContexts.at(leftParseTree);
-    TypeContext b = typeContexts.at(rightParseTree);
-    TypeContext c = typeContexts.at(ctx);
 
     assert(typeContexts.at(leftParseTree).getPromotionType() == typeContexts.at(rightParseTree).getPromotionType());
     assert(typeContexts.at(ctx).getEvalType() == typeContexts.at(ctx).getPromotionType());
@@ -283,7 +305,7 @@ void CodeGeneration::exitEqualityExpr(bluefinParser::EqualityExprContext* ctx)
     assert(opText == "==" || opText == "!=");
 
     Value* expr = nullptr;
-    if (operandType == Type::INT()) {
+    if (operandType == Type::INT() || operandType == Type::BOOL()) {
 		if (opText == "==")
 			expr = Builder->CreateICmpEQ(left, right, "cmpEQtmp");
 		else
