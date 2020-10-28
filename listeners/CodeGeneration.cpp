@@ -31,14 +31,14 @@ using LLVMType = llvm::Type;
 using std::dynamic_pointer_cast;
 
 
-CodeGeneration::CodeGeneration(SymbolTable& symTab, const string moduleName) : symbolTable{ symTab }	{
+CodeGeneration::CodeGeneration(SymbolTable& symTab, const map<ParseTree*, TypeContext>& typeCxts, const string moduleName) : 
+    symbolTable{ symTab }, typeContexts{ typeCxts }	{
     // Open a new context and module.
     TheContext = std::make_unique<LLVMContext>();
     TheModule = std::make_unique<Module>(moduleName, *TheContext);
 
     // Create a new builder for the module.
     Builder = std::make_unique<IRBuilder<>>(*TheContext);
-
 }
 
 void CodeGeneration::enterFuncDef(bluefinParser::FuncDefContext* ctx) {
@@ -113,6 +113,14 @@ void CodeGeneration::enterPrimaryInt(bluefinParser::PrimaryIntContext* ctx)
     values.emplace(ctx, Builder->getInt32(i32Val));
 }
 
+void CodeGeneration::enterPrimaryFloat(bluefinParser::PrimaryFloatContext* ctx)
+{
+    string text = ctx->FLOAT()->getText();
+    float floatVal = std::stof(text);
+
+    values.emplace(ctx, ConstantFP::get(*TheContext, APFloat(floatVal)));
+}
+
 void CodeGeneration::enterPrimaryId(bluefinParser::PrimaryIdContext* ctx)
 {
 	string varName = ctx->ID()->getText();
@@ -130,15 +138,22 @@ void CodeGeneration::exitPrimaryParenth(bluefinParser::PrimaryParenthContext* ct
 
 void CodeGeneration::exitUnaryExpr(bluefinParser::UnaryExprContext* ctx)
 {
-    Value* val = values.at(ctx->expr());
+    ParseTree* childParseTree = ctx->expr();
+    Value* val = values.at(childParseTree);
+    assert(typeContexts.at(ctx).getEvalType() == typeContexts.at(childParseTree).getPromotionType());
+    Type exprType = typeContexts.at(ctx).getPromotionType();
 
     string opText = ctx->op->getText();
     assert(opText == "!" || opText == "-");
 
     // TODO: handle !
     Value* expr = nullptr;
-    if (opText == "-")
-        expr = Builder->CreateNeg(val, "negtmp");
+    if (opText == "-") {
+        if (exprType == Type::INT())
+			expr = Builder->CreateNeg(val, "negtmp");
+        else
+			expr = Builder->CreateFNeg(val, "negtmp");
+    }
     else
         expr = Builder->CreateNot(val, "nottmp");
         
@@ -147,42 +162,81 @@ void CodeGeneration::exitUnaryExpr(bluefinParser::UnaryExprContext* ctx)
 
 void CodeGeneration::exitMultiExpr(bluefinParser::MultiExprContext* ctx)
 {
-    Value* left = values.at(ctx->expr(0));
-    Value* right = values.at(ctx->expr(1));
+    ParseTree* leftParseTree = ctx->expr(0);
+    ParseTree* rightParseTree = ctx->expr(1);
+    assert(typeContexts.at(leftParseTree).getPromotionType() == typeContexts.at(rightParseTree).getPromotionType());
+    assert(typeContexts.at(ctx).getEvalType() == typeContexts.at(rightParseTree).getPromotionType());
+    Type exprType = typeContexts.at(ctx).getPromotionType();
+
+    Value* left = values.at(leftParseTree);
+    Value* right = values.at(rightParseTree);
 
     string opText = ctx->op->getText();
     assert(opText == "*" || opText == "/");
 
     // for now, only int. TODO: add float
     Value* expr = nullptr;
-    if (opText == "*")
-        expr = Builder->CreateMul(left, right, "multmp");
-    else
-        expr = Builder->CreateSDiv(left, right, "divtmp");
+    if (opText == "*") {
+        if (exprType == Type::INT())
+			expr = Builder->CreateMul(left, right, "multmp");
+        else
+			expr = Builder->CreateFMul(left, right, "multmp");
+    }
+    else {
+        if (exprType == Type::INT())
+			expr = Builder->CreateSDiv(left, right, "divtmp");
+        else
+			expr = Builder->CreateFDiv(left, right, "divtmp");
+    }
 
     values.emplace(ctx, expr);
 }
 
 void CodeGeneration::exitAddExpr(bluefinParser::AddExprContext* ctx)
 {
-    Value* left = values.at(ctx->expr(0));
-    Value* right = values.at(ctx->expr(1));
+    ParseTree* leftParseTree = ctx->expr(0);
+    ParseTree* rightParseTree = ctx->expr(1);
+    assert(typeContexts.at(leftParseTree).getPromotionType() == typeContexts.at(rightParseTree).getPromotionType());
+    assert(typeContexts.at(ctx).getEvalType() == typeContexts.at(rightParseTree).getPromotionType());
+    Type exprType = typeContexts.at(ctx).getPromotionType();
+
+    Value* left = values.at(leftParseTree);
+    Value* right = values.at(rightParseTree);
 
     string opText = ctx->op->getText();
     assert(opText == "+" || opText == "-");
 
     // for now, only int
     Value* expr = nullptr;
-    if (opText == "+") 
-        expr = Builder->CreateAdd(left, right, "addtmp");
-    else 
-        expr = Builder->CreateSub(left, right, "subtmp");
-
+    if (opText == "+") {
+        if (exprType == Type::INT())
+            expr = Builder->CreateAdd(left, right, "addtmp");
+        else 
+			expr = Builder->CreateFAdd(left, right, "addtmp");
+    }
+    else {
+        if (exprType == Type::INT())
+            expr = Builder->CreateSub(left, right, "subtmp");
+        else
+			expr = Builder->CreateFSub(left, right, "subtmp");
+    }
     values.emplace(ctx, expr);
 }
 
 void CodeGeneration::exitRelExpr(bluefinParser::RelExprContext* ctx)
 {
+    ParseTree* leftParseTree = ctx->expr(0);
+    ParseTree* rightParseTree = ctx->expr(1);
+
+    TypeContext a = typeContexts.at(leftParseTree);
+    TypeContext b = typeContexts.at(rightParseTree);
+    TypeContext c = typeContexts.at(ctx);
+
+    assert(typeContexts.at(leftParseTree).getPromotionType() == typeContexts.at(rightParseTree).getPromotionType());
+    assert(typeContexts.at(ctx).getEvalType() == typeContexts.at(ctx).getPromotionType());
+    assert(typeContexts.at(ctx).getEvalType() == Type::BOOL());
+    Type operandType = typeContexts.at(leftParseTree).getPromotionType(); // same as right one
+
     Value* left = values.at(ctx->expr(0));
     Value* right = values.at(ctx->expr(1));
 
@@ -190,32 +244,57 @@ void CodeGeneration::exitRelExpr(bluefinParser::RelExprContext* ctx)
     assert(opText == "<" || opText == "<=" || opText == ">" || opText == ">=");
 
     Value* expr = nullptr;
-    if (opText == "<") 
-        expr = Builder->CreateICmpSLT(left, right, "cmpSLTtmp");
-    else if (opText == "<=")
-        expr = Builder->CreateICmpSLE(left, right, "cmpSLEtmp");
-    else if (opText == ">") 
-        expr = Builder->CreateICmpSGT(left, right, "cmpSGTtmp");
-    else 
-        expr = Builder->CreateICmpSGE(left, right, "cmpSGEtmp");
+    if (operandType == Type::INT()) {
+        if (opText == "<")
+            expr = Builder->CreateICmpSLT(left, right, "cmpSLTtmp");
+        else if (opText == "<=")
+            expr = Builder->CreateICmpSLE(left, right, "cmpSLEtmp");
+        else if (opText == ">")
+            expr = Builder->CreateICmpSGT(left, right, "cmpSGTtmp");
+        else
+            expr = Builder->CreateICmpSGE(left, right, "cmpSGEtmp");
+    }
+    else {
+        if (opText == "<")
+            expr = Builder->CreateFCmpOLT(left, right, "cmpFLTtmp");
+        else if (opText == "<=")
+            expr = Builder->CreateFCmpOLE(left, right, "cmpFLEtmp");
+        else if (opText == ">")
+            expr = Builder->CreateFCmpOGT(left, right, "cmpFGTtmp");
+        else
+            expr = Builder->CreateFCmpOGE(left, right, "cmpFGEtmp");
+    }
 
     values.emplace(ctx, expr);
 }
 
 void CodeGeneration::exitEqualityExpr(bluefinParser::EqualityExprContext* ctx)
 {
+    ParseTree* leftParseTree = ctx->expr(0);
+    ParseTree* rightParseTree = ctx->expr(1);
+    assert(typeContexts.at(ctx).getEvalType() == typeContexts.at(ctx).getPromotionType());
+    assert(typeContexts.at(ctx).getEvalType() == Type::BOOL());
+    Type operandType = typeContexts.at(leftParseTree).getPromotionType(); // same as right one
+
     Value* left = values.at(ctx->expr(0));
     Value* right = values.at(ctx->expr(1));
 
     string opText = ctx->op->getText();
     assert(opText == "==" || opText == "!=");
 
-    // for now, only int
     Value* expr = nullptr;
-    if (opText == "==")
-        expr = Builder->CreateICmpEQ(left, right, "cmpEQtmp");
-    else
-        expr = Builder->CreateICmpNE(left, right, "cmpNEtmp");
+    if (operandType == Type::INT()) {
+		if (opText == "==")
+			expr = Builder->CreateICmpEQ(left, right, "cmpEQtmp");
+		else
+			expr = Builder->CreateICmpNE(left, right, "cmpNEtmp");
+    }
+    else {
+		if (opText == "==")
+			expr = Builder->CreateFCmpOEQ(left, right, "cmpEQtmp");
+		else
+			expr = Builder->CreateFCmpONE(left, right, "cmpNEtmp");
+    }
 
     values.emplace(ctx, expr);
 }

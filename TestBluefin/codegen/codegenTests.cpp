@@ -9,6 +9,7 @@
 #include "../../symbolTable/SymbolFactory.h"
 #include "../../listeners/Declaration.h"
 #include "../../listeners/Resolution.h"
+#include "../../listeners/DecorateExprWithTypes.h"
 #include "../../listeners/CodeGeneration.h"
 
 namespace CodeGenTests {
@@ -41,7 +42,11 @@ namespace CodeGenTests {
 		resolutionListener.attachEventObserver(obs);
 		walker.walk(&resolutionListener, tree);
 
-		CodeGeneration generator(symTab, programFile);
+		DecorateExprWithTypes decorateExprListener(symFact, symTab);
+		walker.walk(&decorateExprListener, tree);
+
+		map<ParseTree*, TypeContext> typeContexts = decorateExprListener.getTypeContexts();
+		CodeGeneration generator(symTab, typeContexts, programFile);
 		walker.walk(&generator, tree);
 		string output = generator.dump();
 
@@ -60,6 +65,10 @@ namespace CodeGenTests {
 
 	TEST(CodeGen, Program_ExprForIntLiterals) {
 		validateCodeGen("ExprForIntLiterals.bf", "ExprForIntLiterals_expected.txt");
+	}
+
+	TEST(CodeGen, Program_ExprForFloatLiterals) {
+		validateCodeGen("ExprForFloatLiterals.bf", "ExprForFloatLiterals_expected.txt");
 	}
 
 	TEST(CodeGen, Program_ExprForBool) {
