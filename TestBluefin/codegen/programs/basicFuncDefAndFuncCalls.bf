@@ -8,6 +8,16 @@ bool hi() { }
 void hey(bool a, float b, int c) {
 }
 
-float foo(float a) {}
+float floatOnly(float a) {}
 
-int bar() {}
+void intOnly(int a) {}
+
+void boolOnly(bool a) {}
+
+int bar() {
+   	hi();
+	floatOnly(5.0);
+	intOnly(5);
+	boolOnly(true);
+	boolOnly(false);
+}

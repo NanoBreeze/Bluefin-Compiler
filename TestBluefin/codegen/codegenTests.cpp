@@ -60,7 +60,7 @@ namespace CodeGenTests {
 	}
 
 	TEST(CodeGen, Program_BasicFuncDef) {
-		validateCodeGen("BasicFuncDef.bf", "BasicFuncDef_expected.txt");
+		validateCodeGen("BasicFuncDefAndFuncCalls.bf", "BasicFuncDefAndFuncCalls_expected.txt");
 	}
 
 	TEST(CodeGen, Program_ExprForIntLiterals) {

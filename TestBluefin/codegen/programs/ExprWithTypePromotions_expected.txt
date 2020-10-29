@@ -1,6 +1,10 @@
 ; ModuleID = 'ExprWithTypePromotions.bf'
 source_filename = "ExprWithTypePromotions.bf"
 
+define i32 @hi(float %a) {
+entry:
+}
+
 define void @foo(i32 %val) {
 entry:
   %casttmp = sitofp i32 %val to float
@@ -33,4 +37,16 @@ entry:
   %casttmp15 = sitofp i32 %val to float
   %cmpFLTtmp16 = fcmp olt float %casttmp15, 5.000000e+00
   %cmpEQtmp17 = icmp eq i1 %cmpSGTtmp, %cmpFLTtmp16
+  %calltmp = call i32 @hi(float 5.000000e+00)
+  %addtmp18 = add i32 %calltmp, 5
+  %calltmp19 = call i32 @hi(float 5.000000e+00)
+  %casttmp20 = sitofp i32 %calltmp19 to float
+  %calltmp21 = call i32 @hi(float %casttmp20)
+  %addtmp22 = add i32 %calltmp21, 5
+  %calltmp23 = call i32 @hi(float 5.000000e+00)
+  %casttmp24 = sitofp i32 %calltmp23 to float
+  %addtmp25 = fadd float %casttmp24, 5.000000e+00
+  %calltmp26 = call i32 @hi(float 5.000000e+00)
+  %casttmp27 = sitofp i32 %calltmp26 to float
+  %cmpEQtmp28 = fcmp oeq float %casttmp27, 5.000000e+00
 }

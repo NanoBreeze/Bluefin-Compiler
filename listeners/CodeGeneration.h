@@ -56,6 +56,7 @@ namespace bluefin {
 		void exitLogicalANDExpr(bluefinParser::LogicalANDExprContext*) override;
 		void exitLogicalORExpr(bluefinParser::LogicalORExprContext*) override;
 
+		void exitFuncCall(bluefinParser::FuncCallContext*) override;
 		string dump();
 
 	private:

@@ -71,8 +71,6 @@ void DecorateExprWithTypes::exitFuncCall(bluefinParser::FuncCallContext* ctx) {
 				if (isSubExprTypeUsable(curArgTypeCxt.getEvalType())) {
 					if (isBinaryOperatorOperandCompatible("=", curParamType, curArgTypeCxt.getEvalType())) {
 						curArgTypeCxt.setPromotionType(getPromotionType(curArgTypeCxt.getEvalType(), curParamType));
-
-						typeContexts.emplace(ctx, TypeContext { curArgTypeCxt.getPromotionType() });
 					}
 					else {
 						typeContexts.emplace(ctx, TypeContext { Type::getUnusableType() });
