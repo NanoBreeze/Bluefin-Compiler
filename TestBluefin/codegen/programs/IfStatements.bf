@@ -1,6 +1,5 @@
 /*
 Verifies that if statements work correctly. Include if/else, if, and recursive ifs
-TODO: Add while statements
 */
 
 void foo(int a) {

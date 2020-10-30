@@ -376,14 +376,42 @@ void CodeGeneration::enterStmtIf(bluefinParser::StmtIfContext* ctx) {
 		BasicBlock* elseBB = BasicBlock::Create(*TheContext, "else", TheFunction);
 		BasicBlock* mergeBB = BasicBlock::Create(*TheContext, "merge", TheFunction);
 
-        ifStmtHelper.addIfElseStmt({ ctx->block(0), thenBB }, { ctx->block(1), elseBB }, mergeBB, ctx->expr());
+        ifStmtHelper.addIfElseStmt({ ctx->block(0), thenBB }, { ctx->block(1), elseBB }, mergeBB, ctx->expr(), ctx);
     }
     else {
 		BasicBlock* thenBB = BasicBlock::Create(*TheContext, "then", TheFunction); 
 		BasicBlock* mergeBB = BasicBlock::Create(*TheContext, "merge", TheFunction);
 
-        ifStmtHelper.addIfStmt({ ctx->block(0), thenBB }, mergeBB, ctx->expr());
+        ifStmtHelper.addIfStmt({ ctx->block(0), thenBB }, mergeBB, ctx->expr(), ctx);
     }
+}
+
+void CodeGeneration::exitStmtIf(bluefinParser::StmtIfContext* ctx)
+{
+    BasicBlock* mergeBB = ifStmtHelper.getBBForMerge(ctx);
+    assert(mergeBB != nullptr);
+	Builder->SetInsertPoint(mergeBB);
+}
+
+void CodeGeneration::enterStmtWhile(bluefinParser::StmtWhileContext* ctx)
+{
+	Function* TheFunction = Builder->GetInsertBlock()->getParent();
+	BasicBlock* whileCmpBB = BasicBlock::Create(*TheContext, "whileLoopCmp", TheFunction); 
+	BasicBlock* whileBodyBB = BasicBlock::Create(*TheContext, "whileLoopBody", TheFunction);
+	BasicBlock* afterWhileBB = BasicBlock::Create(*TheContext, "afterWhileLoop", TheFunction);
+
+    Builder->CreateBr(whileCmpBB);
+    Builder->SetInsertPoint(whileCmpBB);
+
+    whileStmtHelper.addWhileStmt(whileCmpBB, whileBodyBB, afterWhileBB, ctx->expr(), ctx->block(), ctx);
+}
+
+void CodeGeneration::exitStmtWhile(bluefinParser::StmtWhileContext* ctx)
+{
+    BasicBlock* afterWhileBB = whileStmtHelper.getBBForAfterLoop(ctx);
+    BasicBlock* whileCmpBB = whileStmtHelper.getBBForLoopCmp(ctx);
+    Builder->CreateBr(whileCmpBB);
+    Builder->SetInsertPoint(afterWhileBB);
 }
 
 void CodeGeneration::enterBlock(bluefinParser::BlockContext* ctx)
@@ -403,6 +431,16 @@ void CodeGeneration::enterBlock(bluefinParser::BlockContext* ctx)
         Builder->CreateCondBr(val, thenBB, nextBB);
         Builder->SetInsertPoint(thenBB);
     }
+    else if (whileStmtHelper.isWhileBlockNode(ctx)) {
+        bluefinParser::ExprContext* expr = whileStmtHelper.getComparisonExpr(ctx);
+        Value* val = values.at(expr);
+        
+        BasicBlock* whileBodyBB = whileStmtHelper.getBBForLoopBody(ctx);
+        BasicBlock* afterWhileBB = whileStmtHelper.getBBForAfterLoop(ctx);
+
+        Builder->CreateCondBr(val, whileBodyBB, afterWhileBB);
+        Builder->SetInsertPoint(whileBodyBB);
+    }
 }
 
 void CodeGeneration::exitBlock(bluefinParser::BlockContext* ctx)
@@ -411,21 +449,10 @@ void CodeGeneration::exitBlock(bluefinParser::BlockContext* ctx)
         llvm::BasicBlock* mergeBB = ifStmtHelper.getBBForMerge(ctx);
 		Builder->CreateBr(mergeBB);
 
-        // Set insertion point for the next block. If we're exiting from an else block, the insertion point must
-        // be set for the merge label. If we're exiting from the "then" block, then the insertion point must be 
-        // either a merge label (if this if stmt doesn't have an else clause) or the else label
-		if (ifStmtHelper.isElseBlockNode(ctx)) {
-			Builder->SetInsertPoint(mergeBB);
+		if (ifStmtHelper.isThenBlockNode(ctx) && ifStmtHelper.hasCorrespondingElseNode(ctx)) {
+			llvm::BasicBlock* elseBlock = ifStmtHelper.getBBForElse(ctx);
+			Builder->SetInsertPoint(elseBlock);
 		}
-        else {
-            if (ifStmtHelper.hasCorrespondingElseNode(ctx)) {
-				llvm::BasicBlock* elseBlock = ifStmtHelper.getBBForElse(ctx);
-				Builder->SetInsertPoint(elseBlock);
-            }
-            else {
-				Builder->SetInsertPoint(mergeBB);
-            }
-        }
     }
 }
 
@@ -441,7 +468,7 @@ string CodeGeneration::dump() {
     //TheModule->dump();
 }
 
-/// ================================== IfStmHelper
+/// ================================== IfStmHelper ========================================
  
 bool IfStmtHelper::isThenBlockNode(bluefinParser::BlockContext* ctx) const
 {
@@ -474,7 +501,8 @@ bluefinParser::ExprContext* IfStmtHelper::getComparisonExpr(bluefinParser::Block
     return nullptr;
 }
 
-void IfStmtHelper::addIfElseStmt(pair<bluefinParser::BlockContext*, llvm::BasicBlock*> thenPair, pair<bluefinParser::BlockContext*, llvm::BasicBlock*> elsePair, llvm::BasicBlock* mergeBlock, bluefinParser::ExprContext* exprNode)
+void IfStmtHelper::addIfElseStmt(pair<bluefinParser::BlockContext*, llvm::BasicBlock*> thenPair, pair<bluefinParser::BlockContext*, llvm::BasicBlock*> elsePair, 
+    llvm::BasicBlock* mergeBlock, bluefinParser::ExprContext* exprNode, bluefinParser::StmtIfContext* ifNode)
 {
     IfStmtInfo info;
     info.thenBlockNode = thenPair.first;
@@ -483,11 +511,13 @@ void IfStmtHelper::addIfElseStmt(pair<bluefinParser::BlockContext*, llvm::BasicB
     info.llvmElseBlockLabel = elsePair.second;
     info.llvmMergeBlockLabel = mergeBlock;
     info.exprNode = exprNode;;
+    info.ifNode = ifNode;
    
     infos.push_back(info);
 }
 
-void IfStmtHelper::addIfStmt(pair<bluefinParser::BlockContext*, llvm::BasicBlock*> thenPair, llvm::BasicBlock* mergeBlock, bluefinParser::ExprContext* exprNode)
+void IfStmtHelper::addIfStmt(pair<bluefinParser::BlockContext*, llvm::BasicBlock*> thenPair, 
+    llvm::BasicBlock* mergeBlock, bluefinParser::ExprContext* exprNode, bluefinParser::StmtIfContext* ifNode)
 {
     IfStmtInfo info;
     info.thenBlockNode = thenPair.first;
@@ -496,6 +526,7 @@ void IfStmtHelper::addIfStmt(pair<bluefinParser::BlockContext*, llvm::BasicBlock
     info.llvmElseBlockLabel = nullptr;
     info.llvmMergeBlockLabel = mergeBlock;
     info.exprNode = exprNode;;
+    info.ifNode = ifNode;
    
     infos.push_back(info);
 }
@@ -544,4 +575,91 @@ llvm::BasicBlock* IfStmtHelper::getBBForMerge(bluefinParser::BlockContext* ctx) 
     }
 
     return nullptr;
+}
+
+llvm::BasicBlock* IfStmtHelper::getBBForMerge(bluefinParser::StmtIfContext* ctx) const
+{
+    for (const auto& info : infos) {
+        if (info.ifNode == ctx) {
+            return info.llvmMergeBlockLabel;
+        }
+    }
+
+    return nullptr;
+}
+
+// ============================== WhileStmtHelper ===============================
+
+void WhileStmtHelper::addWhileStmt(llvm::BasicBlock* llvmWhileLoopCmpLabel, llvm::BasicBlock* llvmWhileLoopBodyLabel, llvm::BasicBlock* llvmAfterWhileLoopLabel, 
+    bluefinParser::ExprContext* exprNode, bluefinParser::BlockContext* whileBlockNode, bluefinParser::StmtWhileContext* whileStmtNode)
+{
+    WhileStmtInfo info;
+    info.llvmWhileLoopCmpLabel = llvmWhileLoopCmpLabel;
+    info.llvmWhileLoopBodyLabel = llvmWhileLoopBodyLabel;
+    info.llvmAfterWhileLoopLabel = llvmAfterWhileLoopLabel;
+    info.exprNode = exprNode;
+    info.whileBlockNode = whileBlockNode;
+    info.whileStmtNode = whileStmtNode;
+
+    infos.push_back(info);
+}
+
+bluefinParser::ExprContext* WhileStmtHelper::getComparisonExpr(bluefinParser::BlockContext* ctx) const
+{
+    for (const auto& info : infos) {
+        if (info.whileBlockNode == ctx)
+            return info.exprNode;
+    }
+
+    return nullptr;
+}
+
+llvm::BasicBlock* WhileStmtHelper::getBBForLoopCmp(bluefinParser::BlockContext* ctx) const
+{
+    for (const auto& info : infos) {
+        if (info.whileBlockNode == ctx)
+            return info.llvmWhileLoopCmpLabel;
+    }
+
+    return nullptr;
+}
+
+llvm::BasicBlock* WhileStmtHelper::getBBForLoopBody(bluefinParser::BlockContext* ctx) const
+{
+    for (const auto& info : infos) {
+        if (info.whileBlockNode == ctx)
+            return info.llvmWhileLoopBodyLabel;
+    }
+
+    return nullptr;
+}
+
+llvm::BasicBlock* WhileStmtHelper::getBBForAfterLoop(bluefinParser::BlockContext* ctx) const
+{
+    for (const auto& info : infos) {
+        if (info.whileBlockNode == ctx)
+            return info.llvmAfterWhileLoopLabel;
+    }
+
+    return nullptr;
+}
+
+llvm::BasicBlock* WhileStmtHelper::getBBForLoopCmp(bluefinParser::StmtWhileContext* ctx) const
+{
+    return getBBForLoopCmp(ctx->block());
+}
+
+llvm::BasicBlock* WhileStmtHelper::getBBForAfterLoop(bluefinParser::StmtWhileContext* ctx) const
+{
+    return getBBForAfterLoop(ctx->block());
+}
+
+bool WhileStmtHelper::isWhileBlockNode(bluefinParser::BlockContext* ctx) const
+{
+    for (const auto& info : infos) {
+        if (info.whileBlockNode == ctx)
+            return true;
+    }
+
+    return false;
 }

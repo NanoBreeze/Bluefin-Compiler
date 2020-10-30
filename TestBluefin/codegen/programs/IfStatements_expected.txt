@@ -1,5 +1,5 @@
-; ModuleID = 'IfWhileStatements.bf'
-source_filename = "IfWhileStatements.bf"
+; ModuleID = 'IfStatements.bf'
+source_filename = "IfStatements.bf"
 
 define void @foo(i32 %a) {
 entry:

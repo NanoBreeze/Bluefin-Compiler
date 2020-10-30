@@ -26,9 +26,9 @@ namespace bluefin {
 		// NOTE: This object model needs some refactoring
 		void addIfElseStmt(pair<bluefinParser::BlockContext*, llvm::BasicBlock*> thenPair,
 			pair<bluefinParser::BlockContext*, llvm::BasicBlock*> elsePair,
-			llvm::BasicBlock* mergeBlock, bluefinParser::ExprContext* exprNode);
+			llvm::BasicBlock* mergeBlock, bluefinParser::ExprContext* exprNode, bluefinParser::StmtIfContext* ifStmtNode);
 		void addIfStmt(pair<bluefinParser::BlockContext*, llvm::BasicBlock*> thenPair,
-			llvm::BasicBlock* mergeBlock, bluefinParser::ExprContext* exprNode);
+			llvm::BasicBlock* mergeBlock, bluefinParser::ExprContext* exprNode, bluefinParser::StmtIfContext* ifStmtNode);
 
 		bool isThenBlockNode(bluefinParser::BlockContext*) const;
 		bool isElseBlockNode(bluefinParser::BlockContext*) const;
@@ -38,6 +38,7 @@ namespace bluefin {
 		llvm::BasicBlock* getBBForElse(bluefinParser::BlockContext* elseCtx) const;
 		llvm::BasicBlock* getBBForThen(bluefinParser::BlockContext* ifCtx) const;
 		llvm::BasicBlock* getBBForMerge(bluefinParser::BlockContext* ifOrElseCtx) const;
+		llvm::BasicBlock* getBBForMerge(bluefinParser::StmtIfContext*) const;
 
 	private:
 		struct IfStmtInfo {
@@ -47,9 +48,36 @@ namespace bluefin {
 			llvm::BasicBlock* llvmElseBlockLabel;
 			llvm::BasicBlock* llvmMergeBlockLabel;
 			bluefinParser::ExprContext* exprNode;
+			bluefinParser::StmtIfContext* ifNode;
 		};
 
 		vector<IfStmtInfo> infos; // maybe a set is better
+	};
+
+	class WhileStmtHelper {
+	public:
+		void addWhileStmt(llvm::BasicBlock* llvmWhileLoopCmpLabel, llvm::BasicBlock* llvmWhileLoopBodyLabel, llvm::BasicBlock* llvmAfterWhileLoopLabel,
+			bluefinParser::ExprContext* exprNode, bluefinParser::BlockContext* whileBlockNode, bluefinParser::StmtWhileContext* whileStmtNode);
+	
+		bluefinParser::ExprContext* getComparisonExpr(bluefinParser::BlockContext*) const;
+		llvm::BasicBlock* getBBForLoopCmp(bluefinParser::BlockContext*) const;
+		llvm::BasicBlock* getBBForLoopBody(bluefinParser::BlockContext*) const;
+		llvm::BasicBlock* getBBForAfterLoop(bluefinParser::BlockContext*) const;
+		llvm::BasicBlock* getBBForLoopCmp(bluefinParser::StmtWhileContext*) const;
+		llvm::BasicBlock* getBBForAfterLoop(bluefinParser::StmtWhileContext*) const;
+		bool isWhileBlockNode(bluefinParser::BlockContext*) const;
+
+	private:
+		struct WhileStmtInfo {
+			llvm::BasicBlock* llvmWhileLoopCmpLabel;
+			llvm::BasicBlock* llvmWhileLoopBodyLabel;
+			llvm::BasicBlock* llvmAfterWhileLoopLabel;
+			bluefinParser::ExprContext* exprNode;
+			bluefinParser::BlockContext* whileBlockNode;
+			bluefinParser::StmtWhileContext* whileStmtNode;
+		};
+
+		vector<WhileStmtInfo> infos;
 	};
 }
 
@@ -95,6 +123,9 @@ namespace bluefin {
 		void exitFuncCall(bluefinParser::FuncCallContext*) override;
 
 		void enterStmtIf(bluefinParser::StmtIfContext*) override;
+		void exitStmtIf(bluefinParser::StmtIfContext*) override;
+		void enterStmtWhile(bluefinParser::StmtWhileContext*) override;
+		void exitStmtWhile(bluefinParser::StmtWhileContext*) override;
 		void enterBlock(bluefinParser::BlockContext*) override;
 		void exitBlock(bluefinParser::BlockContext*) override;
 		string dump();
@@ -111,5 +142,6 @@ namespace bluefin {
 		unique_ptr<llvm::IRBuilder<>> Builder;
 
 		IfStmtHelper ifStmtHelper;
+		WhileStmtHelper whileStmtHelper;
 	};
 }

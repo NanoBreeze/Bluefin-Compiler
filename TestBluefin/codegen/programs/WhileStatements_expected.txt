@@ -1,0 +1,39 @@
+; ModuleID = 'WhileStatements.bf'
+source_filename = "WhileStatements.bf"
+
+define void @foo(i32 %a) {
+entry:
+  %addtmp = add i32 %a, 1
+  br label %whileLoopCmp
+
+whileLoopCmp:                                     ; preds = %merge, %entry
+  %cmpSGTtmp = icmp sgt i32 %a, 2
+  br i1 %cmpSGTtmp, label %whileLoopBody, label %afterWhileLoop
+
+whileLoopBody:                                    ; preds = %whileLoopCmp
+  %addtmp1 = add i32 %a, 3
+  br label %whileLoopCmp2
+
+afterWhileLoop:                                   ; preds = %whileLoopCmp
+  %addtmp5 = add i32 %a, 5
+
+whileLoopCmp2:                                    ; preds = %whileLoopBody3, %whileLoopBody
+  %cmpSLTtmp = icmp slt i32 %a, 4
+  br i1 %cmpSLTtmp, label %whileLoopBody3, label %afterWhileLoop4
+
+whileLoopBody3:                                   ; preds = %whileLoopCmp2
+  br label %whileLoopCmp2
+
+afterWhileLoop4:                                  ; preds = %whileLoopCmp2
+  %cmpEQtmp = icmp eq i32 %a, 6
+  br i1 %cmpEQtmp, label %then, label %else
+
+then:                                             ; preds = %afterWhileLoop4
+  br label %merge
+
+else:                                             ; preds = %afterWhileLoop4
+  br label %merge
+
+merge:                                            ; preds = %else, %then
+  br label %whileLoopCmp
+}
