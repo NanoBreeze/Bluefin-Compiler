@@ -16,6 +16,42 @@
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/IR/Module.h"
 
+namespace bluefin {
+
+	using std::pair;
+	using std::vector;
+	class IfStmtHelper {
+
+	public:
+		// NOTE: This object model needs some refactoring
+		void addIfElseStmt(pair<bluefinParser::BlockContext*, llvm::BasicBlock*> thenPair,
+			pair<bluefinParser::BlockContext*, llvm::BasicBlock*> elsePair,
+			llvm::BasicBlock* mergeBlock, bluefinParser::ExprContext* exprNode);
+		void addIfStmt(pair<bluefinParser::BlockContext*, llvm::BasicBlock*> thenPair,
+			llvm::BasicBlock* mergeBlock, bluefinParser::ExprContext* exprNode);
+
+		bool isThenBlockNode(bluefinParser::BlockContext*) const;
+		bool isElseBlockNode(bluefinParser::BlockContext*) const;
+		bluefinParser::ExprContext* getComparisonExpr(bluefinParser::BlockContext*) const;
+		
+		bool hasCorrespondingElseNode(bluefinParser::BlockContext*) const;
+		llvm::BasicBlock* getBBForElse(bluefinParser::BlockContext* elseCtx) const;
+		llvm::BasicBlock* getBBForThen(bluefinParser::BlockContext* ifCtx) const;
+		llvm::BasicBlock* getBBForMerge(bluefinParser::BlockContext* ifOrElseCtx) const;
+
+	private:
+		struct IfStmtInfo {
+			bluefinParser::BlockContext* thenBlockNode;
+			bluefinParser::BlockContext* elseBlockNode;
+			llvm::BasicBlock* llvmThenBlockLabel;
+			llvm::BasicBlock* llvmElseBlockLabel;
+			llvm::BasicBlock* llvmMergeBlockLabel;
+			bluefinParser::ExprContext* exprNode;
+		};
+
+		vector<IfStmtInfo> infos; // maybe a set is better
+	};
+}
 
 namespace bluefin {
 
@@ -57,12 +93,15 @@ namespace bluefin {
 		void exitLogicalORExpr(bluefinParser::LogicalORExprContext*) override;
 
 		void exitFuncCall(bluefinParser::FuncCallContext*) override;
+
+		void enterStmtIf(bluefinParser::StmtIfContext*) override;
+		void enterBlock(bluefinParser::BlockContext*) override;
+		void exitBlock(bluefinParser::BlockContext*) override;
 		string dump();
 
 	private:
 		SymbolTable& symbolTable;
 		const map<ParseTree*, TypeContext>& typeContexts; // stores the type associated with expressions and functions. Enables type checking
-
 
 		map<ParseTree*, llvm::Value*> values; // stores the type associated ctx node with the LLVM value
 		map<shared_ptr<Symbol>, llvm::Value*> resolvedSymAndValues; // this is clumsy. It is used to resolve the Value associated with a primaryId. eg) a+6;
@@ -70,5 +109,7 @@ namespace bluefin {
 		unique_ptr<llvm::LLVMContext> TheContext;
 		unique_ptr<llvm::Module> TheModule;
 		unique_ptr<llvm::IRBuilder<>> Builder;
+
+		IfStmtHelper ifStmtHelper;
 	};
 }

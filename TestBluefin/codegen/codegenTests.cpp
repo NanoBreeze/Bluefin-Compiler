@@ -78,4 +78,8 @@ namespace CodeGenTests {
 	TEST(CodeGen, Program_ExprWithTypePromotions) {
 		validateCodeGen("ExprWithTypePromotions.bf", "ExprWithTypePromotions_expected.txt");
 	}
+
+	TEST(CodeGen, Program_IfWhileStatements) {
+		validateCodeGen("IfWhileStatements.bf", "IfWhileStatements_expected.txt");
+	}
 }

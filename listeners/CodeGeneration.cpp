@@ -366,6 +366,69 @@ void CodeGeneration::exitFuncCall(bluefinParser::FuncCallContext* ctx)
     values.emplace(ctx, funcRetVal);
 }
 
+void CodeGeneration::enterStmtIf(bluefinParser::StmtIfContext* ctx) {
+
+    bool containsElseBlock = ctx->block().size() == 2;
+	Function* TheFunction = Builder->GetInsertBlock()->getParent();
+
+    if (containsElseBlock) {
+		BasicBlock* thenBB = BasicBlock::Create(*TheContext, "then", TheFunction); 
+		BasicBlock* elseBB = BasicBlock::Create(*TheContext, "else", TheFunction);
+		BasicBlock* mergeBB = BasicBlock::Create(*TheContext, "merge", TheFunction);
+
+        ifStmtHelper.addIfElseStmt({ ctx->block(0), thenBB }, { ctx->block(1), elseBB }, mergeBB, ctx->expr());
+    }
+    else {
+		BasicBlock* thenBB = BasicBlock::Create(*TheContext, "then", TheFunction); 
+		BasicBlock* mergeBB = BasicBlock::Create(*TheContext, "merge", TheFunction);
+
+        ifStmtHelper.addIfStmt({ ctx->block(0), thenBB }, mergeBB, ctx->expr());
+    }
+}
+
+void CodeGeneration::enterBlock(bluefinParser::BlockContext* ctx)
+{ 
+    if (ifStmtHelper.isThenBlockNode(ctx)) {
+        bluefinParser::ExprContext* expr = ifStmtHelper.getComparisonExpr(ctx);
+        Value* val = values.at(expr);
+
+        llvm::BasicBlock* thenBB = ifStmtHelper.getBBForThen(ctx);
+        
+        llvm::BasicBlock* nextBB = nullptr; // if the "if" stmt has an else block, set to the else label. If it doesn't, set to merge label
+        if (ifStmtHelper.hasCorrespondingElseNode(ctx))
+            nextBB = ifStmtHelper.getBBForElse(ctx);
+        else
+            nextBB = ifStmtHelper.getBBForMerge(ctx);
+
+        Builder->CreateCondBr(val, thenBB, nextBB);
+        Builder->SetInsertPoint(thenBB);
+    }
+}
+
+void CodeGeneration::exitBlock(bluefinParser::BlockContext* ctx)
+{
+    if (ifStmtHelper.isThenBlockNode(ctx) || ifStmtHelper.isElseBlockNode(ctx)) {
+        llvm::BasicBlock* mergeBB = ifStmtHelper.getBBForMerge(ctx);
+		Builder->CreateBr(mergeBB);
+
+        // Set insertion point for the next block. If we're exiting from an else block, the insertion point must
+        // be set for the merge label. If we're exiting from the "then" block, then the insertion point must be 
+        // either a merge label (if this if stmt doesn't have an else clause) or the else label
+		if (ifStmtHelper.isElseBlockNode(ctx)) {
+			Builder->SetInsertPoint(mergeBB);
+		}
+        else {
+            if (ifStmtHelper.hasCorrespondingElseNode(ctx)) {
+				llvm::BasicBlock* elseBlock = ifStmtHelper.getBBForElse(ctx);
+				Builder->SetInsertPoint(elseBlock);
+            }
+            else {
+				Builder->SetInsertPoint(mergeBB);
+            }
+        }
+    }
+}
+
 string CodeGeneration::dump() {
 
     string str;
@@ -376,4 +439,109 @@ string CodeGeneration::dump() {
     return str;
 
     //TheModule->dump();
+}
+
+/// ================================== IfStmHelper
+ 
+bool IfStmtHelper::isThenBlockNode(bluefinParser::BlockContext* ctx) const
+{
+    for (const auto& info : infos) {
+        if (info.thenBlockNode == ctx) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool IfStmtHelper::isElseBlockNode(bluefinParser::BlockContext* ctx) const
+{
+    for (const auto& info : infos) {
+        if (info.elseBlockNode == ctx) {
+            return true;
+        }
+    }
+    return false;
+}
+
+// ctx must correspond to the if block's ctx. 
+bluefinParser::ExprContext* IfStmtHelper::getComparisonExpr(bluefinParser::BlockContext* ctx) const
+{
+    for (const auto& info : infos) {
+        if (info.thenBlockNode == ctx) {
+            return info.exprNode;
+        }
+    }
+    return nullptr;
+}
+
+void IfStmtHelper::addIfElseStmt(pair<bluefinParser::BlockContext*, llvm::BasicBlock*> thenPair, pair<bluefinParser::BlockContext*, llvm::BasicBlock*> elsePair, llvm::BasicBlock* mergeBlock, bluefinParser::ExprContext* exprNode)
+{
+    IfStmtInfo info;
+    info.thenBlockNode = thenPair.first;
+    info.llvmThenBlockLabel = thenPair.second;
+    info.elseBlockNode = elsePair.first;
+    info.llvmElseBlockLabel = elsePair.second;
+    info.llvmMergeBlockLabel = mergeBlock;
+    info.exprNode = exprNode;;
+   
+    infos.push_back(info);
+}
+
+void IfStmtHelper::addIfStmt(pair<bluefinParser::BlockContext*, llvm::BasicBlock*> thenPair, llvm::BasicBlock* mergeBlock, bluefinParser::ExprContext* exprNode)
+{
+    IfStmtInfo info;
+    info.thenBlockNode = thenPair.first;
+    info.llvmThenBlockLabel = thenPair.second;
+    info.elseBlockNode = nullptr;
+    info.llvmElseBlockLabel = nullptr;
+    info.llvmMergeBlockLabel = mergeBlock;
+    info.exprNode = exprNode;;
+   
+    infos.push_back(info);
+}
+
+// Given the BlockContext* for a 'if' block, check whether there will be an 'else' block
+// The result is later used for retrieving either the else block's label or merge's label
+bool IfStmtHelper::hasCorrespondingElseNode(bluefinParser::BlockContext* ctx) const
+{
+    for (const auto& info : infos) {
+        if (info.thenBlockNode == ctx) {
+            // If else block is not null, return it. Otherwise, return the merge block. 
+            if (info.elseBlockNode) return true;
+        }
+    }
+    return false;
+}
+
+llvm::BasicBlock* IfStmtHelper::getBBForElse(bluefinParser::BlockContext* ctx) const
+{
+    for (const auto& info : infos) {
+        if (info.elseBlockNode == ctx || info.thenBlockNode == ctx) {
+            return info.llvmElseBlockLabel;
+        }
+    }
+
+    return nullptr;
+}
+
+llvm::BasicBlock* IfStmtHelper::getBBForThen(bluefinParser::BlockContext* ctx) const
+{
+    for (const auto& info : infos) {
+        if (info.thenBlockNode == ctx) {
+            return info.llvmThenBlockLabel;
+        }
+    }
+
+    return nullptr;
+}
+
+llvm::BasicBlock* IfStmtHelper::getBBForMerge(bluefinParser::BlockContext* ctx) const
+{
+    for (const auto& info : infos) {
+        if (info.thenBlockNode == ctx || info.elseBlockNode == ctx) {
+            return info.llvmMergeBlockLabel;
+        }
+    }
+
+    return nullptr;
 }
