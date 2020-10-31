@@ -106,6 +106,7 @@ namespace bluefin {
 		CodeGeneration(SymbolTable& symTab, const map<ParseTree*, TypeContext>& typeCxts, const string moduleName);
 
 		void enterFuncDef(bluefinParser::FuncDefContext*) override;
+		void exitFuncDef(bluefinParser::FuncDefContext*) override;
 		void enterPrimaryBool(bluefinParser::PrimaryBoolContext*) override;
 		void enterPrimaryInt(bluefinParser::PrimaryIntContext*) override;
 		void enterPrimaryFloat(bluefinParser::PrimaryFloatContext*) override;
@@ -121,6 +122,7 @@ namespace bluefin {
 		void exitLogicalORExpr(bluefinParser::LogicalORExprContext*) override;
 
 		void exitFuncCall(bluefinParser::FuncCallContext*) override;
+		void exitStmtReturn(bluefinParser::StmtReturnContext*) override;
 
 		void enterStmtIf(bluefinParser::StmtIfContext*) override;
 		void exitStmtIf(bluefinParser::StmtIfContext*) override;
@@ -128,7 +130,9 @@ namespace bluefin {
 		void exitStmtWhile(bluefinParser::StmtWhileContext*) override;
 		void enterBlock(bluefinParser::BlockContext*) override;
 		void exitBlock(bluefinParser::BlockContext*) override;
+
 		string dump();
+		bool isCodeGenOK();
 
 	private:
 		SymbolTable& symbolTable;

@@ -5,6 +5,7 @@ TODO: Add checking type promo for struct member access, and method call, and var
 */
 
 int hi(float a) {
+	return 3;
 }
 
 void foo(int val) {

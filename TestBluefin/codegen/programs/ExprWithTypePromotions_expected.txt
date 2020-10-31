@@ -3,6 +3,7 @@ source_filename = "ExprWithTypePromotions.bf"
 
 define i32 @hi(float %a) {
 entry:
+  ret i32 3
 }
 
 define void @foo(i32 %val) {
@@ -49,4 +50,5 @@ entry:
   %calltmp26 = call i32 @hi(float 5.000000e+00)
   %casttmp27 = sitofp i32 %calltmp26 to float
   %cmpEQtmp28 = fcmp oeq float %casttmp27, 5.000000e+00
+  ret void
 }

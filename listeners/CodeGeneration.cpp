@@ -91,6 +91,31 @@ void CodeGeneration::enterFuncDef(bluefinParser::FuncDefContext* ctx) {
     //bool isErr = verifyFunction(*F);
 }
 
+void CodeGeneration::exitFuncDef(bluefinParser::FuncDefContext* ctx)
+{
+    // Since all basic blocks must end with either a branching instruction or a return, 
+    // even for void functions, if this function has return type of void, then
+    // generate a ret void instruction. If the user already had a ret instruction,
+    // then it would have already generated a new basic block, into which this ret statement might be in,
+    // so that no basic block would contain two terminators
+
+    shared_ptr<Symbol> sym = symbolTable.getSymbol(ctx);
+    if (sym->getType() == Type::VOID()) {
+        Builder->CreateRetVoid();
+    }
+
+    vector<BasicBlock*> impossibleBB;
+	Function* TheFunction = Builder->GetInsertBlock()->getParent();
+    for (auto& block : TheFunction->getBasicBlockList()) {
+        if (block.getName().startswith("impossible")) {
+            impossibleBB.push_back(&block);
+        }
+    }
+
+     for (BasicBlock* b : impossibleBB) 
+        b->eraseFromParent();
+}
+
 void CodeGeneration::enterPrimaryBool(bluefinParser::PrimaryBoolContext* ctx)
 {
     string text = ctx->BOOL()->getText();
@@ -366,6 +391,31 @@ void CodeGeneration::exitFuncCall(bluefinParser::FuncCallContext* ctx)
     values.emplace(ctx, funcRetVal);
 }
 
+/*
+The logic here requires some explanation. LLVM requires that all BasicBlocks contain only one terminator (ret or br), which
+must be at the last instruction. As a result, after the IR of a return statement is generated and placed into the BB,
+to prevent further instructions from piling in (which would cause the return's IR to no longer be the last instruction), 
+we immediately create a new BB and insert point to store other instructions.
+
+We also know that all other instructions in the same block as the return statement can never be executed. As a result, 
+we call the BB "impossible". Now, upon exiting a funcDef, we remove all "impossible" instructions since they can't ever
+be reached. (also, the last impossible label may not have a terminator)
+*/
+void CodeGeneration::exitStmtReturn(bluefinParser::StmtReturnContext* ctx)
+{
+    if (ctx->expr()) {
+        Value* val = values.at(ctx->expr());
+        Builder->CreateRet(val);
+    }
+    else
+        Builder->CreateRetVoid();
+
+
+	Function* TheFunction = Builder->GetInsertBlock()->getParent();
+	BasicBlock* impossibleBB = BasicBlock::Create(*TheContext, "impossible", TheFunction); 
+    Builder->SetInsertPoint(impossibleBB);
+}
+
 void CodeGeneration::enterStmtIf(bluefinParser::StmtIfContext* ctx) {
 
     bool containsElseBlock = ctx->block().size() == 2;
@@ -466,6 +516,17 @@ string CodeGeneration::dump() {
     return str;
 
     //TheModule->dump();
+}
+
+bool CodeGeneration::isCodeGenOK()
+{
+    string str;
+    //raw_ostream stream;
+    raw_fd_ostream& stream = llvm::outs();
+
+    bool isBroken = verifyModule(*TheModule, &stream);
+    stream.flush();
+    return !isBroken;
 }
 
 /// ================================== IfStmHelper ========================================

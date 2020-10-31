@@ -17,4 +17,5 @@ entry:
   %negtmp = sub i32 0, %val
   %addtmp2 = add i32 %val, 3
   %multmp3 = mul i32 %addtmp2, 3
+  ret void
 }

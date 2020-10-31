@@ -17,4 +17,5 @@ entry:
   %negtmp = fneg float %val
   %addtmp2 = fadd float %val, 1.000000e+00
   %multmp3 = fmul float %addtmp2, 2.500000e+00
+  ret void
 }

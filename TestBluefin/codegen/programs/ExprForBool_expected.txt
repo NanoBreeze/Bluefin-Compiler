@@ -8,4 +8,5 @@ entry:
   %andtmp1 = and i1 %a, %b
   %ortmp2 = or i1 %b, %a
   %nottmp = xor i1 %a, true
+  ret void
 }

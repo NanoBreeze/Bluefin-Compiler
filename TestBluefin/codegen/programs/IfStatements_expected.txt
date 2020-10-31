@@ -52,4 +52,5 @@ then15:                                           ; preds = %merge
 
 merge16:                                          ; preds = %then15, %merge
   %addtmp18 = add i32 %a, 60
+  ret void
 }

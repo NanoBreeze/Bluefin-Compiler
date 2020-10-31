@@ -48,19 +48,21 @@ namespace CodeGenTests {
 		map<ParseTree*, TypeContext> typeContexts = decorateExprListener.getTypeContexts();
 		CodeGeneration generator(symTab, typeContexts, programFile);
 		walker.walk(&generator, tree);
-		string output = generator.dump();
 
+		string output = generator.dump();
+		bool ok = generator.isCodeGenOK();
 
 		string expectedOutput = SymbolTableTests::readFile(pathPrefix + expectedOutputFile);
 		std::cout << "OUTPUT:" << std::endl;
 		std::cout << output << std::endl;
 		std::cout << "EXPECTED:" << std::endl;
 		std::cout << expectedOutput << std::endl;
+		ASSERT_TRUE(generator.isCodeGenOK());
 		ASSERT_EQ(output, expectedOutput);
 	}
 
-	TEST(CodeGen, Program_BasicFuncDef) {
-		validateCodeGen("BasicFuncDefAndFuncCalls.bf", "BasicFuncDefAndFuncCalls_expected.txt");
+	TEST(CodeGen, Program_FuncDefFuncCallsRetStatement) {
+		validateCodeGen("FuncDefFuncCallsRetStatement.bf", "FuncDefFuncCallsRetStatement_expected.txt");
 	}
 
 	TEST(CodeGen, Program_ExprForIntLiterals) {
@@ -85,5 +87,9 @@ namespace CodeGenTests {
 
 	TEST(CodeGen, Program_WhileStatements) {
 		validateCodeGen("WhileStatements.bf", "WhileStatements_expected.txt");
+	}
+
+	TEST(CodeGen, Program_ManyRetStatementsWithIfWhileStatements) {
+		validateCodeGen("ManyRetStatementsWithIfWhileStatements.bf", "ManyRetStatementsWithIfWhileStatements_expected.txt");
 	}
 }

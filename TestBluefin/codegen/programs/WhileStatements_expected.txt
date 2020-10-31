@@ -16,6 +16,7 @@ whileLoopBody:                                    ; preds = %whileLoopCmp
 
 afterWhileLoop:                                   ; preds = %whileLoopCmp
   %addtmp5 = add i32 %a, 5
+  ret void
 
 whileLoopCmp2:                                    ; preds = %whileLoopBody3, %whileLoopBody
   %cmpSLTtmp = icmp slt i32 %a, 4

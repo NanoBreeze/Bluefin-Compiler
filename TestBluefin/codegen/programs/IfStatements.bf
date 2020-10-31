@@ -20,9 +20,7 @@ void foo(int a) {
 
 	a + 10;
 
-	
 	if (a > 50) {}
 
 	a + 60;
-	
 }
