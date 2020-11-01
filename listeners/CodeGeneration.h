@@ -92,6 +92,7 @@ namespace bluefin {
 	using antlr4::tree::ParseTree;
 
 	class llvm::Value;
+	class llvm::Function;
 
 	/*
 	Resolves symbol references. To do so we need the appropriate scope associated with the contexts. 
@@ -105,6 +106,8 @@ namespace bluefin {
 	public:
 		CodeGeneration(SymbolTable& symTab, const map<ParseTree*, TypeContext>& typeCxts, const string moduleName);
 
+		void enterVarDecl(bluefinParser::VarDeclContext*) override;
+		void exitVarDecl(bluefinParser::VarDeclContext*) override;
 		void enterFuncDef(bluefinParser::FuncDefContext*) override;
 		void exitFuncDef(bluefinParser::FuncDefContext*) override;
 		void enterPrimaryBool(bluefinParser::PrimaryBoolContext*) override;
@@ -130,6 +133,8 @@ namespace bluefin {
 		void exitStmtWhile(bluefinParser::StmtWhileContext*) override;
 		void enterBlock(bluefinParser::BlockContext*) override;
 		void exitBlock(bluefinParser::BlockContext*) override;
+		
+		void exitProgram(bluefinParser::ProgramContext*) override;
 
 		string dump();
 		bool isCodeGenOK();
@@ -147,5 +152,7 @@ namespace bluefin {
 
 		IfStmtHelper ifStmtHelper;
 		WhileStmtHelper whileStmtHelper;
+
+		vector<llvm::Function*> internalFunctionsForVarDeclExpr;
 	};
 }

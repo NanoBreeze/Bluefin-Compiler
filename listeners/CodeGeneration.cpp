@@ -1,4 +1,5 @@
 #include "CodeGeneration.h"
+#include "llvm/Transforms/Utils/ModuleUtils.h"
 #include "llvm/ADT/APFloat.h"
 #include "llvm/ADT/STLExtras.h"
 #include "llvm/IR/BasicBlock.h"
@@ -39,6 +40,86 @@ CodeGeneration::CodeGeneration(SymbolTable& symTab, const map<ParseTree*, TypeCo
 
     // Create a new builder for the module.
     Builder = std::make_unique<IRBuilder<>>(*TheContext);
+}
+
+/* For global variable declarations, the expr() may not be a compile-time constant. We wouldn't know
+* until after evaluating the node. If expr() doesn't exist simply create a global and set it to 0. 
+* If it does exist, then create an internal function whose purpose is to update the global. 
+* Now, if the expr() turns out to evaluate to a Constant (in exitVarDecl), then simply change the global's value from 0 
+* to the constant's value and erase its internal function (since it's no longer needed).
+* If the expr() is not a Constant, then push the internal function to a vector. Upon exiting the program,
+* we will generate a global function inside llvm.global_ctors that calls all the internal VarDecl functions, which 
+* ensures all global non-compile-time VarDecl are updated
+*/
+void CodeGeneration::enterVarDecl(bluefinParser::VarDeclContext* ctx)
+{
+    string id = ctx->ID()->getText();
+
+    // This if stmt check ensures we're operating on a global VarDecl, not local one in function or struct def
+    if (symbolTable.getScope(ctx)->getEnclosingScope() == nullptr) {
+
+        Type varDeclType = symbolTable.getSymbol(ctx)->getType();
+        Constant* defaultVal = nullptr;
+        LLVMType* llvmType = nullptr; // type for value being declared
+
+        if (varDeclType == Type::BOOL()) {
+            defaultVal = Builder->getFalse();
+            llvmType = LLVMType::getInt1Ty(*TheContext);
+        }
+        else if (varDeclType == Type::INT()) {
+            defaultVal = Builder->getInt32(0);
+            llvmType = LLVMType::getInt32Ty(*TheContext);
+        }
+        else if (varDeclType == Type::FLOAT()) {
+            defaultVal = ConstantFP::get(*TheContext, APFloat(0.0f));
+            LLVMType* ty = defaultVal->getType();
+            llvmType = LLVMType::getFloatTy(*TheContext);
+		}
+        assert(defaultVal != nullptr && llvmType != nullptr);
+
+        GlobalVariable* v = new GlobalVariable(*TheModule, llvmType, false, 
+            GlobalVariable::LinkageTypes::ExternalLinkage, defaultVal, id);
+
+        if (ctx->expr()) { // if there's an expression, it either can be constant folded or requires calling 
+            // other funcs or primaryIds, which would generate code. We don't know which right now, so we create
+            // new internal function for it. The expr could also be a primaryInt/primaryFloat/etc, which we could find out here,
+            // but for consistency, we choose to deal with that case same way as above
+            
+            string funcName = "internalGlobalVarDecl_" + id;
+            vector<LLVMType*> noParams;
+			FunctionType* FT = FunctionType::get(LLVMType::getVoidTy(*TheContext), noParams, false);
+			Function* internalF = Function::Create(FT, Function::InternalLinkage, funcName, TheModule.get());
+            BasicBlock* BB = BasicBlock::Create(*TheContext, "entry", internalF);
+            Builder->SetInsertPoint(BB);
+        }
+    }
+}
+
+void CodeGeneration::exitVarDecl(bluefinParser::VarDeclContext* ctx)
+{
+    string id = ctx->ID()->getText();
+
+    // if the variable declaration is for a global and it contains an expr, then we will need
+    // to update the global's value (since it was originally set to 0)
+    if (symbolTable.getScope(ctx)->getEnclosingScope() == nullptr && ctx->expr()) {
+        Value* val = values.at(ctx->expr());
+		Function* internalFunction = Builder->GetInsertBlock()->getParent();
+        if (isa<Constant>(val)) {
+            Constant* c = dyn_cast<Constant>(val);
+            TheModule->getNamedGlobal(id)->setInitializer(c);
+            // Remove the internal function since the expr() is a compile-time constant and we can update vardecl 
+            internalFunction->eraseFromParent();
+
+        }
+        else { // non-compile-time assignment. Eg) int d = foo();
+            // At this point, we finished evaluating the expr and our insertion point is still inside the internal function
+            // So store the expr's evaluated value to the global var, and then close it off with a ret void
+			Builder->CreateStore(val, TheModule->getNamedGlobal(id));
+			Builder->CreateRetVoid(); 
+
+            internalFunctionsForVarDeclExpr.push_back(internalFunction);
+        }
+    }
 }
 
 void CodeGeneration::enterFuncDef(bluefinParser::FuncDefContext* ctx) {
@@ -85,10 +166,6 @@ void CodeGeneration::enterFuncDef(bluefinParser::FuncDefContext* ctx) {
 
     BasicBlock* BB = BasicBlock::Create(*TheContext, "entry", F);
     Builder->SetInsertPoint(BB);
-
-    //Builder->CreateRetVoid();
-
-    //bool isErr = verifyFunction(*F);
 }
 
 void CodeGeneration::exitFuncDef(bluefinParser::FuncDefContext* ctx)
@@ -503,6 +580,26 @@ void CodeGeneration::exitBlock(bluefinParser::BlockContext* ctx)
 			llvm::BasicBlock* elseBlock = ifStmtHelper.getBBForElse(ctx);
 			Builder->SetInsertPoint(elseBlock);
 		}
+    }
+}
+
+void CodeGeneration::exitProgram(bluefinParser::ProgramContext* ctx)
+{
+    // Here, we create an internal function that will be put into llvm.global_ctor.
+    // This function calls every internal function that had been created during
+    // global VarDecl initializations (aka, VarDecls whose expr was not a compile-time constant)
+
+    if (!internalFunctionsForVarDeclExpr.empty()) {
+        Function* globalInitFunction = llvm::getOrCreateInitFunction(*TheModule, "_VarDeclInitializations");
+        globalInitFunction->setLinkage(GlobalValue::LinkageTypes::InternalLinkage);
+        BasicBlock* BB = BasicBlock::Create(*TheContext, "entry", globalInitFunction);
+        Builder->SetInsertPoint(BB);
+
+        for (Function* func : internalFunctionsForVarDeclExpr) {
+            Builder->CreateCall(func);
+        }
+
+        Builder->CreateRetVoid();
     }
 }
 

@@ -92,4 +92,8 @@ namespace CodeGenTests {
 	TEST(CodeGen, Program_ManyRetStatementsWithIfWhileStatements) {
 		validateCodeGen("ManyRetStatementsWithIfWhileStatements.bf", "ManyRetStatementsWithIfWhileStatements_expected.txt");
 	}
+
+	TEST(CodeGen, Program_GlobalVarDecl) {
+		validateCodeGen("GlobalVarDecl.bf", "GlobalVarDecl_expected.txt");
+	}
 }
