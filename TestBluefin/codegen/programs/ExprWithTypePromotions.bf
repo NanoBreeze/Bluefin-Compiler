@@ -1,12 +1,15 @@
 /*
 Verifies that automatic type promotions are correctly generated (integers turn into floats)
-Includes promotion of function call args and ret val
-TODO: Add checking type promo for struct member access, and method call, and varDecl
+Includes promotion of function call args and ret val, global/local VarDecl
+TODO: Add checking type promo for struct member access, and method call
 */
 
 int hi(float a) {
 	return 3;
 }
+
+float one = 1; // global varDecl
+float two = hi(1.0); // global varDecl
 
 void foo(int val) {
 
@@ -27,4 +30,6 @@ void foo(int val) {
 	hi(hi(5)) + 5;
 	hi(5) + 5.0;
 	hi(5) == 5.0; // the type of the argument '5' should be promoted to float and the return value of hi(5) should also be promoted to float
+
+	float three = 2+val; 
 }

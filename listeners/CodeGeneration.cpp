@@ -54,26 +54,23 @@ CodeGeneration::CodeGeneration(SymbolTable& symTab, const map<ParseTree*, TypeCo
 void CodeGeneration::enterVarDecl(bluefinParser::VarDeclContext* ctx)
 {
     string id = ctx->ID()->getText();
+	Type varDeclType = symbolTable.getSymbol(ctx)->getType();
+    LLVMType* llvmType = getLLVMType(varDeclType);
 
-    // This if stmt check ensures we're operating on a global VarDecl, not local one in function or struct def
+    // This if stmt checks whether we're operating on a global VarDecl, local VarDecl, or struct def member
     if (symbolTable.getScope(ctx)->getEnclosingScope() == nullptr) {
+        // global variable
 
-        Type varDeclType = symbolTable.getSymbol(ctx)->getType();
         Constant* defaultVal = nullptr;
-        LLVMType* llvmType = nullptr; // type for value being declared
 
         if (varDeclType == Type::BOOL()) {
             defaultVal = Builder->getFalse();
-            llvmType = LLVMType::getInt1Ty(*TheContext);
         }
         else if (varDeclType == Type::INT()) {
             defaultVal = Builder->getInt32(0);
-            llvmType = LLVMType::getInt32Ty(*TheContext);
         }
         else if (varDeclType == Type::FLOAT()) {
             defaultVal = ConstantFP::get(*TheContext, APFloat(0.0f));
-            LLVMType* ty = defaultVal->getType();
-            llvmType = LLVMType::getFloatTy(*TheContext);
 		}
         assert(defaultVal != nullptr && llvmType != nullptr);
 
@@ -92,6 +89,14 @@ void CodeGeneration::enterVarDecl(bluefinParser::VarDeclContext* ctx)
             BasicBlock* BB = BasicBlock::Create(*TheContext, "entry", internalF);
             Builder->SetInsertPoint(BB);
         }
+    }
+    else {
+        // local or struct def member. Since we haven't added struct def to codegen yet, assert it can't be structdef
+        assert(dynamic_pointer_cast<StructSymbol>(symbolTable.getScope(ctx)->getEnclosingScope()) == nullptr);
+
+        // local variables are allocated on the stack
+        values.emplace(ctx, Builder->CreateAlloca(llvmType, nullptr, id)); // NOTE, we're storing the AllocaInst here
+        // TODO: how will later primaryIds assign to thuis var?
     }
 }
 
@@ -120,6 +125,13 @@ void CodeGeneration::exitVarDecl(bluefinParser::VarDeclContext* ctx)
             internalFunctionsForVarDeclExpr.push_back(internalFunction);
         }
     }
+    else if (dynamic_pointer_cast<StructSymbol>(symbolTable.getScope(ctx)->getEnclosingScope()) == nullptr && ctx->expr()) {
+        // local var with an expr. Store the value of the expr into the local var
+        Value* exprVal = values.at(ctx->expr());
+        Value* allocaInst = values.at(ctx);
+
+        Builder->CreateStore(exprVal, allocaInst);
+    }
 }
 
 void CodeGeneration::enterFuncDef(bluefinParser::FuncDefContext* ctx) {
@@ -134,28 +146,10 @@ void CodeGeneration::enterFuncDef(bluefinParser::FuncDefContext* ctx) {
     for (const auto param : params) {
         Type paramType = param->getType();
 		assert(paramType.isUserDefinedType() == false && paramType != Type::STRING() && paramType != Type::VOID()); // for now, only allow some types to be generated
-        if (paramType == Type::BOOL())
-            paramTypes.push_back(LLVMType::getInt1Ty(*TheContext));
-        else if (paramType == Type::FLOAT())
-            paramTypes.push_back(LLVMType::getFloatTy(*TheContext));
-        else if (paramType == Type::INT())
-            paramTypes.push_back(LLVMType::getInt32Ty(*TheContext));
+        paramTypes.push_back(getLLVMType(paramType));
     }
 
-    FunctionType* FT = nullptr;
-    if (retType == Type::BOOL()) {
-        FT = FunctionType::get(LLVMType::getInt1Ty(*TheContext), paramTypes, false);
-    }
-    else if (retType == Type::FLOAT()) {
-        FT = FunctionType::get(LLVMType::getFloatTy(*TheContext), paramTypes, false);
-    }
-    else if (retType == Type::INT()) {
-        FT = FunctionType::get(LLVMType::getInt32Ty(*TheContext), paramTypes, false);
-    }
-    else if (retType == Type::VOID()) {
-        FT = FunctionType::get(LLVMType::getVoidTy(*TheContext), paramTypes, false);
-    }
-
+    FunctionType* FT = FunctionType::get(getLLVMType(retType), paramTypes, false);
     Function* F = Function::Create(FT, Function::ExternalLinkage, funcSym->getName(), TheModule.get());
 
     // Add the values to resolvedSymsAndValues, and set the param names for LLVM's code generation (to avoid awkward names like %0, %1)
@@ -624,6 +618,16 @@ bool CodeGeneration::isCodeGenOK()
     bool isBroken = verifyModule(*TheModule, &stream);
     stream.flush();
     return !isBroken;
+}
+
+LLVMType* CodeGeneration::getLLVMType(Type t) const
+{
+    if (t == Type::BOOL()) return LLVMType::getInt1Ty(*TheContext);
+    if (t == Type::FLOAT()) return LLVMType::getFloatTy(*TheContext);
+    if (t == Type::INT()) return LLVMType::getInt32Ty(*TheContext);
+    if (t == Type::VOID()) return LLVMType::getVoidTy(*TheContext);
+
+    assert(t != Type::STRING()); // we're not ready to implement strings yet
 }
 
 /// ================================== IfStmHelper ========================================

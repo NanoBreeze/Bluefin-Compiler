@@ -1,9 +1,21 @@
 ; ModuleID = 'ExprWithTypePromotions.bf'
 source_filename = "ExprWithTypePromotions.bf"
 
+@one = global float 1.000000e+00
+@two = global float 0.000000e+00
+@llvm.global_ctors = appending global [1 x { i32, void ()*, i8* }] [{ i32, void ()*, i8* } { i32 0, void ()* @_VarDeclInitializations, i8* null }]
+
 define i32 @hi(float %a) {
 entry:
   ret i32 3
+}
+
+define internal void @internalGlobalVarDecl_two() {
+entry:
+  %calltmp = call i32 @hi(float 1.000000e+00)
+  %casttmp = sitofp i32 %calltmp to float
+  store float %casttmp, float* @two, align 4
+  ret void
 }
 
 define void @foo(i32 %val) {
@@ -50,5 +62,15 @@ entry:
   %calltmp26 = call i32 @hi(float 5.000000e+00)
   %casttmp27 = sitofp i32 %calltmp26 to float
   %cmpEQtmp28 = fcmp oeq float %casttmp27, 5.000000e+00
+  %three = alloca float, align 4
+  %addtmp29 = add i32 2, %val
+  %casttmp30 = sitofp i32 %addtmp29 to float
+  store float %casttmp30, float* %three, align 4
+  ret void
+}
+
+define internal void @_VarDeclInitializations() {
+entry:
+  call void @internalGlobalVarDecl_two()
   ret void
 }

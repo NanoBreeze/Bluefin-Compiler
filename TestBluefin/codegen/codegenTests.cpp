@@ -96,4 +96,8 @@ namespace CodeGenTests {
 	TEST(CodeGen, Program_GlobalVarDecl) {
 		validateCodeGen("GlobalVarDecl.bf", "GlobalVarDecl_expected.txt");
 	}
+
+	TEST(CodeGen, Program_LocalVarDecl) {
+		validateCodeGen("LocalVarDecl.bf", "LocalVarDecl_expected.txt");
+	}
 }

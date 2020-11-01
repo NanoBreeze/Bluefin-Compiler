@@ -93,6 +93,7 @@ namespace bluefin {
 
 	class llvm::Value;
 	class llvm::Function;
+	class llvm::Type;
 
 	/*
 	Resolves symbol references. To do so we need the appropriate scope associated with the contexts. 
@@ -154,5 +155,7 @@ namespace bluefin {
 		WhileStmtHelper whileStmtHelper;
 
 		vector<llvm::Function*> internalFunctionsForVarDeclExpr;
+
+		llvm::Type* getLLVMType(Type) const; // return the LLVMType that corresponds with our BluefinType
 	};
 }
