@@ -25,7 +25,9 @@ int main() {
 
 	float f = first.f(); //valid 
 
-	// 5 = 6; TODO: this isn't a VarDecl but this also shouldn't be allowed
+	float g = a = b = 34; // ok
+
+	int h = g = 5;
 
 	return 0;
 }

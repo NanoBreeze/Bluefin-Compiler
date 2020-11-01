@@ -54,6 +54,7 @@ CodeGeneration::CodeGeneration(SymbolTable& symTab, const map<ParseTree*, TypeCo
 void CodeGeneration::enterVarDecl(bluefinParser::VarDeclContext* ctx)
 {
     string id = ctx->ID()->getText();
+    shared_ptr<Symbol> sym = symbolTable.getSymbol(ctx);
 	Type varDeclType = symbolTable.getSymbol(ctx)->getType();
     LLVMType* llvmType = getLLVMType(varDeclType);
 
@@ -77,6 +78,8 @@ void CodeGeneration::enterVarDecl(bluefinParser::VarDeclContext* ctx)
         GlobalVariable* v = new GlobalVariable(*TheModule, llvmType, false, 
             GlobalVariable::LinkageTypes::ExternalLinkage, defaultVal, id);
 
+		resolvedSymAndValues.emplace(sym, v);
+
         if (ctx->expr()) { // if there's an expression, it either can be constant folded or requires calling 
             // other funcs or primaryIds, which would generate code. We don't know which right now, so we create
             // new internal function for it. The expr could also be a primaryInt/primaryFloat/etc, which we could find out here,
@@ -95,18 +98,20 @@ void CodeGeneration::enterVarDecl(bluefinParser::VarDeclContext* ctx)
         assert(dynamic_pointer_cast<StructSymbol>(symbolTable.getScope(ctx)->getEnclosingScope()) == nullptr);
 
         // local variables are allocated on the stack
-        values.emplace(ctx, Builder->CreateAlloca(llvmType, nullptr, id)); // NOTE, we're storing the AllocaInst here
-        // TODO: how will later primaryIds assign to thuis var?
+        Value* allocaVal = Builder->CreateAlloca(llvmType, nullptr, id); // NOTE, we're storing the AllocaInst here
+        values.emplace(ctx, allocaVal);
+		resolvedSymAndValues.emplace(sym, allocaVal); // TODO: how will later primaryIds assign to thuis var?
     }
 }
 
 void CodeGeneration::exitVarDecl(bluefinParser::VarDeclContext* ctx)
 {
     string id = ctx->ID()->getText();
+    shared_ptr<Scope> varDeclScope = symbolTable.getScope(ctx)->getEnclosingScope();
 
     // if the variable declaration is for a global and it contains an expr, then we will need
     // to update the global's value (since it was originally set to 0)
-    if (symbolTable.getScope(ctx)->getEnclosingScope() == nullptr && ctx->expr()) {
+    if (varDeclScope == nullptr && ctx->expr()) {
         Value* val = values.at(ctx->expr());
 		Function* internalFunction = Builder->GetInsertBlock()->getParent();
         if (isa<Constant>(val)) {
@@ -125,13 +130,27 @@ void CodeGeneration::exitVarDecl(bluefinParser::VarDeclContext* ctx)
             internalFunctionsForVarDeclExpr.push_back(internalFunction);
         }
     }
-    else if (dynamic_pointer_cast<StructSymbol>(symbolTable.getScope(ctx)->getEnclosingScope()) == nullptr && ctx->expr()) {
+    else if (dynamic_pointer_cast<StructSymbol>(varDeclScope) == nullptr && ctx->expr()) {
         // local var with an expr. Store the value of the expr into the local var
         Value* exprVal = values.at(ctx->expr());
         Value* allocaInst = values.at(ctx);
 
         Builder->CreateStore(exprVal, allocaInst);
     }
+
+    /*
+	shared_ptr<Symbol> resolvedSym = symbolTable.getResolvedSymbol(ctx);
+    resolvedSymAndValues.emplace();
+
+
+	string varName = ctx->ID()->getText();
+	shared_ptr<Symbol> resolvedSym = symbolTable.getResolvedSymbol(ctx);
+    Value* val = resolvedSymAndValues.at(resolvedSym);
+    if (typeContexts.at(ctx).getPromotionType() == Type::FLOAT())
+		val = Builder->CreateCast(llvm::Instruction::CastOps::SIToFP, val, LLVMType::getFloatTy(*TheContext), "casttmp");
+
+    values.emplace(ctx, val);
+    */
 }
 
 void CodeGeneration::enterFuncDef(bluefinParser::FuncDefContext* ctx) {
@@ -152,14 +171,22 @@ void CodeGeneration::enterFuncDef(bluefinParser::FuncDefContext* ctx) {
     FunctionType* FT = FunctionType::get(getLLVMType(retType), paramTypes, false);
     Function* F = Function::Create(FT, Function::ExternalLinkage, funcSym->getName(), TheModule.get());
 
-    // Add the values to resolvedSymsAndValues, and set the param names for LLVM's code generation (to avoid awkward names like %0, %1)
     for (int i = 0; i < params.size(); i++) {
-        resolvedSymAndValues.emplace(params[i], F->getArg(i));
-        F->getArg(i)->setName(params[i]->getName());
     }
 
     BasicBlock* BB = BasicBlock::Create(*TheContext, "entry", F);
     Builder->SetInsertPoint(BB);
+
+    // since the args can be mutated, create space on the stack that will contain their (possibly mutated) value
+    // Future references to the args will refer to the allocated space
+    // Add the values to resolvedSymsAndValues, and set the param names for LLVM's code generation (to avoid awkward names like %0, %1)
+    assert(params.size() == paramTypes.size());
+    for (int i = 0; i < params.size(); i++) {
+        AllocaInst* allocaInst = Builder->CreateAlloca(paramTypes[i], nullptr, "alloctmp_" + params[i]->getName());
+        Builder->CreateStore(F->getArg(i), allocaInst);
+        F->getArg(i)->setName(params[i]->getName());
+        resolvedSymAndValues.emplace(params[i], allocaInst);
+    }
 }
 
 void CodeGeneration::exitFuncDef(bluefinParser::FuncDefContext* ctx)
@@ -227,11 +254,17 @@ void CodeGeneration::enterPrimaryId(bluefinParser::PrimaryIdContext* ctx)
 {
     /* For primary IDs, they may need to go thru type promotion. 
     * Eg) int a; a + 6.5;, in which the primaryId 'a' is promoted from int to float
-    * This means we must look not only at the existing type, but also that specific TypeContext's promotion type and cast it
+    * This means we must look not only at the existing type, bu also that specific TypeContext's promotion type and cast it
     */
 	string varName = ctx->ID()->getText();
 	shared_ptr<Symbol> resolvedSym = symbolTable.getResolvedSymbol(ctx);
     Value* val = resolvedSymAndValues.at(resolvedSym);
+
+    if (isa<AllocaInst>(val)) {
+        //LoadInst* loadInst = Builder->CreateLoad(val, "loadtmp_" + varName);
+        val = Builder->CreateLoad(val, "loadtmp_" + varName);
+    }
+
     if (typeContexts.at(ctx).getPromotionType() == Type::FLOAT())
 		val = Builder->CreateCast(llvm::Instruction::CastOps::SIToFP, val, LLVMType::getFloatTy(*TheContext), "casttmp");
 
@@ -248,6 +281,7 @@ void CodeGeneration::exitUnaryExpr(bluefinParser::UnaryExprContext* ctx)
 {
     ParseTree* childParseTree = ctx->expr();
     Value* val = values.at(childParseTree);
+    LLVMType* t = val->getType();
     assert(typeContexts.at(ctx).getEvalType() == typeContexts.at(childParseTree).getPromotionType());
     Type exprType = typeContexts.at(ctx).getPromotionType();
 

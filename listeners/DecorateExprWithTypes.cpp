@@ -123,7 +123,7 @@ void bluefin::DecorateExprWithTypes::exitMethodCall(bluefinParser::MethodCallCon
 						if (isBinaryOperatorOperandCompatible("=", curParamType, curArgTypeCxt.getEvalType())) {
 							curArgTypeCxt.setPromotionType(getPromotionType(curArgTypeCxt.getEvalType(), curParamType));
 
-							typeContexts.emplace(ctx, TypeContext { curArgTypeCxt.getPromotionType() });
+							typeContexts.emplace(ctx, TypeContext { curArgTypeCxt.getPromotionType() }); // TODO: I think this line should be removed
 						}
 						else {
 							typeContexts.emplace(ctx, TypeContext { Type::getUnusableType() });
@@ -321,7 +321,8 @@ void DecorateExprWithTypes::exitSimpleAssignExpr(bluefinParser::SimpleAssignExpr
 			rightTypeContext.setPromotionType(
 				getPromotionType(rightTypeContext.getEvalType(), leftTypeContext.getEvalType()));
 
-			typeContexts.emplace(ctx, TypeContext{ leftTypeContext.getEvalType() });
+			//typeContexts.emplace(ctx, TypeContext{ leftTypeContext.getEvalType() });
+			typeContexts.emplace(ctx, TypeContext{ leftTypeContext.getPromotionType() }); // doesn't really matter here whether eval or promo type
 		}
 		else {
 			typeContexts.emplace(ctx, TypeContext{ Type::getUnusableType() });

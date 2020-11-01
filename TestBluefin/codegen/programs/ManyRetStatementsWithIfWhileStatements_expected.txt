@@ -3,7 +3,10 @@ source_filename = "ManyRetStatementsWithIfWhileStatements.bf"
 
 define void @foo(i32 %a) {
 entry:
-  %addtmp = add i32 %a, 6
+  %alloctmp_a = alloca i32, align 4
+  store i32 %a, i32* %alloctmp_a, align 4
+  %loadtmp_a = load i32, i32* %alloctmp_a, align 4
+  %addtmp = add i32 %loadtmp_a, 6
   ret void
 
 then:                                             ; No predecessors!
@@ -18,15 +21,19 @@ merge:                                            ; No predecessors!
 
 define i32 @wow(i32 %a) {
 entry:
+  %alloctmp_a = alloca i32, align 4
+  store i32 %a, i32* %alloctmp_a, align 4
   br label %whileLoopCmp
 
 whileLoopCmp:                                     ; preds = %entry
-  %cmpSGTtmp = icmp sgt i32 %a, 1
+  %loadtmp_a = load i32, i32* %alloctmp_a, align 4
+  %cmpSGTtmp = icmp sgt i32 %loadtmp_a, 1
   br i1 %cmpSGTtmp, label %whileLoopBody, label %afterWhileLoop
 
 whileLoopBody:                                    ; preds = %whileLoopCmp
-  %cmpSGTtmp1 = icmp sgt i32 %a, 2
-  br i1 %cmpSGTtmp1, label %then, label %else
+  %loadtmp_a1 = load i32, i32* %alloctmp_a, align 4
+  %cmpSGTtmp2 = icmp sgt i32 %loadtmp_a1, 2
+  br i1 %cmpSGTtmp2, label %then, label %else
 
 afterWhileLoop:                                   ; preds = %whileLoopCmp
   ret i32 7

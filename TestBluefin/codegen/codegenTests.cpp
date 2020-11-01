@@ -100,4 +100,8 @@ namespace CodeGenTests {
 	TEST(CodeGen, Program_LocalVarDecl) {
 		validateCodeGen("LocalVarDecl.bf", "LocalVarDecl_expected.txt");
 	}
+
+	TEST(CodeGen, Program_ExprForAssignments) {
+		validateCodeGen("ExprForAssignments.bf", "ExprForAssignments_expected.txt");
+	}
 }

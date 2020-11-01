@@ -3,6 +3,8 @@ source_filename = "LocalVarDecl.bf"
 
 define void @foo(i32 %a) {
 entry:
+  %alloctmp_a = alloca i32, align 4
+  store i32 %a, i32* %alloctmp_a, align 4
   %b = alloca i32, align 4
   %c = alloca i32, align 4
   store i32 5, i32* %c, align 4
@@ -11,15 +13,18 @@ entry:
   %e = alloca float, align 4
   store float 6.000000e+00, float* %e, align 4
   %f = alloca i32, align 4
-  %multmp = mul i32 %a, 2
+  %loadtmp_a = load i32, i32* %alloctmp_a, align 4
+  %multmp = mul i32 %loadtmp_a, 2
   %addtmp = add i32 7, %multmp
   store i32 %addtmp, i32* %f, align 4
   %g = alloca float, align 4
-  %subtmp = sub i32 5, %a
+  %loadtmp_a1 = load i32, i32* %alloctmp_a, align 4
+  %subtmp = sub i32 5, %loadtmp_a1
   %casttmp = sitofp i32 %subtmp to float
   store float %casttmp, float* %g, align 4
   %h = alloca i1, align 1
-  %cmpSGTtmp = icmp sgt i32 5, %a
+  %loadtmp_a2 = load i32, i32* %alloctmp_a, align 4
+  %cmpSGTtmp = icmp sgt i32 5, %loadtmp_a2
   store i1 %cmpSGTtmp, i1* %h, align 1
   ret void
 }

@@ -10,7 +10,13 @@ using std::endl;
 
 using namespace antlr4;
 
+int a = 5;
+float b = a = 4;
+
 int main() {
+	float a = 5;
+	int c = 6;
+	c = a = 3;
 	cout << "Hello" << endl;
 
 	ANTLRInputStream input2("int hello() {int b = 7; }");

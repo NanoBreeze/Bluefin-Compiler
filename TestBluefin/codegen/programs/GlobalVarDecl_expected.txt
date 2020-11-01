@@ -19,7 +19,10 @@ entry:
 
 define void @hi(i32 %a) {
 entry:
-  %addtmp = add i32 %a, 1
+  %alloctmp_a = alloca i32, align 4
+  store i32 %a, i32* %alloctmp_a, align 4
+  %loadtmp_a = load i32, i32* %alloctmp_a, align 4
+  %addtmp = add i32 %loadtmp_a, 1
   ret void
 }
 

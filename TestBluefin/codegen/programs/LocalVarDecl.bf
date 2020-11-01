@@ -11,4 +11,6 @@ void foo(int a) {
 	int f = 7+a*2;
 	float g = 5-a; // casting '5-a'
 	bool h = 5>a; 
+
+	//int i = c = 9; // this requires assignment expr to be done
 }
