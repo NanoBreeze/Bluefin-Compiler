@@ -12,5 +12,5 @@ void foo(int a) {
 	float g = 5-a; // casting '5-a'
 	bool h = 5>a; 
 
-	//int i = c = 9; // this requires assignment expr to be done
+	float i = c = 9+c; // this requires casting
 }

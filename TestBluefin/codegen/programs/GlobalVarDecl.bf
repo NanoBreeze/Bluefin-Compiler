@@ -22,4 +22,4 @@ float g;
 float h = 5;  // 5 will need to be casted
 float i = 5 + foo();  // 5 and 'foo' will need to be casted
 
-//float j = e = 4;  // 5 and 'foo' will need to be casted
+float j = e = 4*foo();  // The subexpr 'e = 4' will need to be casted into a float

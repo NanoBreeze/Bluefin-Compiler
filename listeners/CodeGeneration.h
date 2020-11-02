@@ -124,6 +124,7 @@ namespace bluefin {
 		void exitEqualityExpr(bluefinParser::EqualityExprContext*) override;
 		void exitLogicalANDExpr(bluefinParser::LogicalANDExprContext*) override;
 		void exitLogicalORExpr(bluefinParser::LogicalORExprContext*) override;
+		void exitSimpleAssignExpr(bluefinParser::SimpleAssignExprContext*) override;
 
 		void exitFuncCall(bluefinParser::FuncCallContext*) override;
 		void exitStmtReturn(bluefinParser::StmtReturnContext*) override;

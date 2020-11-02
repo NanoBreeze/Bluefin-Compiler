@@ -98,7 +98,7 @@ void CodeGeneration::enterVarDecl(bluefinParser::VarDeclContext* ctx)
         assert(dynamic_pointer_cast<StructSymbol>(symbolTable.getScope(ctx)->getEnclosingScope()) == nullptr);
 
         // local variables are allocated on the stack
-        Value* allocaVal = Builder->CreateAlloca(llvmType, nullptr, id); // NOTE, we're storing the AllocaInst here
+        Value* allocaVal = Builder->CreateAlloca(llvmType, nullptr, "alloctmp_" + id); // NOTE, we're storing the AllocaInst here
         values.emplace(ctx, allocaVal);
 		resolvedSymAndValues.emplace(sym, allocaVal); // TODO: how will later primaryIds assign to thuis var?
     }
@@ -137,20 +137,6 @@ void CodeGeneration::exitVarDecl(bluefinParser::VarDeclContext* ctx)
 
         Builder->CreateStore(exprVal, allocaInst);
     }
-
-    /*
-	shared_ptr<Symbol> resolvedSym = symbolTable.getResolvedSymbol(ctx);
-    resolvedSymAndValues.emplace();
-
-
-	string varName = ctx->ID()->getText();
-	shared_ptr<Symbol> resolvedSym = symbolTable.getResolvedSymbol(ctx);
-    Value* val = resolvedSymAndValues.at(resolvedSym);
-    if (typeContexts.at(ctx).getPromotionType() == Type::FLOAT())
-		val = Builder->CreateCast(llvm::Instruction::CastOps::SIToFP, val, LLVMType::getFloatTy(*TheContext), "casttmp");
-
-    values.emplace(ctx, val);
-    */
 }
 
 void CodeGeneration::enterFuncDef(bluefinParser::FuncDefContext* ctx) {
@@ -210,8 +196,8 @@ void CodeGeneration::exitFuncDef(bluefinParser::FuncDefContext* ctx)
         }
     }
 
-     for (BasicBlock* b : impossibleBB) 
-        b->eraseFromParent();
+	for (BasicBlock* b : impossibleBB) 
+		b->eraseFromParent();
 }
 
 void CodeGeneration::enterPrimaryBool(bluefinParser::PrimaryBoolContext* ctx)
@@ -260,10 +246,11 @@ void CodeGeneration::enterPrimaryId(bluefinParser::PrimaryIdContext* ctx)
 	shared_ptr<Symbol> resolvedSym = symbolTable.getResolvedSymbol(ctx);
     Value* val = resolvedSymAndValues.at(resolvedSym);
 
-    if (isa<AllocaInst>(val)) {
-        //LoadInst* loadInst = Builder->CreateLoad(val, "loadtmp_" + varName);
-        val = Builder->CreateLoad(val, "loadtmp_" + varName);
-    }
+	// the (mutable) primary Id must come from either the stack or is a global, so we load it into memory
+    if (isa<AllocaInst, GlobalVariable>(val) == false)
+        assert(false); 
+
+	val = Builder->CreateLoad(val, "loadtmp_" + varName);
 
     if (typeContexts.at(ctx).getPromotionType() == Type::FLOAT())
 		val = Builder->CreateCast(llvm::Instruction::CastOps::SIToFP, val, LLVMType::getFloatTy(*TheContext), "casttmp");
@@ -467,6 +454,35 @@ void CodeGeneration::exitLogicalORExpr(bluefinParser::LogicalORExprContext* ctx)
 
     Value* expr = Builder->CreateOr(left, right, "ortmp");
     values.emplace(ctx, expr);
+}
+
+// TODO: We don't check l-value or r-value, so an assignmetn like 'a+3 = 6' will lead
+// to an unresolved expr for ctx->expr(0) and will crash the code generator.
+// Note: Visiting the primaryId on the lhs will automatically generate a load for it
+// even though it is totally useless and won't be used
+void CodeGeneration::exitSimpleAssignExpr(bluefinParser::SimpleAssignExprContext* ctx)
+{
+    shared_ptr<Symbol> sym = symbolTable.getResolvedSymbol(ctx->expr(0));
+    Value* lhs = resolvedSymAndValues.at(sym);
+    
+    if (isa<AllocaInst, GlobalVariable>(lhs) == false)  // for assignment, rhs must either be stored on a stack var or a global (not register)
+        assert(false);
+    // AMAZINGLY, this is a bug! assert(isa<AllocaInst, GlobalVariable>(lhs)); 
+
+    Value* exprVal = values.at(ctx->expr(1));
+    LLVMType* t = exprVal->getType();
+    Builder->CreateStore(exprVal, lhs);
+
+    // Since we allow chaining assignments together, this Context* node may be the rhs child of another 
+    // SimpleAssignExprContext* node or a VarDeclContext* node. As a result, associate this node with the
+    // value of its rhs expr and do cast the rhs if needed
+    //. eg) floatVal = intVal = 8;, where 'intVal = 8' should be cast to a float
+    Type exprEvalType = typeContexts.at(ctx).getEvalType();
+    Type exprPromoType = typeContexts.at(ctx).getPromotionType();
+    if (exprPromoType == Type::FLOAT() && exprEvalType == Type::INT()) { // cast left and right to float
+        exprVal = Builder->CreateCast(llvm::Instruction::CastOps::SIToFP, exprVal, LLVMType::getFloatTy(*TheContext), "casttmp");
+    }
+    values.emplace(ctx, exprVal);
 }
 
 void CodeGeneration::exitFuncCall(bluefinParser::FuncCallContext* ctx)

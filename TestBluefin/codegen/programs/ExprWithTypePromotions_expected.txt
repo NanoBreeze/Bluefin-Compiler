@@ -79,11 +79,11 @@ entry:
   %calltmp38 = call i32 @hi(float 5.000000e+00)
   %casttmp39 = sitofp i32 %calltmp38 to float
   %cmpEQtmp40 = fcmp oeq float %casttmp39, 5.000000e+00
-  %three = alloca float, align 4
+  %alloctmp_three = alloca float, align 4
   %loadtmp_val41 = load i32, i32* %alloctmp_val, align 4
   %addtmp42 = add i32 2, %loadtmp_val41
   %casttmp43 = sitofp i32 %addtmp42 to float
-  store float %casttmp43, float* %three, align 4
+  store float %casttmp43, float* %alloctmp_three, align 4
   ret void
 }
 
