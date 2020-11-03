@@ -111,6 +111,8 @@ namespace bluefin {
 		void exitVarDecl(bluefinParser::VarDeclContext*) override;
 		void enterFuncDef(bluefinParser::FuncDefContext*) override;
 		void exitFuncDef(bluefinParser::FuncDefContext*) override;
+		void enterStructDef(bluefinParser::StructDefContext*) override;
+		void exitStructDef(bluefinParser::StructDefContext* ctx) override;
 		void enterPrimaryBool(bluefinParser::PrimaryBoolContext*) override;
 		void enterPrimaryInt(bluefinParser::PrimaryIntContext*) override;
 		void enterPrimaryFloat(bluefinParser::PrimaryFloatContext*) override;
@@ -147,6 +149,8 @@ namespace bluefin {
 
 		map<ParseTree*, llvm::Value*> values; // stores the type associated ctx node with the LLVM value
 		map<shared_ptr<Symbol>, llvm::Value*> resolvedSymAndValues; // this is clumsy. It is used to resolve the Value associated with a primaryId. eg) a+6;
+		
+		unordered_map<Type, llvm::Type*> bluefinToLLVMTypes;
 
 		unique_ptr<llvm::LLVMContext> TheContext;
 		unique_ptr<llvm::Module> TheModule;

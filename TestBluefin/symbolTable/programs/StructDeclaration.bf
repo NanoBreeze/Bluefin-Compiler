@@ -6,12 +6,13 @@ struct A {
 } ;
 
 struct B {
-	int a;
-	int d;
+	int a = 9;
+	int d = a;
 } ;
 
 struct C {
 	A a;
 	B b;
 	int c;
+	B bb = b;
 };

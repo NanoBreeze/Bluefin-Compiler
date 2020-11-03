@@ -57,9 +57,10 @@ void CodeGeneration::enterVarDecl(bluefinParser::VarDeclContext* ctx)
     shared_ptr<Symbol> sym = symbolTable.getSymbol(ctx);
 	Type varDeclType = symbolTable.getSymbol(ctx)->getType();
     LLVMType* llvmType = getLLVMType(varDeclType);
+    shared_ptr<Scope> varDeclScope = symbolTable.getScope(ctx);
 
     // This if stmt checks whether we're operating on a global VarDecl, local VarDecl, or struct def member
-    if (symbolTable.getScope(ctx)->getEnclosingScope() == nullptr) {
+    if (varDeclScope->getEnclosingScope() == nullptr) {
         // global variable
 
         Constant* defaultVal = nullptr;
@@ -93,25 +94,33 @@ void CodeGeneration::enterVarDecl(bluefinParser::VarDeclContext* ctx)
             Builder->SetInsertPoint(BB);
         }
     }
-    else {
-        // local or struct def member. Since we haven't added struct def to codegen yet, assert it can't be structdef
-        assert(dynamic_pointer_cast<StructSymbol>(symbolTable.getScope(ctx)->getEnclosingScope()) == nullptr);
-
+    else if (dynamic_pointer_cast<StructSymbol>(varDeclScope) == nullptr) { // local varDecl 
         // local variables are allocated on the stack
         Value* allocaVal = Builder->CreateAlloca(llvmType, nullptr, "alloctmp_" + id); // NOTE, we're storing the AllocaInst here
         values.emplace(ctx, allocaVal);
-		resolvedSymAndValues.emplace(sym, allocaVal); // TODO: how will later primaryIds assign to thuis var?
+		resolvedSymAndValues.emplace(sym, allocaVal); 
+    }
+    else {
+        // struct member field
+        // Since this struct's member can be assigned to another one, we do want to store its ctx and symbol, 
+        // so others can reference
+        /* TODO 
+		resolvedSymAndValues.emplace(sym, allocaVal); 
+        shared_ptr<StructSymbol> structSym = dynamic_pointer_cast<StructSymbol>(varDeclScope);
+        StructType* structType = structSymbolAndTypes.at(structSym);
+        structType->member
+		*/
     }
 }
 
 void CodeGeneration::exitVarDecl(bluefinParser::VarDeclContext* ctx)
 {
     string id = ctx->ID()->getText();
-    shared_ptr<Scope> varDeclScope = symbolTable.getScope(ctx)->getEnclosingScope();
+    shared_ptr<Scope> varDeclScope = symbolTable.getScope(ctx);
 
     // if the variable declaration is for a global and it contains an expr, then we will need
     // to update the global's value (since it was originally set to 0)
-    if (varDeclScope == nullptr && ctx->expr()) {
+    if (varDeclScope->getEnclosingScope() == nullptr && ctx->expr()) {
         Value* val = values.at(ctx->expr());
 		Function* internalFunction = Builder->GetInsertBlock()->getParent();
         if (isa<Constant>(val)) {
@@ -136,6 +145,9 @@ void CodeGeneration::exitVarDecl(bluefinParser::VarDeclContext* ctx)
         Value* allocaInst = values.at(ctx);
 
         Builder->CreateStore(exprVal, allocaInst);
+    }
+    else {
+        // struct member field
     }
 }
 
@@ -200,6 +212,30 @@ void CodeGeneration::exitFuncDef(bluefinParser::FuncDefContext* ctx)
 		b->eraseFromParent();
 }
 
+void CodeGeneration::enterStructDef(bluefinParser::StructDefContext* ctx)
+{
+}
+
+void CodeGeneration::exitStructDef(bluefinParser::StructDefContext* ctx)
+{
+    string structName = ctx->ID()->getText();
+    shared_ptr<StructSymbol> structSym = dynamic_pointer_cast<StructSymbol>(symbolTable.getSymbol(ctx));
+    assert(structSym);
+    shared_ptr<Scope> scope = dynamic_pointer_cast<Scope>(structSym);
+
+	unordered_map<string, shared_ptr<Symbol>> syms = scope->getSymbols();
+    vector<LLVMType*> members;
+
+    for (auto pair : syms) {
+        members.push_back(getLLVMType(pair.second->getType()));
+    }
+
+    StructType* structType = StructType::create(*TheContext, members, structName);
+    structType->dump();
+    bluefinToLLVMTypes.emplace(structSym->getType(), structType);   // store this StructType as the type is needed if 
+    // it's a member of another struct or used in a VarDecl
+}
+
 void CodeGeneration::enterPrimaryBool(bluefinParser::PrimaryBoolContext* ctx)
 {
     string text = ctx->BOOL()->getText();
@@ -242,6 +278,7 @@ void CodeGeneration::enterPrimaryId(bluefinParser::PrimaryIdContext* ctx)
     * Eg) int a; a + 6.5;, in which the primaryId 'a' is promoted from int to float
     * This means we must look not only at the existing type, bu also that specific TypeContext's promotion type and cast it
     */
+
 	string varName = ctx->ID()->getText();
 	shared_ptr<Symbol> resolvedSym = symbolTable.getResolvedSymbol(ctx);
     Value* val = resolvedSymAndValues.at(resolvedSym);
@@ -661,7 +698,6 @@ string CodeGeneration::dump() {
 
 bool CodeGeneration::isCodeGenOK()
 {
-    string str;
     //raw_ostream stream;
     raw_fd_ostream& stream = llvm::outs();
 
@@ -672,12 +708,14 @@ bool CodeGeneration::isCodeGenOK()
 
 LLVMType* CodeGeneration::getLLVMType(Type t) const
 {
+    assert(t != Type::STRING()); // we're not ready to implement strings yet
+
     if (t == Type::BOOL()) return LLVMType::getInt1Ty(*TheContext);
     if (t == Type::FLOAT()) return LLVMType::getFloatTy(*TheContext);
     if (t == Type::INT()) return LLVMType::getInt32Ty(*TheContext);
     if (t == Type::VOID()) return LLVMType::getVoidTy(*TheContext);
 
-    assert(t != Type::STRING()); // we're not ready to implement strings yet
+    return bluefinToLLVMTypes.at(t);
 }
 
 /// ================================== IfStmHelper ========================================

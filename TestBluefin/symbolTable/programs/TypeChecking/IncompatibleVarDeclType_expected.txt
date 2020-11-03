@@ -1,3 +1,5 @@
+Operator '=' cannot be applied to 'int' and 'float'
+Operator '=' cannot be applied to 'int' and 'float'
 Operator '*' cannot be applied to 'int' and 'bool'
 Operator '=' cannot be applied to 'int' and 'float'
 Operator '=' cannot be applied to 'A' and 'string'

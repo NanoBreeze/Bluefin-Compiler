@@ -104,4 +104,8 @@ namespace CodeGenTests {
 	TEST(CodeGen, Program_ExprForAssignments) {
 		validateCodeGen("ExprForAssignments.bf", "ExprForAssignments_expected.txt");
 	}
+
+	TEST(CodeGen, Program_StructDef) {
+		validateCodeGen("StructDef.bf", "StructDef_expected.txt");
+	}
 }

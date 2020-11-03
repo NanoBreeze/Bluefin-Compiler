@@ -17,6 +17,7 @@ setCurrentScope - Level 1
 declare - a - c_var - t_A
 declare - b - c_var - t_B
 declare - c - c_var - t_int
+declare - bb - c_var - t_B
 exitScope - Level 1
 resolve - int - c_builtinType - t_int
 resolve - int - c_builtinType - t_int
@@ -24,6 +25,9 @@ resolve - void - c_builtinType - t_void
 resolve - int - c_builtinType - t_int
 resolve - int - c_builtinType - t_int
 resolve - int - c_builtinType - t_int
+resolve - a - c_var - t_int
 resolve - A - c_struct - t_A
 resolve - B - c_struct - t_B
 resolve - int - c_builtinType - t_int
+resolve - B - c_struct - t_B
+resolve - b - c_var - t_B
