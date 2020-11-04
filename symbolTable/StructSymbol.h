@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <vector>
 #include <iostream>
 #include "Symbol.h"
 #include "Scope.h"
@@ -9,6 +10,7 @@ namespace bluefin {
 
 	using std::string;
 	using std::shared_ptr;
+	using std::vector;
 
 	/** 
 	Might be circular reference to have a sp to enclosing scope. Consider using wp
@@ -28,9 +30,13 @@ namespace bluefin {
 		using Symbol::getName; // both Scope and Symbol have "getName()". If user calls StructSymbol::getName()
 		// refer to the Symbol's
 
+		size_t getMemberIndex(string memName) const;
+
+		void declare(shared_ptr<Symbol> symbol) override;
+
 	private:
 		shared_ptr<StructSymbol> superClass;
-
+		vector<string> memNames;
 	};
 
 }

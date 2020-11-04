@@ -31,6 +31,7 @@ using LLVMType = llvm::Type;
 
 using std::dynamic_pointer_cast;
 
+// TODO: I want to refactor the way VarDecl and StructDef's are handled, especially its ctor. This is getting messy.
 
 CodeGeneration::CodeGeneration(SymbolTable& symTab, const map<ParseTree*, TypeContext>& typeCxts, const string moduleName) : 
     symbolTable{ symTab }, typeContexts{ typeCxts }	{
@@ -102,14 +103,14 @@ void CodeGeneration::enterVarDecl(bluefinParser::VarDeclContext* ctx)
     }
     else {
         // struct member field
-        // Since this struct's member can be assigned to another one, we do want to store its ctx and symbol, 
-        // so others can reference
-        /* TODO 
-		resolvedSymAndValues.emplace(sym, allocaVal); 
-        shared_ptr<StructSymbol> structSym = dynamic_pointer_cast<StructSymbol>(varDeclScope);
-        StructType* structType = structSymbolAndTypes.at(structSym);
-        structType->member
-		*/
+        // Since this struct's member can be assigned to another one, we do want to store its ctx and symbol, so others can reference
+        // Eg, the 'a' in struct Foo:
+        // struct Foo { int a; int b = a; };
+		Function* internalFunction = Builder->GetInsertBlock()->getParent();
+        Value* thisPtr = internalFunction->getArg(0);
+		resolvedSymAndValues.emplace(sym, nullptr);  // Since we can't pass in an actual value 
+        // right now, we pass in the "this" pointer (getelementptr hasn't been called, we shall pass in nullptr 
+        // later, if we need to resolve it in primaryId, we will use 
     }
 }
 
@@ -146,8 +147,27 @@ void CodeGeneration::exitVarDecl(bluefinParser::VarDeclContext* ctx)
 
         Builder->CreateStore(exprVal, allocaInst);
     }
-    else {
-        // struct member field
+    else if (dynamic_pointer_cast<StructSymbol>(varDeclScope) && ctx->expr()) {
+        // struct member field with expr
+        // if we're in here, that means the current BB insertion point is already in the ctor so can freely get stuff.
+        shared_ptr<StructSymbol> structSym = dynamic_pointer_cast<StructSymbol>(varDeclScope);
+        LLVMType* t = getLLVMType(structSym->getType());
+        assert(isa<StructType>(t));
+        StructType* structType = dyn_cast<StructType>(t);
+
+		Function* internalFunction = Builder->GetInsertBlock()->getParent();
+        Value* thisPtr = internalFunction->getArg(0);
+
+		Value* zero  = Builder->getInt32(0);
+        size_t memberIndex = structSym->getMemberIndex(id);
+		Value* index  = Builder->getInt32(memberIndex);
+
+        Value* indices[2] = { zero, index };
+
+        Value* memberPtr = Builder->CreateGEP(structType, thisPtr, indices, "memPtr_" + id);
+        Value* exprVal = values.at(ctx->expr());
+
+        Builder->CreateStore(exprVal, memberPtr);
     }
 }
 
@@ -168,9 +188,6 @@ void CodeGeneration::enterFuncDef(bluefinParser::FuncDefContext* ctx) {
 
     FunctionType* FT = FunctionType::get(getLLVMType(retType), paramTypes, false);
     Function* F = Function::Create(FT, Function::ExternalLinkage, funcSym->getName(), TheModule.get());
-
-    for (int i = 0; i < params.size(); i++) {
-    }
 
     BasicBlock* BB = BasicBlock::Create(*TheContext, "entry", F);
     Builder->SetInsertPoint(BB);
@@ -212,28 +229,42 @@ void CodeGeneration::exitFuncDef(bluefinParser::FuncDefContext* ctx)
 		b->eraseFromParent();
 }
 
+/* For all struct def, we create the struct here and then start constructing its ctor, 
+All fields/aka, VarDecl with expr() will generate code inside the ctor to update their values
+In exitStructDef, we close off the ctor.
+*/
 void CodeGeneration::enterStructDef(bluefinParser::StructDefContext* ctx)
 {
-}
-
-void CodeGeneration::exitStructDef(bluefinParser::StructDefContext* ctx)
-{
-    string structName = ctx->ID()->getText();
+    // Since some some the structDef's varDecl's contain assignment, we create a ctor for every struct def
+    // so that those assignment expressions can go into the ctor function
     shared_ptr<StructSymbol> structSym = dynamic_pointer_cast<StructSymbol>(symbolTable.getSymbol(ctx));
-    assert(structSym);
+
     shared_ptr<Scope> scope = dynamic_pointer_cast<Scope>(structSym);
-
 	unordered_map<string, shared_ptr<Symbol>> syms = scope->getSymbols();
-    vector<LLVMType*> members;
 
+    vector<LLVMType*> members;
     for (auto pair : syms) {
         members.push_back(getLLVMType(pair.second->getType()));
     }
 
+    string structName = structSym->getName();
     StructType* structType = StructType::create(*TheContext, members, structName);
-    structType->dump();
     bluefinToLLVMTypes.emplace(structSym->getType(), structType);   // store this StructType as the type is needed if 
-    // it's a member of another struct or used in a VarDecl
+
+    vector<LLVMType*> ctorParam; // since this is the ctor, the type should be only
+    ctorParam.push_back(structType->getPointerTo());
+
+    FunctionType* FT = FunctionType::get(getLLVMType(Type::VOID()), ctorParam, false);
+    Function* F = Function::Create(FT, Function::InternalLinkage, "ctor_" + structName, TheModule.get());
+	F->getArg(0)->setName("this");
+
+	BasicBlock * BB = BasicBlock::Create(*TheContext, "entry", F);
+	Builder->SetInsertPoint(BB);
+}
+
+void CodeGeneration::exitStructDef(bluefinParser::StructDefContext* ctx)
+{
+    Builder->CreateRetVoid();
 }
 
 void CodeGeneration::enterPrimaryBool(bluefinParser::PrimaryBoolContext* ctx)
@@ -283,16 +314,46 @@ void CodeGeneration::enterPrimaryId(bluefinParser::PrimaryIdContext* ctx)
 	shared_ptr<Symbol> resolvedSym = symbolTable.getResolvedSymbol(ctx);
     Value* val = resolvedSymAndValues.at(resolvedSym);
 
-	// the (mutable) primary Id must come from either the stack or is a global, so we load it into memory
-    if (isa<AllocaInst, GlobalVariable>(val) == false)
+	// the (mutable) primary Id must be either an internal struct member, local stack or is a global. For latter two, we load it into memory
+    if (val != nullptr && isa<AllocaInst, GlobalVariable>(val) == false)
         assert(false); 
 
-	val = Builder->CreateLoad(val, "loadtmp_" + varName);
+    if (val == nullptr) {
 
-    if (typeContexts.at(ctx).getPromotionType() == Type::FLOAT())
-		val = Builder->CreateCast(llvm::Instruction::CastOps::SIToFP, val, LLVMType::getFloatTy(*TheContext), "casttmp");
+        shared_ptr<StructSymbol> structSym = dynamic_pointer_cast<StructSymbol>(symbolTable.getScope(resolvedSym));
+        LLVMType* t = getLLVMType(structSym->getType());
+        assert(isa<StructType>(t));
+        StructType* structType = dyn_cast<StructType>(t);
+        assert(structSym != nullptr);
 
-    values.emplace(ctx, val);
+        Function* internalFunction = Builder->GetInsertBlock()->getParent();
+        Value* thisPtr = internalFunction->getArg(0);
+
+		Value* zero  = Builder->getInt32(0);
+		size_t memberIndex = structSym->getMemberIndex(varName);
+		Value* index  = Builder->getInt32(memberIndex);
+		Value* indices[2] = { zero, index };
+
+		Value* memberPtr = Builder->CreateGEP(structType, thisPtr, indices, "memPtr_" + varName);
+
+		Value* val = Builder->CreateLoad(memberPtr, "loadtmp_" + varName);
+		Type varIdEvalType = typeContexts.at(ctx).getEvalType();
+		Type varIdPromoType = typeContexts.at(ctx).getPromotionType();
+
+		if (varIdPromoType == Type::FLOAT() && varIdEvalType == Type::INT()) { // cast left and right to float
+			val = Builder->CreateCast(llvm::Instruction::CastOps::SIToFP, val, LLVMType::getFloatTy(*TheContext), "casttmp");
+		}
+
+        values.emplace(ctx, val);
+	 }
+    else {
+        val = Builder->CreateLoad(val, "loadtmp_" + varName);
+
+        if (typeContexts.at(ctx).getPromotionType() == Type::FLOAT())
+            val = Builder->CreateCast(llvm::Instruction::CastOps::SIToFP, val, LLVMType::getFloatTy(*TheContext), "casttmp");
+
+        values.emplace(ctx, val);
+    }
 }
 
 void CodeGeneration::exitPrimaryParenth(bluefinParser::PrimaryParenthContext* ctx)

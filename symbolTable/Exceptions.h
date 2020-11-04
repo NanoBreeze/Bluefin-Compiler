@@ -75,4 +75,22 @@ namespace bluefin {
 	private:
 		const string varId;
 	};
+
+
+	// Used if we can't find the index of the name within the struct
+	class StructFieldNoIndexException : public exception
+	{
+	public:
+		StructFieldNoIndexException(const string memberName) :
+			memberName{ memberName }
+		{}
+
+		const char* what() const override {
+			return
+				("The index of " + memberName + " could not be found. It doesn't exist in the struct").c_str();
+		}
+
+	private:
+		const string memberName;
+	};
 }
