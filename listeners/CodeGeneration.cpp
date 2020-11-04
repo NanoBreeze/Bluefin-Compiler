@@ -23,6 +23,7 @@
 
 #include "../symbolTable/SymbolTable.h"
 #include "../symbolTable/FunctionSymbol.h"
+#include "../symbolTable/VariableSymbol.h"
 
 using namespace bluefin;
 using namespace llvm;
@@ -106,8 +107,6 @@ void CodeGeneration::enterVarDecl(bluefinParser::VarDeclContext* ctx)
         // Since this struct's member can be assigned to another one, we do want to store its ctx and symbol, so others can reference
         // Eg, the 'a' in struct Foo:
         // struct Foo { int a; int b = a; };
-		Function* internalFunction = Builder->GetInsertBlock()->getParent();
-        Value* thisPtr = internalFunction->getArg(0);
 		resolvedSymAndValues.emplace(sym, nullptr);  // Since we can't pass in an actual value 
         // right now, we pass in the "this" pointer (getelementptr hasn't been called, we shall pass in nullptr 
         // later, if we need to resolve it in primaryId, we will use 
@@ -150,6 +149,7 @@ void CodeGeneration::exitVarDecl(bluefinParser::VarDeclContext* ctx)
     else if (dynamic_pointer_cast<StructSymbol>(varDeclScope) && ctx->expr()) {
         // struct member field with expr
         // if we're in here, that means the current BB insertion point is already in the ctor so can freely get stuff.
+        // make sure we're still in ctor since a func def might have take us out.
         shared_ptr<StructSymbol> structSym = dynamic_pointer_cast<StructSymbol>(varDeclScope);
         LLVMType* t = getLLVMType(structSym->getType());
         assert(isa<StructType>(t));
@@ -164,7 +164,9 @@ void CodeGeneration::exitVarDecl(bluefinParser::VarDeclContext* ctx)
 
         Value* indices[2] = { zero, index };
 
-        Value* memberPtr = Builder->CreateGEP(structType, thisPtr, indices, "memPtr_" + id);
+        IRBuilder<> TmpB(&currentStructCtor->getEntryBlock(), currentStructCtor->getEntryBlock().begin());
+
+        Value* memberPtr = TmpB.CreateGEP(structType, thisPtr, indices, "memPtr_" + id);
         Value* exprVal = values.at(ctx->expr());
 
         Builder->CreateStore(exprVal, memberPtr);
@@ -178,13 +180,25 @@ void CodeGeneration::enterFuncDef(bluefinParser::FuncDefContext* ctx) {
     Type retType = funcSym->getType();
     assert(retType.isUserDefinedType() == false && retType != Type::STRING()); // for now, only allow some types to be generated
 
+
     vector<LLVMType*> paramTypes;
     vector<shared_ptr<Symbol>> params = funcSym->getParams();
-    for (const auto param : params) {
-        Type paramType = param->getType();
+
+    // Determine if function is a method or a global function. If it's a method, remember to add the "this" ptr
+    shared_ptr<StructSymbol> structSym = dynamic_pointer_cast<StructSymbol>(symbolTable.getScope(ctx));
+    StructType* structType = nullptr;
+	if (structSym) {
+        LLVMType* t = getLLVMType(structSym->getType());
+        assert(isa<StructType>(t));
+        structType = dyn_cast<StructType>(t);
+        paramTypes.push_back(structType->getPointerTo());
+	}
+
+	for (const auto param : params) {
+		Type paramType = param->getType();
 		assert(paramType.isUserDefinedType() == false && paramType != Type::STRING() && paramType != Type::VOID()); // for now, only allow some types to be generated
-        paramTypes.push_back(getLLVMType(paramType));
-    }
+		paramTypes.push_back(getLLVMType(paramType));
+	}
 
     FunctionType* FT = FunctionType::get(getLLVMType(retType), paramTypes, false);
     Function* F = Function::Create(FT, Function::ExternalLinkage, funcSym->getName(), TheModule.get());
@@ -195,11 +209,16 @@ void CodeGeneration::enterFuncDef(bluefinParser::FuncDefContext* ctx) {
     // since the args can be mutated, create space on the stack that will contain their (possibly mutated) value
     // Future references to the args will refer to the allocated space
     // Add the values to resolvedSymsAndValues, and set the param names for LLVM's code generation (to avoid awkward names like %0, %1)
-    assert(params.size() == paramTypes.size());
+    int argOffset = structType == nullptr ? 0 : 1;
+    if (argOffset == 1) {
+        F->getArg(0)->setName("this");
+    }
+    assert(params.size() + argOffset == paramTypes.size());
+
     for (int i = 0; i < params.size(); i++) {
         AllocaInst* allocaInst = Builder->CreateAlloca(paramTypes[i], nullptr, "alloctmp_" + params[i]->getName());
         Builder->CreateStore(F->getArg(i), allocaInst);
-        F->getArg(i)->setName(params[i]->getName());
+        F->getArg(i+ argOffset)->setName(params[i]->getName());
         resolvedSymAndValues.emplace(params[i], allocaInst);
     }
 }
@@ -244,7 +263,9 @@ void CodeGeneration::enterStructDef(bluefinParser::StructDefContext* ctx)
 
     vector<LLVMType*> members;
     for (auto pair : syms) {
-        members.push_back(getLLVMType(pair.second->getType()));
+        shared_ptr<Symbol> sym = pair.second; // exclude all the methods
+        if (dynamic_pointer_cast<VariableSymbol>(sym))
+			members.push_back(getLLVMType(sym->getType()));
     }
 
     string structName = structSym->getName();
@@ -257,6 +278,7 @@ void CodeGeneration::enterStructDef(bluefinParser::StructDefContext* ctx)
     FunctionType* FT = FunctionType::get(getLLVMType(Type::VOID()), ctorParam, false);
     Function* F = Function::Create(FT, Function::InternalLinkage, "ctor_" + structName, TheModule.get());
 	F->getArg(0)->setName("this");
+    currentStructCtor = F;
 
 	BasicBlock * BB = BasicBlock::Create(*TheContext, "entry", F);
 	Builder->SetInsertPoint(BB);
@@ -264,7 +286,8 @@ void CodeGeneration::enterStructDef(bluefinParser::StructDefContext* ctx)
 
 void CodeGeneration::exitStructDef(bluefinParser::StructDefContext* ctx)
 {
-    Builder->CreateRetVoid();
+	IRBuilder<> TmpB(&currentStructCtor->getEntryBlock(), currentStructCtor->getEntryBlock().end());
+    TmpB.CreateRetVoid();
 }
 
 void CodeGeneration::enterPrimaryBool(bluefinParser::PrimaryBoolContext* ctx)

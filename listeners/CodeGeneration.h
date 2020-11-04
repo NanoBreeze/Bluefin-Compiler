@@ -150,6 +150,7 @@ namespace bluefin {
 		map<ParseTree*, llvm::Value*> values; // stores the type associated ctx node with the LLVM value
 		map<shared_ptr<Symbol>, llvm::Value*> resolvedSymAndValues; // this is clumsy. It is used to resolve the Value associated with a primaryId. eg) a+6;
 		
+		llvm::Function* currentStructCtor; // used by struct's members
 		unordered_map<Type, llvm::Type*> bluefinToLLVMTypes;
 
 		unique_ptr<llvm::LLVMContext> TheContext;

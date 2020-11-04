@@ -1,7 +1,7 @@
 /*
 Verifies struct definitions, including nested members
 Verifies varDecl with expr() inside struct (fields)
-TODO: Add struct member access, methods, inheritance, and polymorphism
+TODO: Add struct member access, methods, inheritance, and polymorphism, and forward referencing
 */
 
 int blow = 8;
@@ -14,7 +14,12 @@ int nice() {
 struct Hey {
 	int a;
 	int b = a;
+
 	float c = 123 * a;
+
+	void heyyy(int a) {
+		c + b + blow;
+	}
 };
 
 
