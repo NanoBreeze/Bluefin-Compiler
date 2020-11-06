@@ -33,5 +33,6 @@ struct Hi {
 
 void foo() {
 	Hey hey;  // in order for StructDefs to show up, we must make a local variable with them
+	hey.a;
 	Hi hi;
 }

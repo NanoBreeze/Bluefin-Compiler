@@ -2,7 +2,7 @@
 #include <memory>
 #include "antlr4-runtime.h"
 
-#include "utils.h"
+#include "testutils.h"
 #include "../generated/bluefin/bluefinLexer.h"
 #include "../generated/bluefin/bluefinParser.h"
 #include "../symbolTable/BuiltinTypeSymbol.h"

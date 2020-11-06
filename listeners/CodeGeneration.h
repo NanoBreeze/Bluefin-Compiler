@@ -20,6 +20,7 @@ namespace bluefin {
 
 	using std::pair;
 	using std::vector;
+	using std::map;
 	class IfStmtHelper {
 
 	public:
@@ -79,6 +80,18 @@ namespace bluefin {
 
 		vector<WhileStmtInfo> infos;
 	};
+
+	class StructHelper {
+	public:
+		// To get the StructType, the user can simply call Codegen::getLLVMType(..)
+		void addStructDef(shared_ptr<StructSymbol>, llvm::Function* ctor);
+		llvm::Function* getCtor(shared_ptr<StructSymbol>);
+		llvm::Value* getCtorThisPtr(shared_ptr<StructSymbol>);
+		
+
+	private:
+		map<shared_ptr<StructSymbol>, llvm::Function*> structSymbolAndFuncs;
+	};
 }
 
 namespace bluefin {
@@ -130,6 +143,7 @@ namespace bluefin {
 
 		void exitFuncCall(bluefinParser::FuncCallContext*) override;
 		void exitStmtReturn(bluefinParser::StmtReturnContext*) override;
+		void enterMemberAccess(bluefinParser::MemberAccessContext*) override;
 
 		void enterStmtIf(bluefinParser::StmtIfContext*) override;
 		void exitStmtIf(bluefinParser::StmtIfContext*) override;
@@ -150,7 +164,6 @@ namespace bluefin {
 		map<ParseTree*, llvm::Value*> values; // stores the type associated ctx node with the LLVM value
 		map<shared_ptr<Symbol>, llvm::Value*> resolvedSymAndValues; // this is clumsy. It is used to resolve the Value associated with a primaryId. eg) a+6;
 		
-		llvm::Function* currentStructCtor; // used by struct's members
 		unordered_map<Type, llvm::Type*> bluefinToLLVMTypes;
 
 		unique_ptr<llvm::LLVMContext> TheContext;
@@ -159,9 +172,11 @@ namespace bluefin {
 
 		IfStmtHelper ifStmtHelper;
 		WhileStmtHelper whileStmtHelper;
+		StructHelper structHelper;
 
 		vector<llvm::Function*> internalFunctionsForVarDeclExpr;
 
 		llvm::Type* getLLVMType(Type) const; // return the LLVMType that corresponds with our BluefinType
+		llvm::Function* createCtor(shared_ptr<StructSymbol>);
 	};
 }
