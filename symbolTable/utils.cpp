@@ -13,6 +13,11 @@ namespace bluefin {
 		return structSym != nullptr;
 	}
 
+	bool isStructMethod(shared_ptr<FunctionSymbol> funcSym, SymbolTable& symbolTable) {
+		shared_ptr<StructSymbol> structSym = dynamic_pointer_cast<StructSymbol>(symbolTable.getScope(funcSym));
+		return structSym != nullptr;
+	}
+
 	shared_ptr<StructSymbol> getContainingStruct(bluefinParser::FuncDefContext* ctx, SymbolTable& symbolTable)
 	{
 		return dynamic_pointer_cast<StructSymbol>(symbolTable.getScope(ctx));
@@ -49,5 +54,21 @@ namespace bluefin {
 				fields.push_back(dynamic_pointer_cast<VariableSymbol>(sym));
 		}
 		return fields;
+	}
+
+	vector<shared_ptr<FunctionSymbol>> getAllStructMethods(shared_ptr<StructSymbol> structSym) {
+		vector<shared_ptr<FunctionSymbol>> methods;
+
+		shared_ptr<Scope> scope = dynamic_pointer_cast<Scope>(structSym);
+		assert(scope != nullptr);
+
+		unordered_map<string, shared_ptr<Symbol>> syms = scope->getSymbols();
+
+		for (auto pair : syms) { // exclude all the methods
+			shared_ptr<Symbol> sym = pair.second;
+			if (dynamic_pointer_cast<FunctionSymbol>(sym))
+				methods.push_back(dynamic_pointer_cast<FunctionSymbol>(sym));
+		}
+		return methods;
 	}
 }

@@ -9,6 +9,7 @@
 #include "../generated/bluefin/bluefinBaseListener.h"
 #include "../symbolTable/SymbolTable.h"
 #include "../symbolTable/StructSymbol.h"
+#include "../symbolTable/FunctionSymbol.h"
 #include "../symbolTable/Scope.h"
 #include "../symbolTable/TypeContext.h"
 
@@ -165,6 +166,8 @@ namespace bluefin {
 		map<shared_ptr<Symbol>, llvm::Value*> resolvedSymAndValues; // this is clumsy. It is used to resolve the Value associated with a primaryId. eg) a+6;
 		
 		unordered_map<Type, llvm::Type*> bluefinToLLVMTypes;
+		llvm::Value* currentMethodThis;
+		map<shared_ptr<FunctionSymbol>, llvm::Function*> methodToLLVMFunctions;
 
 		unique_ptr<llvm::LLVMContext> TheContext;
 		unique_ptr<llvm::Module> TheModule;
