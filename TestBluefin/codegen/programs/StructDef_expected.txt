@@ -4,7 +4,7 @@ source_filename = "StructDef.bf"
 %Normal = type { i32, float, i32, i32, float }
 %Forwards = type { i32, float, i32, i32 }
 %MethodCalls = type {}
-%StructMemberDecl = type { %Normal, float }
+%StructMemberDecl = type { %Normal, float, i32 }
 
 @globalVar = global i32 8
 @norm = external global %Normal
@@ -151,6 +151,11 @@ entry:
   %loadtmp_d = load float, float* %memPtr_d, align 4
   %memPtr_d2 = getelementptr %StructMemberDecl, %StructMemberDecl* %this, i32 0, i32 1
   store float %loadtmp_d, float* %memPtr_d2, align 4
+  %memPtr_norm3 = getelementptr %StructMemberDecl, %StructMemberDecl* %this, i32 0, i32 0
+  %loadtmp_norm4 = load %Normal, %Normal* %memPtr_norm3, align 4
+  %calltmp = call i32 @_Normal_method(%Normal* %memPtr_norm3, i32 2)
+  %memPtr_a = getelementptr %StructMemberDecl, %StructMemberDecl* %this, i32 0, i32 2
+  store i32 %calltmp, i32* %memPtr_a, align 4
   ret void
 }
 

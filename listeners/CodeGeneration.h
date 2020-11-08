@@ -145,6 +145,7 @@ namespace bluefin {
 		void exitFuncCall(bluefinParser::FuncCallContext*) override;
 		void exitStmtReturn(bluefinParser::StmtReturnContext*) override;
 		void exitMemberAccess(bluefinParser::MemberAccessContext*) override;
+		void exitMethodCall(bluefinParser::MethodCallContext*) override;
 
 		void enterStmtIf(bluefinParser::StmtIfContext*) override;
 		void exitStmtIf(bluefinParser::StmtIfContext*) override;

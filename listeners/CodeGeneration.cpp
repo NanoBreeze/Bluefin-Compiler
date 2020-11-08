@@ -795,6 +795,49 @@ void CodeGeneration::exitMemberAccess(bluefinParser::MemberAccessContext* ctx)
 	values.emplace(ctx, val);
 }
 
+void CodeGeneration::exitMethodCall(bluefinParser::MethodCallContext* ctx)
+{
+    // NOTE: for now, we don't handle chained method calls. eg) no 'a.b().c()', only 'a.b()' and 'a.b.c()'
+    // To make the method call, we need the relevant pointer to the struct instance, the params, and 
+    // of course, the function itself.
+    shared_ptr<Symbol> leftSymbol = symbolTable.getResolvedSymbol(ctx->expr());
+    shared_ptr<StructSymbol> structSym = dynamic_pointer_cast<StructSymbol>(symbolTable.getSymbolMatchingType(leftSymbol->getType()));
+    string memName = ctx->ID()->getText();
+    shared_ptr<FunctionSymbol> funcSym = dynamic_pointer_cast<FunctionSymbol>(symbolTable.resolveMember(memName, structSym));
+    assert(funcSym != nullptr);
+
+    Function* F = methodToLLVMFunctions.at(funcSym);
+
+    Value* leftAddr = nullptr;
+    if (elementPtrs.count(ctx->expr()) == 1)
+        leftAddr = elementPtrs.at(ctx->expr());
+    else {
+        // left sym is a primaryId (the root, eg, the 'a' in 'a.b.c')
+        // Set address to the globalVar or local address of the root
+		shared_ptr<Symbol> leftSym = symbolTable.getResolvedSymbol(ctx->expr());
+		leftAddr = resolvedSymAndValues.at(leftSym);
+		if (isa<AllocaInst, GlobalVariable>(leftAddr) == false)
+			assert(false);
+    }
+    vector<Value*> args;
+    args.push_back(leftAddr);
+	for (int i = 0; i < funcSym->getParams().size(); i++) {
+		Value* val = values.at(ctx->argList()->expr(i));
+		args.push_back(val);
+	}
+
+    string twine = (F->getReturnType() == LLVMType::getVoidTy(*TheContext)) ? "" : "calltmp"; // if the function ret type is void
+	Value* funcRetVal = Builder->CreateCall(F, args, twine);
+    Type exprEvalType = typeContexts.at(ctx).getEvalType();
+    Type exprPromoType = typeContexts.at(ctx).getPromotionType();
+
+    // We want to check whether the return value of the function call needs to be promoted
+    if (exprPromoType == Type::FLOAT() && exprEvalType == Type::INT()) { // cast left and right to float
+        funcRetVal = Builder->CreateCast(llvm::Instruction::CastOps::SIToFP, funcRetVal, LLVMType::getFloatTy(*TheContext), "casttmp");
+    }
+    values.emplace(ctx, funcRetVal);
+}
+
 void CodeGeneration::enterStmtIf(bluefinParser::StmtIfContext* ctx) {
 
     bool containsElseBlock = ctx->block().size() == 2;

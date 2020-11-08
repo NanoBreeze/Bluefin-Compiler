@@ -64,6 +64,7 @@ struct MethodCalls {
 struct StructMemberDecl {
 	Normal norm;
 	float d = norm.d;
+	int a = norm.method(2);
 };
 
 Normal norm;					// global var of struct type. Ctor needs to be called

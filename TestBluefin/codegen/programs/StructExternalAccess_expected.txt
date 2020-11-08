@@ -9,6 +9,21 @@ entry:
   ret void
 }
 
+define i32 @_Foo_here(%Foo* %this) {
+entry:
+  %memPtr_x = getelementptr %Foo, %Foo* %this, i32 0, i32 0
+  %loadtmp_x = load i32, i32* %memPtr_x, align 4
+  ret i32 %loadtmp_x
+}
+
+define i32 @_Foo_there(%Foo* %this, i32 %a) {
+entry:
+  %alloctmp_a = alloca i32, align 4
+  store i32 %a, i32* %alloctmp_a, align 4
+  %loadtmp_a = load i32, i32* %alloctmp_a, align 4
+  ret i32 %loadtmp_a
+}
+
 define void @_ctor_Bar(%Bar* %this) {
 entry:
   %memPtr_foo = getelementptr %Bar, %Bar* %this, i32 0, i32 0
@@ -80,5 +95,42 @@ entry:
   %loadtmp_y23 = load float, float* %memPtr_y22, align 4
   %subtmp = fsub float %casttmp, %loadtmp_y23
   store float %subtmp, float* %memPtr_y12, align 4
+  ret void
+}
+
+define void @method() {
+entry:
+  %alloctmp_foo = alloca %Foo, align 8
+  call void @_ctor_Foo(%Foo* %alloctmp_foo)
+  %loadtmp_foo = load %Foo, %Foo* %alloctmp_foo, align 4
+  %calltmp = call i32 @_Foo_here(%Foo* %alloctmp_foo)
+  %alloctmp_a = alloca i32, align 4
+  %loadtmp_foo1 = load %Foo, %Foo* %alloctmp_foo, align 4
+  %calltmp2 = call i32 @_Foo_there(%Foo* %alloctmp_foo, i32 5)
+  store i32 %calltmp2, i32* %alloctmp_a, align 4
+  %loadtmp_foo3 = load %Foo, %Foo* %alloctmp_foo, align 4
+  %loadtmp_foo4 = load %Foo, %Foo* %alloctmp_foo, align 4
+  %memPtr_x = getelementptr %Foo, %Foo* %alloctmp_foo, i32 0, i32 0
+  %loadtmp_x = load i32, i32* %memPtr_x, align 4
+  %calltmp5 = call i32 @_Foo_there(%Foo* %alloctmp_foo, i32 %loadtmp_x)
+  %alloctmp_bar = alloca %Bar, align 8
+  call void @_ctor_Bar(%Bar* %alloctmp_bar)
+  %loadtmp_bar = load %Bar, %Bar* %alloctmp_bar, align 4
+  %memPtr_foo = getelementptr %Bar, %Bar* %alloctmp_bar, i32 0, i32 0
+  %loadtmp_foo6 = load %Foo, %Foo* %memPtr_foo, align 4
+  %calltmp7 = call i32 @_Foo_here(%Foo* %memPtr_foo)
+  %loadtmp_bar8 = load %Bar, %Bar* %alloctmp_bar, align 4
+  %memPtr_foo9 = getelementptr %Bar, %Bar* %alloctmp_bar, i32 0, i32 0
+  %loadtmp_foo10 = load %Foo, %Foo* %memPtr_foo9, align 4
+  %loadtmp_bar11 = load %Bar, %Bar* %alloctmp_bar, align 4
+  %memPtr_foo12 = getelementptr %Bar, %Bar* %alloctmp_bar, i32 0, i32 0
+  %loadtmp_foo13 = load %Foo, %Foo* %memPtr_foo12, align 4
+  %memPtr_x14 = getelementptr %Foo, %Foo* %memPtr_foo12, i32 0, i32 0
+  %loadtmp_x15 = load i32, i32* %memPtr_x14, align 4
+  %calltmp16 = call i32 @_Foo_there(%Foo* %memPtr_foo9, i32 %loadtmp_x15)
+  %loadtmp_a = load i32, i32* %alloctmp_a, align 4
+  %loadtmp_foo17 = load %Foo, %Foo* %alloctmp_foo, align 4
+  %calltmp18 = call i32 @_Foo_here(%Foo* %alloctmp_foo)
+  store i32 %calltmp18, i32* %alloctmp_a, align 4
   ret void
 }

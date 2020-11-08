@@ -9,6 +9,12 @@ and intermediate member access both create "load" instructions, which isn't nece
 struct Foo {
 	int x;
 	float y;
+	int here() {
+		return x;
+	}
+	int there(int a) {
+		return a;
+	}
 };
 
 struct Bar {
@@ -36,5 +42,18 @@ void bar() {
 
 	bar.foo.y = 10; //bar.foo.x - bar.foo.y;		// chained member access used in expr and simple assignment
 	bar.foo.y = bar.foo.x - bar.foo.y;		// chained member access used in expr and simple assignment
+}
+
+void method() {
+	Foo foo;
+	foo.here();
+	int a = foo.there(5);	// VarDecl with method call with args
+	foo.there(foo.x);
+
+	Bar bar;
+	bar.foo.here();
+	bar.foo.there(bar.foo.x);
+
+	a = foo.here();			// Simple assignment with method call
 }
 
