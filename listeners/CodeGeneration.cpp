@@ -122,6 +122,7 @@ void CodeGeneration::enterVarDecl(bluefinParser::VarDeclContext* ctx)
     }
     else {
         // struct member field
+        // if the type is a user-defined type. eg) Foo foo, then associate it into resolvedSymAnd
     }
 }
 
@@ -158,24 +159,49 @@ void CodeGeneration::exitVarDecl(bluefinParser::VarDeclContext* ctx)
 
         Builder->CreateStore(exprVal, allocaInst);
     }
-    else if (isStructField(ctx, symbolTable) && ctx->expr()) {
+    else if (isStructField(ctx, symbolTable) /* && ctx->expr() */ ) {
         // struct member field with expr. 
         // if we're in here, that means the current BB insertion point should be in the ctor.
-        shared_ptr<StructSymbol> structSym = getContainingStruct(ctx, symbolTable);
-        LLVMType* structType = getLLVMType(structSym->getType());
 
-		Function* ctor = structHelper.getCtor(structSym);
-        Value* thisPtr = structHelper.getCtorThisPtr(structSym);
+        // if user-defined type, then call ctor
+		Type varDeclType = symbolTable.getSymbol(ctx)->getType();
+        if (varDeclType.isUserDefinedType()) {
+            string str = dump();
+            shared_ptr<StructSymbol> structOfVarDeclType = dynamic_pointer_cast<StructSymbol>(symbolTable.getSymbolMatchingType(varDeclType));
+            Function* ctor = structHelper.getCtor(structOfVarDeclType);
 
-		Value* zero  = Builder->getInt32(0);
-        size_t memberIndex = structSym->getFieldIndex(id);
-		Value* index  = Builder->getInt32(memberIndex);
-        Value* indices[2] = { zero, index };
+            // We also need to pass in the address of the field. 
+            shared_ptr<StructSymbol> structSym = getContainingStruct(ctx, symbolTable);
+            LLVMType* structType = getLLVMType(structSym->getType());
 
-        Value* memberPtr = Builder->CreateGEP(structType, thisPtr, indices, "memPtr_" + id);
+            Value* thisPtr = structHelper.getCtorThisPtr(structSym);
 
-        Value* exprVal = values.at(ctx->expr());
-        Builder->CreateStore(exprVal, memberPtr);
+            Value* zero = Builder->getInt32(0);
+            size_t memberIndex = structSym->getFieldIndex(id);
+            Value* index = Builder->getInt32(memberIndex);
+            Value* indices[2] = { zero, index };
+
+            Value* memberPtr = Builder->CreateGEP(structType, thisPtr, indices, "memPtr_" + id);
+
+            Builder->CreateCall(ctor, memberPtr);
+        }
+        if (ctx->expr()) {
+            assert(!varDeclType.isUserDefinedType()); // for now, we don't allow struct assignment inside vardecl. eg) Foo foo = foobar;
+            shared_ptr<StructSymbol> structSym = getContainingStruct(ctx, symbolTable);
+            LLVMType* structType = getLLVMType(structSym->getType());
+
+            Value* thisPtr = structHelper.getCtorThisPtr(structSym);
+
+            Value* zero = Builder->getInt32(0);
+            size_t memberIndex = structSym->getFieldIndex(id);
+            Value* index = Builder->getInt32(memberIndex);
+            Value* indices[2] = { zero, index };
+
+            Value* memberPtr = Builder->CreateGEP(structType, thisPtr, indices, "memPtr_" + id);
+
+            Value* exprVal = values.at(ctx->expr());
+            Builder->CreateStore(exprVal, memberPtr);
+        }
     }
 }
 
@@ -387,6 +413,10 @@ void CodeGeneration::enterPrimaryId(bluefinParser::PrimaryIdContext* ctx)
 		Value* indices[2] = { zero, index };
 
 		Value* memberPtr = Builder->CreateGEP(structType, thisPtr, indices, "memPtr_" + varName);
+		assert(isa<GetElementPtrInst>(memberPtr));
+		GetElementPtrInst* castedMemAddr = dyn_cast<GetElementPtrInst>(memberPtr);
+
+        elementPtrs.emplace(ctx, castedMemAddr);
 
 		val = Builder->CreateLoad(memberPtr, "loadtmp_" + varName);
 	}
@@ -611,27 +641,33 @@ void CodeGeneration::exitLogicalORExpr(bluefinParser::LogicalORExprContext* ctx)
 // even though it is totally useless and won't be used
 void CodeGeneration::exitSimpleAssignExpr(bluefinParser::SimpleAssignExprContext* ctx)
 {
-    shared_ptr<Symbol> sym = symbolTable.getResolvedSymbol(ctx->expr(0));
-    Value* lhs = resolvedSymAndValues.at(sym);
-    
-    if (isa<AllocaInst, GlobalVariable>(lhs) == false)  // for assignment, rhs must either be stored on a stack var or a global (not register)
-        assert(false);
-    // AMAZINGLY, this is a bug! assert(isa<AllocaInst, GlobalVariable>(lhs)); 
+    Value* address = nullptr;
 
-    Value* exprVal = values.at(ctx->expr(1));
-    LLVMType* t = exprVal->getType();
-    Builder->CreateStore(exprVal, lhs);
-
-    // Since we allow chaining assignments together, this Context* node may be the rhs child of another 
-    // SimpleAssignExprContext* node or a VarDeclContext* node. As a result, associate this node with the
-    // value of its rhs expr and do cast the rhs if needed
-    //. eg) floatVal = intVal = 8;, where 'intVal = 8' should be cast to a float
-    Type exprEvalType = typeContexts.at(ctx).getEvalType();
-    Type exprPromoType = typeContexts.at(ctx).getPromotionType();
-    if (exprPromoType == Type::FLOAT() && exprEvalType == Type::INT()) { // cast left and right to float
-        exprVal = Builder->CreateCast(llvm::Instruction::CastOps::SIToFP, exprVal, LLVMType::getFloatTy(*TheContext), "casttmp");
+    if (auto leftCtx = dynamic_cast<bluefinParser::MemberAccessContext*>(ctx->expr(0)))
+        address = elementPtrs.at(leftCtx);
+    else {
+        // left sym is a primaryId (the root, eg, the 'a' in 'a.b.c')
+        // Set address to the globalVar or local address of the root
+		shared_ptr<Symbol> leftSym = symbolTable.getResolvedSymbol(ctx->expr(0));
+		address = resolvedSymAndValues.at(leftSym);
+		if (isa<AllocaInst, GlobalVariable>(address) == false)
+			assert(false);
     }
-    values.emplace(ctx, exprVal);
+
+	Value* exprVal = values.at(ctx->expr(1));
+	LLVMType* t = exprVal->getType();
+	Builder->CreateStore(exprVal, address);
+
+	// Since we allow chaining assignments together, this Context* node may be the rhs child of another 
+	// SimpleAssignExprContext* node or a VarDeclContext* node. As a result, associate this node with the
+	// value of its rhs expr and do cast the rhs if needed
+	//. eg) floatVal = intVal = 8;, where 'intVal = 8' should be cast to a float
+	Type exprEvalType = typeContexts.at(ctx).getEvalType();
+	Type exprPromoType = typeContexts.at(ctx).getPromotionType();
+	if (exprPromoType == Type::FLOAT() && exprEvalType == Type::INT()) { // cast left and right to float
+		exprVal = Builder->CreateCast(llvm::Instruction::CastOps::SIToFP, exprVal, LLVMType::getFloatTy(*TheContext), "casttmp");
+	}
+	values.emplace(ctx, exprVal);
 }
 
 void CodeGeneration::exitFuncCall(bluefinParser::FuncCallContext* ctx)
@@ -642,9 +678,9 @@ void CodeGeneration::exitFuncCall(bluefinParser::FuncCallContext* ctx)
     string id = ctx->ID()->getText();
     Function* F = nullptr;
     vector<Value*> args;
-	// The resolved FunctionSymbol that corresponds to this funcCall is either a global function or a struct's method
-	// If it's a struct's method, that means we must currently be inside the ctor or a method itself 
-	// In either case, we must remember to pass in the "this" variable
+    // The resolved FunctionSymbol that corresponds to this funcCall is either a global function or a struct's method
+    // If it's a struct's method, that means we must currently be inside the ctor or a method itself 
+    // In either case, we must remember to pass in the "this" variable
 
     if (isStructMethod(funcSym, symbolTable)) {
         F = methodToLLVMFunctions.at(funcSym);
@@ -654,16 +690,16 @@ void CodeGeneration::exitFuncCall(bluefinParser::FuncCallContext* ctx)
         F = TheModule->getFunction(id);
     }
 
-	 // NOTE: argList() is null is no children, so we use funcSym->getParams().size() instead
-	for (int i = 0; i < funcSym->getParams().size(); i++) {
-		Value* val = values.at(ctx->argList()->expr(i));
-		args.push_back(val);
-	}
+    // NOTE: argList() is null is no children, so we use funcSym->getParams().size() instead
+    for (int i = 0; i < funcSym->getParams().size(); i++) {
+        Value* val = values.at(ctx->argList()->expr(i));
+        args.push_back(val);
+    }
 
-    string str  = dump();
+    string str = dump();
 
-	string twine = (F->getReturnType() == LLVMType::getVoidTy(*TheContext)) ? "" : "calltmp"; // if the function ret type is void
-	// the function call must not have a name (other the return value doesn't exist). Otherwise, Builder->CreateCall(..) will trigger an assertion
+    string twine = (F->getReturnType() == LLVMType::getVoidTy(*TheContext)) ? "" : "calltmp"; // if the function ret type is void
+    // the function call must not have a name (other the return value doesn't exist). Otherwise, Builder->CreateCall(..) will trigger an assertion
     Value* funcRetVal = Builder->CreateCall(F, args, twine);
     Type exprEvalType = typeContexts.at(ctx).getEvalType();
     Type exprPromoType = typeContexts.at(ctx).getPromotionType();
@@ -678,10 +714,10 @@ void CodeGeneration::exitFuncCall(bluefinParser::FuncCallContext* ctx)
 /*
 The logic here requires some explanation. LLVM requires that all BasicBlocks contain only one terminator (ret or br), which
 must be at the last instruction. As a result, after the IR of a return statement is generated and placed into the BB,
-to prevent further instructions from piling in (which would cause the return's IR to no longer be the last instruction), 
+to prevent further instructions from piling in (which would cause the return's IR to no longer be the last instruction),
 we immediately create a new BB and insert point to store other instructions.
 
-We also know that all other instructions in the same block as the return statement can never be executed. As a result, 
+We also know that all other instructions in the same block as the return statement can never be executed. As a result,
 we call the BB "impossible". Now, upon exiting a funcDef, we remove all "impossible" instructions since they can't ever
 be reached. (also, the last impossible label may not have a terminator)
 */
@@ -695,13 +731,68 @@ void CodeGeneration::exitStmtReturn(bluefinParser::StmtReturnContext* ctx)
         Builder->CreateRetVoid();
 
 
-	Function* TheFunction = Builder->GetInsertBlock()->getParent();
-	BasicBlock* impossibleBB = BasicBlock::Create(*TheContext, "impossible", TheFunction); 
+    Function* TheFunction = Builder->GetInsertBlock()->getParent();
+    BasicBlock* impossibleBB = BasicBlock::Create(*TheContext, "impossible", TheFunction);
     Builder->SetInsertPoint(impossibleBB);
 }
 
-void CodeGeneration::enterMemberAccess(bluefinParser::MemberAccessContext* ctx)
+void CodeGeneration::exitMemberAccess(bluefinParser::MemberAccessContext* ctx)
 {
+    // memberAccess calls getelementptr, which requires the StructType* and the memory location of the left val.
+    // How to get StructType*? From our previous passes, we can use symbol table to get the left sides's resolved symbol, then the 
+    // StructSymbol that matches with its type, and get its StructType.
+    // To get the memory location, if this is the base (eg, 'a' in 'a.b.c'), we simply look at resolvedSymAndValue
+    // Otherwise, we look at elementPtrs
+	shared_ptr<Symbol> leftSym = symbolTable.getResolvedSymbol(ctx->expr());
+    Value* address = nullptr;
+
+    string here = dump();
+    // if the left val corresponds to an elementPtr (either we're in a chained external member access or the root
+    // which is always a primaryId, refers to an internal member (so we're inside a field varDecl. Then use that 
+    // as the address
+    //if (auto leftCtx = dynamic_cast<bluefinParser::MemberAccessContext*>(ctx->expr()))
+        //address = elementPtrs.at(leftCtx);
+    if (elementPtrs.count(ctx->expr()) == 1)
+        address = elementPtrs.at(ctx->expr());
+    else {
+        // left sym is a primaryId (the root, eg, the 'a' in 'a.b.c')
+        // Set address to the globalVar or local address of the root
+		address = resolvedSymAndValues.at(leftSym);
+		if (isa<AllocaInst, GlobalVariable>(address) == false) 
+			assert(false);
+		// AMAZINGLY, this is a bug! assert(isa<AllocaInst, GlobalVariable>(lhs)); 
+    }
+
+    shared_ptr<StructSymbol> structSym = dynamic_pointer_cast<StructSymbol>(symbolTable.getSymbolMatchingType(leftSym->getType()));
+    assert(structSym != nullptr);
+
+    LLVMType* structType = getLLVMType(structSym->getType());
+
+    string memName = ctx->ID()->getText();
+	Value* zero  = Builder->getInt32(0);
+	size_t memberIndex = structSym->getFieldIndex(memName);
+	Value* index  = Builder->getInt32(memberIndex);
+	Value* indices[2] = { zero, index };
+
+    Value* memAddr = Builder->CreateGEP(structType, address, indices, "memPtr_" + memName);
+    assert(isa<GetElementPtrInst>(memAddr));
+    GetElementPtrInst* castedMemAddr = dyn_cast<GetElementPtrInst>(memAddr);
+
+    elementPtrs.emplace(ctx, castedMemAddr);
+
+    // TODO: Refactor. To allow this member access to be used, we load it. However, this means for each chained member access
+    // we load intermediate members, whose values would never actually be used, which is unnecessary redundancy
+    // eg) for "a.b.c";, load will be created for "b" and "c" even though the load for "b" isn't needed (actually, primaryId "a' 
+    // will also trigger a load
+	Value* val = Builder->CreateLoad(memAddr, "loadtmp_" + memName);
+	Type varIdEvalType = typeContexts.at(ctx).getEvalType();
+	Type varIdPromoType = typeContexts.at(ctx).getPromotionType();
+
+	if (varIdPromoType == Type::FLOAT() && varIdEvalType == Type::INT()) { // cast left and right to float
+		val = Builder->CreateCast(llvm::Instruction::CastOps::SIToFP, val, LLVMType::getFloatTy(*TheContext), "casttmp");
+	}
+
+	values.emplace(ctx, val);
 }
 
 void CodeGeneration::enterStmtIf(bluefinParser::StmtIfContext* ctx) {

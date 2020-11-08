@@ -108,4 +108,8 @@ namespace CodeGenTests {
 	TEST(CodeGen, Program_StructDef) {
 		validateCodeGen("StructDef.bf", "StructDef_expected.txt");
 	}
+
+	TEST(CodeGen, Program_StructExternalAccess) {
+		validateCodeGen("StructExternalAccess.bf", "StructExternalAccess_expected.txt");
+	}
 }

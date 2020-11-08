@@ -4,6 +4,7 @@ source_filename = "StructDef.bf"
 %Normal = type { i32, float, i32, i32, float }
 %Forwards = type { i32, float, i32, i32 }
 %MethodCalls = type {}
+%StructMemberDecl = type { %Normal, float }
 
 @globalVar = global i32 8
 @norm = external global %Normal
@@ -140,6 +141,19 @@ entry:
   ret i32 1
 }
 
+define void @_ctor_StructMemberDecl(%StructMemberDecl* %this) {
+entry:
+  %memPtr_norm = getelementptr %StructMemberDecl, %StructMemberDecl* %this, i32 0, i32 0
+  call void @_ctor_Normal(%Normal* %memPtr_norm)
+  %memPtr_norm1 = getelementptr %StructMemberDecl, %StructMemberDecl* %this, i32 0, i32 0
+  %loadtmp_norm = load %Normal, %Normal* %memPtr_norm1, align 4
+  %memPtr_d = getelementptr %Normal, %Normal* %memPtr_norm1, i32 0, i32 4
+  %loadtmp_d = load float, float* %memPtr_d, align 4
+  %memPtr_d2 = getelementptr %StructMemberDecl, %StructMemberDecl* %this, i32 0, i32 1
+  store float %loadtmp_d, float* %memPtr_d2, align 4
+  ret void
+}
+
 define internal void @internalGlobalVarDecl_norm() {
 entry:
   call void @_ctor_Normal(%Normal* @norm)
@@ -154,6 +168,8 @@ entry:
   call void @_ctor_Forwards(%Forwards* %alloctmp_forwards)
   %alloctmp_methodCalls = alloca %MethodCalls, align 8
   call void @_ctor_MethodCalls(%MethodCalls* %alloctmp_methodCalls)
+  %alloctmp_decl = alloca %StructMemberDecl, align 8
+  call void @_ctor_StructMemberDecl(%StructMemberDecl* %alloctmp_decl)
   ret void
 }
 

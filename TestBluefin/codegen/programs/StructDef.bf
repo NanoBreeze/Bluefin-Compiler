@@ -5,6 +5,7 @@ Verifies global and local varDecl of struct types
 TODO: Add struct member access, external method call, inheritance, and polymorphism
 */
 
+
 int globalVar = 8;
 
 int globalFunc() {
@@ -60,10 +61,16 @@ struct MethodCalls {
 	}
 };
 
+struct StructMemberDecl {
+	Normal norm;
+	float d = norm.d;
+};
+
 Normal norm;					// global var of struct type. Ctor needs to be called
 
 void foo() {
 	Normal normal;				// local var of struct type. Expect ctor to be called
 	Forwards forwards;
 	MethodCalls methodCalls;
+	StructMemberDecl decl;
 }

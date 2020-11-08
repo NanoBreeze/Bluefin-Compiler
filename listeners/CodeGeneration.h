@@ -144,7 +144,7 @@ namespace bluefin {
 
 		void exitFuncCall(bluefinParser::FuncCallContext*) override;
 		void exitStmtReturn(bluefinParser::StmtReturnContext*) override;
-		void enterMemberAccess(bluefinParser::MemberAccessContext*) override;
+		void exitMemberAccess(bluefinParser::MemberAccessContext*) override;
 
 		void enterStmtIf(bluefinParser::StmtIfContext*) override;
 		void exitStmtIf(bluefinParser::StmtIfContext*) override;
@@ -164,6 +164,12 @@ namespace bluefin {
 
 		map<ParseTree*, llvm::Value*> values; // stores the type associated ctx node with the LLVM value
 		map<shared_ptr<Symbol>, llvm::Value*> resolvedSymAndValues; // this is clumsy. It is used to resolve the Value associated with a primaryId. eg) a+6;
+		// which is either a local variable (AllocaInst), global variable (GlobalVariable). Struct field addresses are placed in elementPtrs
+		
+		// Given two member accesses (a.fooStruct.c, and x.fooStruct.y), the 'fooStruct' member resolves to the instance field of the StructDef that 
+		// corresponds to 'a' type (yeah this is wordy). That's a problem, since if we associate pointer addresses to them, we can get incorrect results
+		// As a result, don't associate field pointers to symbols. Instead, associate to the memberAccessContext
+		map<bluefinParser::ExprContext*, llvm::GetElementPtrInst*> elementPtrs; 
 		
 		unordered_map<Type, llvm::Type*> bluefinToLLVMTypes;
 		llvm::Value* currentMethodThis;
