@@ -24,6 +24,12 @@ namespace bluefin {
 	// A VarDecl may be at global scope, local scope (local variable), or in a StructSymbol (field)
 	bool isStructField(bluefinParser::VarDeclContext* ctx, SymbolTable& symTab);
 
+	// Checks if the VarDecl is at global scope
+	bool isGlobalVarDecl(bluefinParser::VarDeclContext* ctx, SymbolTable& symTab);
+
+	// Checks if the VarDecl is at local scope
+	bool isLocalVarDecl(bluefinParser::VarDeclContext* ctx, SymbolTable& symTab);
+
 	// Given a VarDecl that's inside a struct (so it's a field), get the containing struct
 	// Returns null if not inside a struct. Somewhat duplicates isStructMethod(..)
 	shared_ptr<StructSymbol> getContainingStruct(bluefinParser::VarDeclContext* ctx, SymbolTable& symbolTable);

@@ -31,6 +31,19 @@ namespace bluefin {
 		return structSym != nullptr; // if containing scope, when casted to structSymbol, is not null, then it is a structSymbol!
 	}
 
+	bool isGlobalVarDecl(bluefinParser::VarDeclContext* ctx, SymbolTable& symbolTable)
+	{
+		shared_ptr<Scope> varDeclScope = symbolTable.getScope(ctx);
+		return varDeclScope->getEnclosingScope() == nullptr; // if no enclosing scope, then we must be in global scope
+	}
+
+	// NOTE: a local varDecl's scope is not always a function. eg) the varDecl is inside a block
+	// We say a varDecl is local if it's not global and it's not a struct field
+	bool isLocalVarDecl(bluefinParser::VarDeclContext* ctx, SymbolTable& symTab)
+	{
+		return !(isGlobalVarDecl(ctx, symTab) || isStructField(ctx, symTab));
+	}
+
 	shared_ptr<StructSymbol> getContainingStruct(bluefinParser::VarDeclContext* ctx, SymbolTable& symbolTable)
 	{
 		shared_ptr<Scope> varDeclScope = symbolTable.getScope(ctx);

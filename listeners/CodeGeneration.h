@@ -108,6 +108,7 @@ namespace bluefin {
 	class llvm::Value;
 	class llvm::Function;
 	class llvm::Type;
+	class llvm::StructType;
 
 	/*
 	Resolves symbol references. To do so we need the appropriate scope associated with the contexts. 
@@ -187,6 +188,13 @@ namespace bluefin {
 		vector<llvm::Function*> internalFunctionsForVarDeclExpr;
 
 		llvm::Type* getLLVMType(Type) const; // return the LLVMType that corresponds with our BluefinType
-		llvm::Function* createCtor(shared_ptr<StructSymbol>);
+
+		llvm::Value* createCastIfNecessary(bluefinParser::ExprContext*, llvm::Value*) const;
+		llvm::Function* createFunction(shared_ptr<FunctionSymbol>, llvm::StructType*) const;
+		llvm::Function* createFunction(shared_ptr<FunctionSymbol>) const;
+		llvm::Function* createCtor(llvm::StructType*) const;
+		llvm::Function* createGlobalVarDeclFunction(string id) const;
+		llvm::StructType* createStruct(shared_ptr<StructSymbol>) const;
+		// CallCtor?
 	};
 }

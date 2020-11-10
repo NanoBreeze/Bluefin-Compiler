@@ -15,6 +15,21 @@ entry:
   ret i32 1
 }
 
+define i32 @_Normal_method(%Normal* %this, i32 %a) {
+entry:
+  %alloctmp_a = alloca i32, align 4
+  store i32 %a, i32* %alloctmp_a, align 4
+  %loadtmp_a = load i32, i32* %alloctmp_a, align 4
+  %casttmp = sitofp i32 %loadtmp_a to float
+  %memPtr_b = getelementptr %Normal, %Normal* %this, i32 0, i32 1
+  %loadtmp_b = load float, float* %memPtr_b, align 4
+  %addtmp = fadd float %casttmp, %loadtmp_b
+  %loadtmp_globalVar = load i32, i32* @globalVar, align 4
+  %casttmp1 = sitofp i32 %loadtmp_globalVar to float
+  %addtmp2 = fadd float %addtmp, %casttmp1
+  ret i32 2
+}
+
 define void @_ctor_Normal(%Normal* %this) {
 entry:
   %memPtr_a = getelementptr %Normal, %Normal* %this, i32 0, i32 0
@@ -38,41 +53,6 @@ entry:
   %casttmp6 = sitofp i32 %addtmp5 to float
   %memPtr_d = getelementptr %Normal, %Normal* %this, i32 0, i32 4
   store float %casttmp6, float* %memPtr_d, align 4
-  ret void
-}
-
-define i32 @_Normal_method(%Normal* %this, i32 %a) {
-entry:
-  %alloctmp_a = alloca i32, align 4
-  store i32 %a, i32* %alloctmp_a, align 4
-  %loadtmp_a = load i32, i32* %alloctmp_a, align 4
-  %casttmp = sitofp i32 %loadtmp_a to float
-  %memPtr_b = getelementptr %Normal, %Normal* %this, i32 0, i32 1
-  %loadtmp_b = load float, float* %memPtr_b, align 4
-  %addtmp = fadd float %casttmp, %loadtmp_b
-  %loadtmp_globalVar = load i32, i32* @globalVar, align 4
-  %casttmp1 = sitofp i32 %loadtmp_globalVar to float
-  %addtmp2 = fadd float %addtmp, %casttmp1
-  ret i32 2
-}
-
-define void @_ctor_Forwards(%Forwards* %this) {
-entry:
-  %calltmp = call i32 @_Forwards_first(%Forwards* %this)
-  %memPtr_a = getelementptr %Forwards, %Forwards* %this, i32 0, i32 0
-  store i32 %calltmp, i32* %memPtr_a, align 4
-  %memPtr_a1 = getelementptr %Forwards, %Forwards* %this, i32 0, i32 0
-  %loadtmp_a = load i32, i32* %memPtr_a1, align 4
-  %memPtr_c = getelementptr %Forwards, %Forwards* %this, i32 0, i32 2
-  %loadtmp_c = load i32, i32* %memPtr_c, align 4
-  %calltmp2 = call i32 @_Forwards_second(%Forwards* %this, i32 %loadtmp_a, i32 %loadtmp_c)
-  %casttmp = sitofp i32 %calltmp2 to float
-  %memPtr_b = getelementptr %Forwards, %Forwards* %this, i32 0, i32 1
-  store float %casttmp, float* %memPtr_b, align 4
-  %memPtr_d = getelementptr %Forwards, %Forwards* %this, i32 0, i32 3
-  %loadtmp_d = load i32, i32* %memPtr_d, align 4
-  %memPtr_c3 = getelementptr %Forwards, %Forwards* %this, i32 0, i32 2
-  store i32 %loadtmp_d, i32* %memPtr_c3, align 4
   ret void
 }
 
@@ -109,8 +89,23 @@ entry:
   ret i32 %addtmp2
 }
 
-define void @_ctor_MethodCalls(%MethodCalls* %this) {
+define void @_ctor_Forwards(%Forwards* %this) {
 entry:
+  %calltmp = call i32 @_Forwards_first(%Forwards* %this)
+  %memPtr_a = getelementptr %Forwards, %Forwards* %this, i32 0, i32 0
+  store i32 %calltmp, i32* %memPtr_a, align 4
+  %memPtr_a1 = getelementptr %Forwards, %Forwards* %this, i32 0, i32 0
+  %loadtmp_a = load i32, i32* %memPtr_a1, align 4
+  %memPtr_c = getelementptr %Forwards, %Forwards* %this, i32 0, i32 2
+  %loadtmp_c = load i32, i32* %memPtr_c, align 4
+  %calltmp2 = call i32 @_Forwards_second(%Forwards* %this, i32 %loadtmp_a, i32 %loadtmp_c)
+  %casttmp = sitofp i32 %calltmp2 to float
+  %memPtr_b = getelementptr %Forwards, %Forwards* %this, i32 0, i32 1
+  store float %casttmp, float* %memPtr_b, align 4
+  %memPtr_d = getelementptr %Forwards, %Forwards* %this, i32 0, i32 3
+  %loadtmp_d = load i32, i32* %memPtr_d, align 4
+  %memPtr_c3 = getelementptr %Forwards, %Forwards* %this, i32 0, i32 2
+  store i32 %loadtmp_d, i32* %memPtr_c3, align 4
   ret void
 }
 
@@ -139,6 +134,11 @@ entry:
   %alloctmp_a = alloca i32, align 4
   store i32 %a, i32* %alloctmp_a, align 4
   ret i32 1
+}
+
+define void @_ctor_MethodCalls(%MethodCalls* %this) {
+entry:
+  ret void
 }
 
 define void @_ctor_StructMemberDecl(%StructMemberDecl* %this) {

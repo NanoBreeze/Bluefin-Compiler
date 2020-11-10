@@ -58,12 +58,11 @@ void CodeGeneration::enterVarDecl(bluefinParser::VarDeclContext* ctx)
 {
     string id = ctx->ID()->getText();
     shared_ptr<Symbol> sym = symbolTable.getSymbol(ctx);
-	Type varDeclType = symbolTable.getSymbol(ctx)->getType();
+	Type varDeclType = sym->getType();
     LLVMType* llvmType = getLLVMType(varDeclType);
-    shared_ptr<Scope> varDeclScope = symbolTable.getScope(ctx);
 
     // This if stmt checks whether we're operating on a global VarDecl, local VarDecl, or struct def member
-    if (varDeclScope->getEnclosingScope() == nullptr) {
+    if (isGlobalVarDecl(ctx, symbolTable)) {
         // global variable
 
         Constant* defaultVal = nullptr;
@@ -90,23 +89,12 @@ void CodeGeneration::enterVarDecl(bluefinParser::VarDeclContext* ctx)
             // but for consistency, we choose to deal with that case same way as above.
             // If the variable is a structDef, also create the internal function and call the struct's ctor
             
-            string funcName = "internalGlobalVarDecl_" + id;
-            vector<LLVMType*> noParams;
-			FunctionType* FT = FunctionType::get(LLVMType::getVoidTy(*TheContext), noParams, false);
-			Function* internalF = Function::Create(FT, Function::InternalLinkage, funcName, TheModule.get());
+            Function* internalF = createGlobalVarDeclFunction(id);
             BasicBlock* BB = BasicBlock::Create(*TheContext, "entry", internalF);
             Builder->SetInsertPoint(BB);
-
-            if (varDeclType.isUserDefinedType() && !ctx->expr()) { // simply a bare global var. eg) Normal norm;
-                shared_ptr<StructSymbol> structSym = dynamic_pointer_cast<StructSymbol>(symbolTable.getSymbolMatchingType(varDeclType));
-                Function* ctor = structHelper.getCtor(structSym);
-                Builder->CreateCall(ctor, v);
-				Builder->CreateRetVoid(); 
-				internalFunctionsForVarDeclExpr.push_back(internalF);
-            }
         }
     }
-    else if (dynamic_pointer_cast<StructSymbol>(varDeclScope) == nullptr) { // local varDecl 
+    else if (isLocalVarDecl(ctx, symbolTable)) { // local varDecl 
         // local variables are allocated on the stack
         Value* allocaVal = Builder->CreateAlloca(llvmType, nullptr, "alloctmp_" + id); // NOTE, we're storing the AllocaInst here
         values.emplace(ctx, allocaVal);
@@ -122,7 +110,6 @@ void CodeGeneration::enterVarDecl(bluefinParser::VarDeclContext* ctx)
     }
     else {
         // struct member field
-        // if the type is a user-defined type. eg) Foo foo, then associate it into resolvedSymAnd
     }
 }
 
@@ -133,33 +120,49 @@ void CodeGeneration::exitVarDecl(bluefinParser::VarDeclContext* ctx)
 
     // if the variable declaration is for a global and it contains an expr, then we will need
     // to update the global's value (since it was originally set to 0)
-    if (varDeclScope->getEnclosingScope() == nullptr && ctx->expr()) {
-        Value* val = values.at(ctx->expr());
-		Function* internalFunction = Builder->GetInsertBlock()->getParent();
-        if (isa<Constant>(val)) {
-            Constant* c = dyn_cast<Constant>(val);
-            TheModule->getNamedGlobal(id)->setInitializer(c);
-            // Remove the internal function since the expr() is a compile-time constant and we can update vardecl 
-            internalFunction->eraseFromParent();
+    if (isGlobalVarDecl(ctx, symbolTable)) {
 
+        shared_ptr<Symbol> sym = symbolTable.getSymbol(ctx);
+        Type symType = sym->getType();
+        Value* globalAddr = resolvedSymAndValues.at(sym);
+        assert(isa<GlobalVariable>(globalAddr));
+		Function* internalF = Builder->GetInsertBlock()->getParent();
+
+        if (symType.isUserDefinedType()) { // simply a bare global var. eg) Normal norm;
+            assert(!ctx->expr()); // don't support VarDecl with assignment of struct type. eg) Normal norm = normmm; is not allowed
+            shared_ptr<StructSymbol> structSym = dynamic_pointer_cast<StructSymbol>(symbolTable.getSymbolMatchingType(symType));
+            Function* ctor = structHelper.getCtor(structSym);
+            Builder->CreateCall(ctor, globalAddr);
+            Builder->CreateRetVoid();
+            internalFunctionsForVarDeclExpr.push_back(internalF);
         }
-        else { // non-compile-time assignment. Eg) int d = foo();
-            // At this point, we finished evaluating the expr and our insertion point is still inside the internal function
-            // So store the expr's evaluated value to the global var, and then close it off with a ret void
-			Builder->CreateStore(val, TheModule->getNamedGlobal(id));
-			Builder->CreateRetVoid(); 
+        else if (ctx->expr()) {
+            Value* val = values.at(ctx->expr());
+            if (isa<Constant>(val)) {
+                Constant* c = dyn_cast<Constant>(val);
+                TheModule->getNamedGlobal(id)->setInitializer(c);
+                // Remove the internal function since the expr() is a compile-time constant and we can update vardecl 
+                internalF->eraseFromParent();
 
-            internalFunctionsForVarDeclExpr.push_back(internalFunction);
+            }
+            else { // non-compile-time assignment. Eg) int d = foo();
+                // At this point, we finished evaluating the expr and our insertion point is still inside the internal function
+                // So store the expr's evaluated value to the global var, and then close it off with a ret void
+                Builder->CreateStore(val, globalAddr);
+                Builder->CreateRetVoid();
+
+                internalFunctionsForVarDeclExpr.push_back(internalF);
+            }
         }
     }
-    else if (dynamic_pointer_cast<StructSymbol>(varDeclScope) == nullptr && ctx->expr()) {
+    else if (isLocalVarDecl(ctx, symbolTable) && ctx->expr()) {
         // local var with an expr. Store the value of the expr into the local var
         Value* exprVal = values.at(ctx->expr());
         Value* allocaInst = values.at(ctx);
 
         Builder->CreateStore(exprVal, allocaInst);
     }
-    else if (isStructField(ctx, symbolTable) /* && ctx->expr() */ ) {
+    else if (isStructField(ctx, symbolTable)) {
         // struct member field with expr. 
         // if we're in here, that means the current BB insertion point should be in the ctor.
 
@@ -212,49 +215,26 @@ void CodeGeneration::enterFuncDef(bluefinParser::FuncDefContext* ctx) {
     assert(funcSym != nullptr);
 
     // If the funcDef is a method, then its declaration must have already been generated by enterStructDef
-    // so no need to generate signature, simply fill in the alloca for non-this args
+    // so simply set the insertion point and update currentMethodThis to this method's "this"
     if (isMethod) {
         Function* F = methodToLLVMFunctions.at(funcSym);
-        BasicBlock* BB = BasicBlock::Create(*TheContext, "entry", F);
-        Builder->SetInsertPoint(BB);
-
-		vector<shared_ptr<Symbol>> params = funcSym->getParams();
-        for (int i = 1; i < F->arg_size(); i++) { // start at 1 not 0, because no need to allocate for "this" pointer
-            Argument* arg = F->getArg(i);
-            AllocaInst* allocaInst = Builder->CreateAlloca(arg->getType(), nullptr, "alloctmp_" + arg->getName());
-            Builder->CreateStore(arg, allocaInst);
-            resolvedSymAndValues.emplace(params[i-1], allocaInst);
-        }
+        Builder->SetInsertPoint(&(F->getEntryBlock()));
         currentMethodThis = F->getArg(0);
     }
     else {
-        Type retType = funcSym->getType();
-        assert(retType.isUserDefinedType() == false && retType != Type::STRING()); // for now, only allow some types to be generated
 
-        vector<LLVMType*> llvmParamTypes;
-        vector<shared_ptr<Symbol>> params = funcSym->getParams();
-
-        for (const auto param : params) {
-            Type paramType = param->getType();
-            assert(paramType.isUserDefinedType() == false && paramType != Type::STRING() && paramType != Type::VOID()); // for now, only allow some types to be generated
-            llvmParamTypes.push_back(getLLVMType(paramType));
-        }
-
-        FunctionType* FT = FunctionType::get(getLLVMType(retType), llvmParamTypes, false);
-        Function* F = Function::Create(FT, Function::ExternalLinkage, funcSym->getName(), TheModule.get());
-
-        assert(params.size() == llvmParamTypes.size());
-
+        Function* F = createFunction(funcSym);
         BasicBlock* BB = BasicBlock::Create(*TheContext, "entry", F);
         Builder->SetInsertPoint(BB);
 
         // since the args can be mutated, create space on the stack that will contain their (possibly mutated) value
         // Future references to the args will refer to the allocated space
         // Add the values to resolvedSymsAndValues, and set the param names for LLVM's code generation (to avoid awkward names like %0, %1)
+        vector<shared_ptr<Symbol>> params = funcSym->getParams();
         for (int i = 0; i < params.size(); i++) {
-            AllocaInst* allocaInst = Builder->CreateAlloca(llvmParamTypes[i], nullptr, "alloctmp_" + params[i]->getName());
+            Type t = params[i]->getType();
+            AllocaInst* allocaInst = Builder->CreateAlloca(getLLVMType(t), nullptr, "alloctmp_" + params[i]->getName());
             Builder->CreateStore(F->getArg(i), allocaInst);
-            F->getArg(i)->setName(params[i]->getName());
             resolvedSymAndValues.emplace(params[i], allocaInst);
         }
     }
@@ -291,8 +271,10 @@ void CodeGeneration::exitFuncDef(bluefinParser::FuncDefContext* ctx)
     }
 }
 
-/* For all struct def, we create the struct here and then start constructing its ctor, 
-All fields/aka, VarDecl with expr() will generate code inside the ctor to update their values
+/* We create the struct, then create its methods and start constructing its ctor, 
+All fields/aka, VarDecl with expr() will generate code inside the ctor to update their values.
+When entering a funcDef, the insertion point will be set to its corresponding method/function, 
+and upon exiting, it will be set back to the ctor.
 In exitStructDef, we close off the ctor.
 */
 void CodeGeneration::enterStructDef(bluefinParser::StructDefContext* ctx)
@@ -300,52 +282,37 @@ void CodeGeneration::enterStructDef(bluefinParser::StructDefContext* ctx)
     // Since some some the structDef's varDecl's contain assignment, we create a ctor for every struct def
     // so that those assignment expressions can go into the ctor function
     shared_ptr<StructSymbol> structSym = dynamic_pointer_cast<StructSymbol>(symbolTable.getSymbol(ctx));
+    StructType* structType = createStruct(structSym);
+    bluefinToLLVMTypes.emplace(structSym->getType(), structType); 
 
-    vector<LLVMType*> members;
-    for (auto varSym : structSym->getFields()) {
-		members.push_back(getLLVMType(varSym->getType()));
-    }
-
-    StructType* structType = StructType::create(*TheContext, members, structSym->getName());
-    bluefinToLLVMTypes.emplace(structSym->getType(), structType);   // store this StructType as the type is needed if 
-
-    Function* F = createCtor(structSym);
-    structHelper.addStructDef(structSym, F);
-    currentMethodThis = F->getArg(0); // referring to ctor
-
+	// Create the Function/method here so that later, internal VarDecl (fields) can forward reference them
     for (auto funcSym : structSym->getMethods()) {
-        // Create the Function/method here so that later, internal VarDecl (fields) can forward refernce them
+        Function* F = createFunction(funcSym, structType);
+		BasicBlock* BB = BasicBlock::Create(*TheContext, "entry", F);
+		Builder->SetInsertPoint(BB);
 
-		Type retType = funcSym->getType();
-		assert(retType.isUserDefinedType() == false && retType != Type::STRING()); // for now, only allow some types to be generated
-
-        vector<LLVMType*> llvmParamTypes;
-        vector<shared_ptr<Symbol>> params = funcSym->getParams();
-
-        llvmParamTypes.push_back(structType->getPointerTo());
-        for (const auto param : params) {
-            Type paramType = param->getType();
-            assert(paramType.isUserDefinedType() == false && paramType != Type::STRING() && paramType != Type::VOID()); // for now, only allow some types to be generated
-            llvmParamTypes.push_back(getLLVMType(paramType));
-        }
-
-		FunctionType* FT = FunctionType::get(getLLVMType(retType), llvmParamTypes, false);
-		Function* F = Function::Create(FT, Function::ExternalLinkage, "_" + structSym->getName() + "_" + funcSym->getName(), TheModule.get());
-        F->getArg(0)->setName("this");
-        for (int i = 0; i < params.size(); i++) {
-            F->getArg(i + 1)->setName(params[i]->getName());
-        }
+		vector<shared_ptr<Symbol>> params = funcSym->getParams();
+		for (int i = 0; i < params.size(); i++) { // remember, no need to allocate for "this" pointer, which is the first arg in function, but not in param
+            Type t = params[i]->getType();
+			AllocaInst* allocaInst = Builder->CreateAlloca(getLLVMType(t), nullptr, "alloctmp_" + params[i]->getName());
+			Builder->CreateStore(F->getArg(i+1), allocaInst);
+			resolvedSymAndValues.emplace(params[i], allocaInst);
+		}
 
         methodToLLVMFunctions.emplace(funcSym, F);
     }
+
+    Function* ctor = createCtor(structType);
+    BasicBlock* BB = BasicBlock::Create(*TheContext, "entry", ctor);
+    Builder->SetInsertPoint(BB);
+
+    structHelper.addStructDef(structSym, ctor);
+    currentMethodThis = ctor->getArg(0); // referring to ctor
 }
 
 void CodeGeneration::exitStructDef(bluefinParser::StructDefContext* ctx)
 {
-    shared_ptr<StructSymbol> structSym = dynamic_pointer_cast<StructSymbol>(symbolTable.getSymbol(ctx));
-    Function* ctor = structHelper.getCtor(structSym);
-
-    Builder->CreateRetVoid();
+    Builder->CreateRetVoid(); // close off the ctor
 }
 
 void CodeGeneration::enterPrimaryBool(bluefinParser::PrimaryBoolContext* ctx)
@@ -395,7 +362,6 @@ void CodeGeneration::enterPrimaryId(bluefinParser::PrimaryIdContext* ctx)
     bool isResolvedSymStructField = (dynamic_pointer_cast<StructSymbol>(symbolTable.getScope(resolvedSym)) != nullptr);
     Value* val = nullptr;
 
-    // TODO: for now, we assume no external struct member access nor chaining
 	// the (mutable) primary Id must be either an internal struct member, local stack or is a global. For latter two, we load it into memory
     if (isResolvedSymStructField) {
 
@@ -454,7 +420,6 @@ void CodeGeneration::exitUnaryExpr(bluefinParser::UnaryExprContext* ctx)
     string opText = ctx->op->getText();
     assert(opText == "!" || opText == "-");
 
-    // TODO: handle !
     Value* expr = nullptr;
     if (opText == "-") {
         if (exprType == Type::INT())
@@ -483,7 +448,6 @@ void CodeGeneration::exitMultiExpr(bluefinParser::MultiExprContext* ctx)
     string opText = ctx->op->getText();
     assert(opText == "*" || opText == "/");
 
-    // for now, only int. TODO: add float
     Value* expr = nullptr;
     if (opText == "*") {
         if (exprEvalType == Type::INT())
@@ -515,7 +479,6 @@ void CodeGeneration::exitAddExpr(bluefinParser::AddExprContext* ctx)
     assert(typeContexts.at(leftParseTree).getPromotionType() == typeContexts.at(rightParseTree).getPromotionType());
     assert(typeContexts.at(ctx).getEvalType() == typeContexts.at(rightParseTree).getPromotionType());
     Type exprEvalType = typeContexts.at(ctx).getEvalType();
-    Type exprPromoType = typeContexts.at(ctx).getPromotionType();
 
     Value* left = values.at(leftParseTree);
     Value* right = values.at(rightParseTree);
@@ -538,9 +501,7 @@ void CodeGeneration::exitAddExpr(bluefinParser::AddExprContext* ctx)
 			expr = Builder->CreateFSub(left, right, "subtmp");
     }
 
-    if (exprPromoType == Type::FLOAT() && exprEvalType == Type::INT()) { // cast left and right to float
-        expr = Builder->CreateCast(llvm::Instruction::CastOps::SIToFP, expr, LLVMType::getFloatTy(*TheContext), "casttmp");
-    }
+    expr = createCastIfNecessary(ctx, expr);
 
     values.emplace(ctx, expr);
 }
@@ -655,18 +616,13 @@ void CodeGeneration::exitSimpleAssignExpr(bluefinParser::SimpleAssignExprContext
     }
 
 	Value* exprVal = values.at(ctx->expr(1));
-	LLVMType* t = exprVal->getType();
 	Builder->CreateStore(exprVal, address);
 
 	// Since we allow chaining assignments together, this Context* node may be the rhs child of another 
 	// SimpleAssignExprContext* node or a VarDeclContext* node. As a result, associate this node with the
 	// value of its rhs expr and do cast the rhs if needed
 	//. eg) floatVal = intVal = 8;, where 'intVal = 8' should be cast to a float
-	Type exprEvalType = typeContexts.at(ctx).getEvalType();
-	Type exprPromoType = typeContexts.at(ctx).getPromotionType();
-	if (exprPromoType == Type::FLOAT() && exprEvalType == Type::INT()) { // cast left and right to float
-		exprVal = Builder->CreateCast(llvm::Instruction::CastOps::SIToFP, exprVal, LLVMType::getFloatTy(*TheContext), "casttmp");
-	}
+    exprVal = createCastIfNecessary(ctx, exprVal);
 	values.emplace(ctx, exprVal);
 }
 
@@ -696,18 +652,12 @@ void CodeGeneration::exitFuncCall(bluefinParser::FuncCallContext* ctx)
         args.push_back(val);
     }
 
-    string str = dump();
-
     string twine = (F->getReturnType() == LLVMType::getVoidTy(*TheContext)) ? "" : "calltmp"; // if the function ret type is void
     // the function call must not have a name (other the return value doesn't exist). Otherwise, Builder->CreateCall(..) will trigger an assertion
     Value* funcRetVal = Builder->CreateCall(F, args, twine);
-    Type exprEvalType = typeContexts.at(ctx).getEvalType();
-    Type exprPromoType = typeContexts.at(ctx).getPromotionType();
 
     // We want to check whether the return value of the function call needs to be promoted
-    if (exprPromoType == Type::FLOAT() && exprEvalType == Type::INT()) { // cast left and right to float
-        funcRetVal = Builder->CreateCast(llvm::Instruction::CastOps::SIToFP, funcRetVal, LLVMType::getFloatTy(*TheContext), "casttmp");
-    }
+    funcRetVal = createCastIfNecessary(ctx, funcRetVal);
     values.emplace(ctx, funcRetVal);
 }
 
@@ -785,12 +735,7 @@ void CodeGeneration::exitMemberAccess(bluefinParser::MemberAccessContext* ctx)
     // eg) for "a.b.c";, load will be created for "b" and "c" even though the load for "b" isn't needed (actually, primaryId "a' 
     // will also trigger a load
 	Value* val = Builder->CreateLoad(memAddr, "loadtmp_" + memName);
-	Type varIdEvalType = typeContexts.at(ctx).getEvalType();
-	Type varIdPromoType = typeContexts.at(ctx).getPromotionType();
-
-	if (varIdPromoType == Type::FLOAT() && varIdEvalType == Type::INT()) { // cast left and right to float
-		val = Builder->CreateCast(llvm::Instruction::CastOps::SIToFP, val, LLVMType::getFloatTy(*TheContext), "casttmp");
-	}
+    val = createCastIfNecessary(ctx, val);
 
 	values.emplace(ctx, val);
 }
@@ -828,13 +773,8 @@ void CodeGeneration::exitMethodCall(bluefinParser::MethodCallContext* ctx)
 
     string twine = (F->getReturnType() == LLVMType::getVoidTy(*TheContext)) ? "" : "calltmp"; // if the function ret type is void
 	Value* funcRetVal = Builder->CreateCall(F, args, twine);
-    Type exprEvalType = typeContexts.at(ctx).getEvalType();
-    Type exprPromoType = typeContexts.at(ctx).getPromotionType();
+    funcRetVal = createCastIfNecessary(ctx, funcRetVal);
 
-    // We want to check whether the return value of the function call needs to be promoted
-    if (exprPromoType == Type::FLOAT() && exprEvalType == Type::INT()) { // cast left and right to float
-        funcRetVal = Builder->CreateCast(llvm::Instruction::CastOps::SIToFP, funcRetVal, LLVMType::getFloatTy(*TheContext), "casttmp");
-    }
     values.emplace(ctx, funcRetVal);
 }
 
@@ -982,23 +922,103 @@ LLVMType* CodeGeneration::getLLVMType(Type t) const
     return bluefinToLLVMTypes.at(t);
 }
 
-Function* CodeGeneration::createCtor(shared_ptr<StructSymbol> structSym)
-{
-    LLVMType* t = getLLVMType(structSym->getType());
-	StructType* structType = dyn_cast<StructType>(t);
-    assert(structType != nullptr);
 
+Value* CodeGeneration::createCastIfNecessary(bluefinParser::ExprContext* ctx, llvm::Value* val) const
+{
+    Type exprEvalType = typeContexts.at(ctx).getEvalType();
+    Type exprPromoType = typeContexts.at(ctx).getPromotionType();
+
+    if (exprPromoType == Type::FLOAT() && exprEvalType == Type::INT()) { 
+        val = Builder->CreateCast(llvm::Instruction::CastOps::SIToFP, val, LLVMType::getFloatTy(*TheContext), "casttmp");
+    }
+    return val;
+}
+
+// Creates a "Function" for the struct's method, which differs from a normal function because 
+// it adds name mangling and a "this" ptr
+Function* CodeGeneration::createFunction(shared_ptr<FunctionSymbol> funcSym, StructType* structType) const
+{
+    Type retType = funcSym->getType();
+    assert(retType.isUserDefinedType() == false && retType != Type::STRING()); // for now, only allow some types to be generated
+
+    vector<LLVMType*> llvmParamTypes;
+    vector<shared_ptr<Symbol>> params = funcSym->getParams();
+
+    llvmParamTypes.push_back(structType->getPointerTo());
+    for (const auto param : params) {
+        Type paramType = param->getType();
+        assert(paramType.isUserDefinedType() == false && paramType != Type::STRING() && paramType != Type::VOID()); // for now, only allow some types to be generated
+        llvmParamTypes.push_back(getLLVMType(paramType));
+    }
+
+    FunctionType* FT = FunctionType::get(getLLVMType(retType), llvmParamTypes, false);
+    Function* F = Function::Create(FT, Function::ExternalLinkage, "_" + structType->getName() + "_" + funcSym->getName(), TheModule.get());
+
+    // set the name of the first arg to 'this' and provide names to others
+    F->getArg(0)->setName("this");
+    for (int i = 0; i < params.size(); i++) {
+        F->getArg(i + 1)->setName(params[i]->getName());
+    }
+
+    return F;
+}
+
+Function* CodeGeneration::createFunction(shared_ptr<FunctionSymbol> funcSym) const
+{
+    Type retType = funcSym->getType();
+    assert(retType.isUserDefinedType() == false && retType != Type::STRING()); // for now, only allow some types to be generated
+
+    vector<LLVMType*> llvmParamTypes;
+    vector<shared_ptr<Symbol>> params = funcSym->getParams();
+
+    for (const auto param : params) {
+        Type paramType = param->getType();
+        assert(paramType.isUserDefinedType() == false && paramType != Type::STRING() && paramType != Type::VOID()); // for now, only allow some types to be generated
+        llvmParamTypes.push_back(getLLVMType(paramType));
+    }
+
+    FunctionType* FT = FunctionType::get(getLLVMType(retType), llvmParamTypes, false);
+    Function* F = Function::Create(FT, Function::ExternalLinkage, funcSym->getName(), TheModule.get());;
+
+	for (int i = 0; i < params.size(); i++) {
+		F->getArg(i)->setName(params[i]->getName());
+	}
+
+    return F;
+}
+
+Function* CodeGeneration::createCtor(StructType* structType) const
+{
     vector<LLVMType*> ctorParam; // since this is the ctor, the type should be only
     ctorParam.push_back(structType->getPointerTo());
 
     FunctionType* FT = FunctionType::get(getLLVMType(Type::VOID()), ctorParam, false);
-    Function* ctor = Function::Create(FT, Function::ExternalLinkage, "_ctor_" + structSym->getName(), TheModule.get());
+    Function* ctor = Function::Create(FT, Function::ExternalLinkage, "_ctor_" + structType->getName(), TheModule.get());
     ctor->getArg(0)->setName("this");
-
-    BasicBlock* BB = BasicBlock::Create(*TheContext, "entry", ctor);
-    Builder->SetInsertPoint(BB);
     return ctor;
 }
+
+Function* CodeGeneration::createGlobalVarDeclFunction(string id) const
+{
+    string funcName = "internalGlobalVarDecl_" + id;
+    vector<LLVMType*> noParams;
+    FunctionType* FT = FunctionType::get(LLVMType::getVoidTy(*TheContext), noParams, false);
+    Function* internalF = Function::Create(FT, Function::InternalLinkage, funcName, TheModule.get());
+
+    return internalF;
+}
+
+StructType* CodeGeneration::createStruct(shared_ptr<StructSymbol> structSym) const
+{
+    vector<LLVMType*> members;
+    for (auto varSym : structSym->getFields()) {
+        members.push_back(getLLVMType(varSym->getType()));
+    }
+
+    StructType* structType = StructType::create(*TheContext, members, structSym->getName());
+    return structType;
+}
+
 
 /// ================================== IfStmHelper ========================================
  

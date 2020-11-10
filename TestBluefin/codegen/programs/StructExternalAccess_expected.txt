@@ -4,11 +4,6 @@ source_filename = "StructExternalAccess.bf"
 %Foo = type { i32, float }
 %Bar = type { %Foo, i32, float }
 
-define void @_ctor_Foo(%Foo* %this) {
-entry:
-  ret void
-}
-
 define i32 @_Foo_here(%Foo* %this) {
 entry:
   %memPtr_x = getelementptr %Foo, %Foo* %this, i32 0, i32 0
@@ -22,6 +17,11 @@ entry:
   store i32 %a, i32* %alloctmp_a, align 4
   %loadtmp_a = load i32, i32* %alloctmp_a, align 4
   ret i32 %loadtmp_a
+}
+
+define void @_ctor_Foo(%Foo* %this) {
+entry:
+  ret void
 }
 
 define void @_ctor_Bar(%Bar* %this) {
