@@ -90,6 +90,7 @@ void CodeGeneration::enterVarDecl(bluefinParser::VarDeclContext* ctx)
             // If the variable is a structDef, also create the internal function and call the struct's ctor
             
             Function* internalF = createGlobalVarDeclFunction(id);
+            functionsThatInitializeGlobalVarDecl.emplace(v, internalF);
             BasicBlock* BB = BasicBlock::Create(*TheContext, "entry", internalF);
             Builder->SetInsertPoint(BB);
         }
@@ -118,18 +119,16 @@ void CodeGeneration::exitVarDecl(bluefinParser::VarDeclContext* ctx)
     string id = ctx->ID()->getText();
     shared_ptr<Scope> varDeclScope = symbolTable.getScope(ctx);
 
-    // if the variable declaration is for a global and it contains an expr, then we will need
-    // to update the global's value (since it was originally set to 0)
     if (isGlobalVarDecl(ctx, symbolTable)) {
 
         shared_ptr<Symbol> sym = symbolTable.getSymbol(ctx);
         Type symType = sym->getType();
         Value* globalAddr = resolvedSymAndValues.at(sym);
         assert(isa<GlobalVariable>(globalAddr));
-		Function* internalF = Builder->GetInsertBlock()->getParent();
 
         if (symType.isUserDefinedType()) { // simply a bare global var. eg) Normal norm;
             assert(!ctx->expr()); // don't support VarDecl with assignment of struct type. eg) Normal norm = normmm; is not allowed
+			Function* internalF = functionsThatInitializeGlobalVarDecl.at(dyn_cast<GlobalVariable>(globalAddr));
             shared_ptr<StructSymbol> structSym = dynamic_pointer_cast<StructSymbol>(symbolTable.getSymbolMatchingType(symType));
             Function* ctor = structHelper.getCtor(structSym);
             Builder->CreateCall(ctor, globalAddr);
@@ -138,7 +137,10 @@ void CodeGeneration::exitVarDecl(bluefinParser::VarDeclContext* ctx)
         }
         else if (ctx->expr()) {
             Value* val = values.at(ctx->expr());
+			Function* internalF = functionsThatInitializeGlobalVarDecl.at(dyn_cast<GlobalVariable>(globalAddr));
             if (isa<Constant>(val)) {
+				// if the variable declaration is for a global and it contains an expr, then we will need
+				// to update the global's value (since it was originally set to 0)
                 Constant* c = dyn_cast<Constant>(val);
                 TheModule->getNamedGlobal(id)->setInitializer(c);
                 // Remove the internal function since the expr() is a compile-time constant and we can update vardecl 
@@ -163,47 +165,24 @@ void CodeGeneration::exitVarDecl(bluefinParser::VarDeclContext* ctx)
         Builder->CreateStore(exprVal, allocaInst);
     }
     else if (isStructField(ctx, symbolTable)) {
-        // struct member field with expr. 
         // if we're in here, that means the current BB insertion point should be in the ctor.
-
         // if user-defined type, then call ctor
 		Type varDeclType = symbolTable.getSymbol(ctx)->getType();
+		shared_ptr<StructSymbol> structSym = getContainingStruct(ctx, symbolTable);
+		Value* thisPtr = structHelper.getCtorThisPtr(structSym);
+
         if (varDeclType.isUserDefinedType()) {
-            string str = dump();
             shared_ptr<StructSymbol> structOfVarDeclType = dynamic_pointer_cast<StructSymbol>(symbolTable.getSymbolMatchingType(varDeclType));
-            Function* ctor = structHelper.getCtor(structOfVarDeclType);
 
-            // We also need to pass in the address of the field. 
-            shared_ptr<StructSymbol> structSym = getContainingStruct(ctx, symbolTable);
-            LLVMType* structType = getLLVMType(structSym->getType());
-
-            Value* thisPtr = structHelper.getCtorThisPtr(structSym);
-
-            Value* zero = Builder->getInt32(0);
-            size_t memberIndex = structSym->getFieldIndex(id);
-            Value* index = Builder->getInt32(memberIndex);
-            Value* indices[2] = { zero, index };
-
-            Value* memberPtr = Builder->CreateGEP(structType, thisPtr, indices, "memPtr_" + id);
-
-            Builder->CreateCall(ctor, memberPtr);
+            Function* varDeclCtor = structHelper.getCtor(structOfVarDeclType);
+            GetElementPtrInst* memPtr = createStructElementAddr(structSym, id, thisPtr);
+            Builder->CreateCall(varDeclCtor, memPtr);
         }
         if (ctx->expr()) {
             assert(!varDeclType.isUserDefinedType()); // for now, we don't allow struct assignment inside vardecl. eg) Foo foo = foobar;
-            shared_ptr<StructSymbol> structSym = getContainingStruct(ctx, symbolTable);
-            LLVMType* structType = getLLVMType(structSym->getType());
-
-            Value* thisPtr = structHelper.getCtorThisPtr(structSym);
-
-            Value* zero = Builder->getInt32(0);
-            size_t memberIndex = structSym->getFieldIndex(id);
-            Value* index = Builder->getInt32(memberIndex);
-            Value* indices[2] = { zero, index };
-
-            Value* memberPtr = Builder->CreateGEP(structType, thisPtr, indices, "memPtr_" + id);
-
+			GetElementPtrInst* memPtr = createStructElementAddr(structSym, id, thisPtr);
             Value* exprVal = values.at(ctx->expr());
-            Builder->CreateStore(exprVal, memberPtr);
+            Builder->CreateStore(exprVal, memPtr);
         }
     }
 }
@@ -369,22 +348,12 @@ void CodeGeneration::enterPrimaryId(bluefinParser::PrimaryIdContext* ctx)
         // would be generated either into either a ctor (inside a vardecl's expr()) or a method
 
         shared_ptr<StructSymbol> structSym = dynamic_pointer_cast<StructSymbol>(symbolTable.getScope(resolvedSym));
+        Value* thisPtr = currentMethodThis; 
 
-        LLVMType* structType = getLLVMType(structSym->getType());
-        Value* thisPtr = currentMethodThis; // structHelper.getCtorThisPtr(structSym); // this primaryId may be in a method and not a ctor. How to distinguish which to get?
+        GetElementPtrInst* memPtr = createStructElementAddr(structSym, varName, thisPtr);
+        elementPtrs.emplace(ctx, memPtr);
 
-		Value* zero  = Builder->getInt32(0);
-		size_t memberIndex = structSym->getFieldIndex(varName);
-		Value* index  = Builder->getInt32(memberIndex);
-		Value* indices[2] = { zero, index };
-
-		Value* memberPtr = Builder->CreateGEP(structType, thisPtr, indices, "memPtr_" + varName);
-		assert(isa<GetElementPtrInst>(memberPtr));
-		GetElementPtrInst* castedMemAddr = dyn_cast<GetElementPtrInst>(memberPtr);
-
-        elementPtrs.emplace(ctx, castedMemAddr);
-
-		val = Builder->CreateLoad(memberPtr, "loadtmp_" + varName);
+		val = Builder->CreateLoad(memPtr, "loadtmp_" + varName);
 	}
     else {
         val = resolvedSymAndValues.at(resolvedSym);
@@ -393,12 +362,7 @@ void CodeGeneration::enterPrimaryId(bluefinParser::PrimaryIdContext* ctx)
         val = Builder->CreateLoad(val, "loadtmp_" + varName);
     }
 
-	Type varIdEvalType = typeContexts.at(ctx).getEvalType();
-	Type varIdPromoType = typeContexts.at(ctx).getPromotionType();
-
-	if (varIdPromoType == Type::FLOAT() && varIdEvalType == Type::INT()) { // cast left and right to float
-		val = Builder->CreateCast(llvm::Instruction::CastOps::SIToFP, val, LLVMType::getFloatTy(*TheContext), "casttmp");
-	}
+    val = createCastIfNecessary(ctx, val);
 
 	values.emplace(ctx, val);
 }
@@ -465,10 +429,7 @@ void CodeGeneration::exitMultiExpr(bluefinParser::MultiExprContext* ctx)
     // The *'s expr node may have a promotion type of float, whereas the individual subnodes' promotion type is to int
     // eg) int val; a*2.0 - val/2, for val/2, both have promotion type to int, but the expression is float, so 
     // we need to convert the final expr to float
-    if (exprPromoType == Type::FLOAT() && exprEvalType == Type::INT()) { // cast left and right to float
-        expr = Builder->CreateCast(llvm::Instruction::CastOps::SIToFP, expr, LLVMType::getFloatTy(*TheContext), "casttmp");
-    }
-
+    expr = createCastIfNecessary(ctx, expr);
     values.emplace(ctx, expr);
 }
 
@@ -502,7 +463,6 @@ void CodeGeneration::exitAddExpr(bluefinParser::AddExprContext* ctx)
     }
 
     expr = createCastIfNecessary(ctx, expr);
-
     values.emplace(ctx, expr);
 }
 
@@ -680,7 +640,6 @@ void CodeGeneration::exitStmtReturn(bluefinParser::StmtReturnContext* ctx)
     else
         Builder->CreateRetVoid();
 
-
     Function* TheFunction = Builder->GetInsertBlock()->getParent();
     BasicBlock* impossibleBB = BasicBlock::Create(*TheContext, "impossible", TheFunction);
     Builder->SetInsertPoint(impossibleBB);
@@ -700,9 +659,7 @@ void CodeGeneration::exitMemberAccess(bluefinParser::MemberAccessContext* ctx)
     // if the left val corresponds to an elementPtr (either we're in a chained external member access or the root
     // which is always a primaryId, refers to an internal member (so we're inside a field varDecl. Then use that 
     // as the address
-    //if (auto leftCtx = dynamic_cast<bluefinParser::MemberAccessContext*>(ctx->expr()))
-        //address = elementPtrs.at(leftCtx);
-    if (elementPtrs.count(ctx->expr()) == 1)
+   if (elementPtrs.count(ctx->expr()) == 1)
         address = elementPtrs.at(ctx->expr());
     else {
         // left sym is a primaryId (the root, eg, the 'a' in 'a.b.c')
@@ -716,25 +673,16 @@ void CodeGeneration::exitMemberAccess(bluefinParser::MemberAccessContext* ctx)
     shared_ptr<StructSymbol> structSym = dynamic_pointer_cast<StructSymbol>(symbolTable.getSymbolMatchingType(leftSym->getType()));
     assert(structSym != nullptr);
 
-    LLVMType* structType = getLLVMType(structSym->getType());
-
     string memName = ctx->ID()->getText();
-	Value* zero  = Builder->getInt32(0);
-	size_t memberIndex = structSym->getFieldIndex(memName);
-	Value* index  = Builder->getInt32(memberIndex);
-	Value* indices[2] = { zero, index };
+	GetElementPtrInst* memPtr = createStructElementAddr(structSym, memName, address);
 
-    Value* memAddr = Builder->CreateGEP(structType, address, indices, "memPtr_" + memName);
-    assert(isa<GetElementPtrInst>(memAddr));
-    GetElementPtrInst* castedMemAddr = dyn_cast<GetElementPtrInst>(memAddr);
-
-    elementPtrs.emplace(ctx, castedMemAddr);
+    elementPtrs.emplace(ctx, memPtr);
 
     // TODO: Refactor. To allow this member access to be used, we load it. However, this means for each chained member access
     // we load intermediate members, whose values would never actually be used, which is unnecessary redundancy
     // eg) for "a.b.c";, load will be created for "b" and "c" even though the load for "b" isn't needed (actually, primaryId "a' 
     // will also trigger a load
-	Value* val = Builder->CreateLoad(memAddr, "loadtmp_" + memName);
+	Value* val = Builder->CreateLoad(memPtr, "loadtmp_" + memName);
     val = createCastIfNecessary(ctx, val);
 
 	values.emplace(ctx, val);
@@ -902,7 +850,6 @@ string CodeGeneration::dump() {
 
 bool CodeGeneration::isCodeGenOK()
 {
-    //raw_ostream stream;
     raw_fd_ostream& stream = llvm::outs();
 
     bool isBroken = verifyModule(*TheModule, &stream);
@@ -1017,6 +964,21 @@ StructType* CodeGeneration::createStruct(shared_ptr<StructSymbol> structSym) con
 
     StructType* structType = StructType::create(*TheContext, members, structSym->getName());
     return structType;
+}
+
+GetElementPtrInst* CodeGeneration::createStructElementAddr(shared_ptr<StructSymbol> structSym, string fieldName, Value* structAddr)
+{
+    LLVMType* structType = getLLVMType(structSym->getType());
+
+    Value* zero = Builder->getInt32(0);
+    size_t memberIndex = structSym->getFieldIndex(fieldName);
+    Value* index = Builder->getInt32(memberIndex);
+    Value* indices[2] = { zero, index };
+
+    Value* memAddr = Builder->CreateGEP(structType, structAddr, indices, "memPtr_" + fieldName);
+    assert(isa<GetElementPtrInst>(memAddr));
+    GetElementPtrInst* castedMemAddr = dyn_cast<GetElementPtrInst>(memAddr);
+    return castedMemAddr;
 }
 
 
