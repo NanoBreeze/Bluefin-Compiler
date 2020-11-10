@@ -33,8 +33,6 @@ using LLVMType = llvm::Type;
 
 using std::dynamic_pointer_cast;
 
-// TODO: I want to refactor the way VarDecl and StructDef's are handled, especially its ctor. This is getting messy.
-
 CodeGeneration::CodeGeneration(SymbolTable& symTab, const map<ParseTree*, TypeContext>& typeCxts, const string moduleName) : 
     symbolTable{ symTab }, typeContexts{ typeCxts }	{
     // Open a new context and module.
@@ -81,7 +79,7 @@ void CodeGeneration::enterVarDecl(bluefinParser::VarDeclContext* ctx)
         GlobalVariable* v = new GlobalVariable(*TheModule, llvmType, false, 
             GlobalVariable::LinkageTypes::ExternalLinkage, defaultVal, id);
 
-		resolvedSymAndValues.emplace(sym, v);
+		resolvedSymAndAddrs.emplace(sym, v);
 
         if (ctx->expr() || varDeclType.isUserDefinedType()) { // if there's an expression, it either can be constant folded or requires calling 
             // other funcs or primaryIds, which would generate code. We don't know which right now, so we create
@@ -99,7 +97,7 @@ void CodeGeneration::enterVarDecl(bluefinParser::VarDeclContext* ctx)
         // local variables are allocated on the stack
         Value* allocaVal = Builder->CreateAlloca(llvmType, nullptr, "alloctmp_" + id); // NOTE, we're storing the AllocaInst here
         values.emplace(ctx, allocaVal);
-		resolvedSymAndValues.emplace(sym, allocaVal); 
+		resolvedSymAndAddrs.emplace(sym, allocaVal); 
 
         // if the type is a struct, then call the struct's its corresponding ctor
         if (varDeclType.isUserDefinedType()) {
@@ -123,7 +121,7 @@ void CodeGeneration::exitVarDecl(bluefinParser::VarDeclContext* ctx)
 
         shared_ptr<Symbol> sym = symbolTable.getSymbol(ctx);
         Type symType = sym->getType();
-        Value* globalAddr = resolvedSymAndValues.at(sym);
+        Value* globalAddr = resolvedSymAndAddrs.at(sym);
         assert(isa<GlobalVariable>(globalAddr));
 
         if (symType.isUserDefinedType()) { // simply a bare global var. eg) Normal norm;
@@ -176,6 +174,7 @@ void CodeGeneration::exitVarDecl(bluefinParser::VarDeclContext* ctx)
 
             Function* varDeclCtor = structHelper.getCtor(structOfVarDeclType);
             GetElementPtrInst* memPtr = createStructElementAddr(structSym, id, thisPtr);
+            string str = dump();
             Builder->CreateCall(varDeclCtor, memPtr);
         }
         if (ctx->expr()) {
@@ -214,7 +213,7 @@ void CodeGeneration::enterFuncDef(bluefinParser::FuncDefContext* ctx) {
             Type t = params[i]->getType();
             AllocaInst* allocaInst = Builder->CreateAlloca(getLLVMType(t), nullptr, "alloctmp_" + params[i]->getName());
             Builder->CreateStore(F->getArg(i), allocaInst);
-            resolvedSymAndValues.emplace(params[i], allocaInst);
+            resolvedSymAndAddrs.emplace(params[i], allocaInst);
         }
     }
 }
@@ -275,7 +274,7 @@ void CodeGeneration::enterStructDef(bluefinParser::StructDefContext* ctx)
             Type t = params[i]->getType();
 			AllocaInst* allocaInst = Builder->CreateAlloca(getLLVMType(t), nullptr, "alloctmp_" + params[i]->getName());
 			Builder->CreateStore(F->getArg(i+1), allocaInst);
-			resolvedSymAndValues.emplace(params[i], allocaInst);
+			resolvedSymAndAddrs.emplace(params[i], allocaInst);
 		}
 
         methodToLLVMFunctions.emplace(funcSym, F);
@@ -356,7 +355,7 @@ void CodeGeneration::enterPrimaryId(bluefinParser::PrimaryIdContext* ctx)
 		val = Builder->CreateLoad(memPtr, "loadtmp_" + varName);
 	}
     else {
-        val = resolvedSymAndValues.at(resolvedSym);
+        val = resolvedSymAndAddrs.at(resolvedSym);
         if (val != nullptr && isa<AllocaInst, GlobalVariable>(val) == false)
             assert(false);
         val = Builder->CreateLoad(val, "loadtmp_" + varName);
@@ -558,7 +557,7 @@ void CodeGeneration::exitLogicalORExpr(bluefinParser::LogicalORExprContext* ctx)
 
 // TODO: We don't check l-value or r-value, so an assignmetn like 'a+3 = 6' will lead
 // to an unresolved expr for ctx->expr(0) and will crash the code generator.
-// Note: Visiting the primaryId on the lhs will automatically generate a load for it
+// TODO: Visiting the primaryId on the lhs will automatically generate a load for it
 // even though it is totally useless and won't be used
 void CodeGeneration::exitSimpleAssignExpr(bluefinParser::SimpleAssignExprContext* ctx)
 {
@@ -570,7 +569,7 @@ void CodeGeneration::exitSimpleAssignExpr(bluefinParser::SimpleAssignExprContext
         // left sym is a primaryId (the root, eg, the 'a' in 'a.b.c')
         // Set address to the globalVar or local address of the root
 		shared_ptr<Symbol> leftSym = symbolTable.getResolvedSymbol(ctx->expr(0));
-		address = resolvedSymAndValues.at(leftSym);
+		address = resolvedSymAndAddrs.at(leftSym);
 		if (isa<AllocaInst, GlobalVariable>(address) == false)
 			assert(false);
     }
@@ -655,7 +654,6 @@ void CodeGeneration::exitMemberAccess(bluefinParser::MemberAccessContext* ctx)
 	shared_ptr<Symbol> leftSym = symbolTable.getResolvedSymbol(ctx->expr());
     Value* address = nullptr;
 
-    string here = dump();
     // if the left val corresponds to an elementPtr (either we're in a chained external member access or the root
     // which is always a primaryId, refers to an internal member (so we're inside a field varDecl. Then use that 
     // as the address
@@ -664,10 +662,9 @@ void CodeGeneration::exitMemberAccess(bluefinParser::MemberAccessContext* ctx)
     else {
         // left sym is a primaryId (the root, eg, the 'a' in 'a.b.c')
         // Set address to the globalVar or local address of the root
-		address = resolvedSymAndValues.at(leftSym);
+		address = resolvedSymAndAddrs.at(leftSym);
 		if (isa<AllocaInst, GlobalVariable>(address) == false) 
 			assert(false);
-		// AMAZINGLY, this is a bug! assert(isa<AllocaInst, GlobalVariable>(lhs)); 
     }
 
     shared_ptr<StructSymbol> structSym = dynamic_pointer_cast<StructSymbol>(symbolTable.getSymbolMatchingType(leftSym->getType()));
@@ -708,7 +705,7 @@ void CodeGeneration::exitMethodCall(bluefinParser::MethodCallContext* ctx)
         // left sym is a primaryId (the root, eg, the 'a' in 'a.b.c')
         // Set address to the globalVar or local address of the root
 		shared_ptr<Symbol> leftSym = symbolTable.getResolvedSymbol(ctx->expr());
-		leftAddr = resolvedSymAndValues.at(leftSym);
+		leftAddr = resolvedSymAndAddrs.at(leftSym);
 		if (isa<AllocaInst, GlobalVariable>(leftAddr) == false)
 			assert(false);
     }
@@ -955,9 +952,13 @@ Function* CodeGeneration::createGlobalVarDeclFunction(string id) const
     return internalF;
 }
 
+// If the struct extends a base type, we treat the base type as if it were the first member in the StructSym
 StructType* CodeGeneration::createStruct(shared_ptr<StructSymbol> structSym) const
 {
     vector<LLVMType*> members;
+    if (shared_ptr<StructSymbol> parentSym = structSym->getSuperClass()) {
+        members.push_back(getLLVMType(parentSym->getType()));
+    }
     for (auto varSym : structSym->getFields()) {
         members.push_back(getLLVMType(varSym->getType()));
     }
@@ -972,6 +973,12 @@ GetElementPtrInst* CodeGeneration::createStructElementAddr(shared_ptr<StructSymb
 
     Value* zero = Builder->getInt32(0);
     size_t memberIndex = structSym->getFieldIndex(fieldName);
+
+    // If this struct extends a parent struct, then in the generated IR code for this struct, the first member is the parent type,
+    // which means we must increment the memberIndex by 1
+    if (structSym->getSuperClass())
+        memberIndex++;
+
     Value* index = Builder->getInt32(memberIndex);
     Value* indices[2] = { zero, index };
 

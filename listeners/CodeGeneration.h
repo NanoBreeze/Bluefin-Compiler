@@ -164,11 +164,11 @@ namespace bluefin {
 
 	private:
 		SymbolTable& symbolTable;
-		const map<ParseTree*, TypeContext>& typeContexts; // stores the type associated with expressions and functions. Enables type checking
+		const map<ParseTree*, TypeContext>& typeContexts; // stores the type associated with expressions and functions. Enables type checking and casting
 
 		map<ParseTree*, llvm::Value*> values; // stores the type associated ctx node with the LLVM value
-		map<shared_ptr<Symbol>, llvm::Value*> resolvedSymAndValues; // this is clumsy. It is used to resolve the Value associated with a primaryId. eg) a+6;
-		// which is either a local variable (AllocaInst), global variable (GlobalVariable). Struct field addresses are placed in elementPtrs
+		map<shared_ptr<Symbol>, llvm::Value*> resolvedSymAndAddrs; // Matches a resolved Symbol with its address. The resolved symbol is used
+		// either for local variable (AllocaInst) or global variable (GlobalVariable). Struct field addresses are placed in elementPtrs
 		
 		// Given two member accesses (a.fooStruct.c, and x.fooStruct.y), the 'fooStruct' member resolves to the instance field of the StructDef that 
 		// corresponds to 'a' type (yeah this is wordy). That's a problem, since if we associate pointer addresses to them, we can get incorrect results
