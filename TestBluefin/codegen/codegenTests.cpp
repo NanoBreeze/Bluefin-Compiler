@@ -120,4 +120,8 @@ namespace CodeGenTests {
 	TEST(CodeGen, Program_StructInheritanceInternalAccess) {
 		validateCodeGen("StructInheritanceInternalAccess.bf", "StructInheritanceInternalAccess_expected.txt");
 	}
+
+	TEST(CodeGen, Program_StructInheritanceCtorCalls) {
+		validateCodeGen("StructInheritanceCtorCalls.bf", "StructInheritanceCtorCalls_expected.txt");
+	}
 }

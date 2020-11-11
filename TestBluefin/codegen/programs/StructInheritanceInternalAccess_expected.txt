@@ -48,6 +48,8 @@ entry:
 
 define void @_ctor_Der(%Der* %this) {
 entry:
+  %memCast = bitcast %Der* %this to %Base*
+  call void @_ctor_Base(%Base* %memCast)
   %memPtr_b = getelementptr %Der, %Der* %this, i32 0, i32 1
   %loadtmp_b = load i32, i32* %memPtr_b, align 4
   %memPtr_b1 = getelementptr %Der, %Der* %this, i32 0, i32 1
@@ -70,32 +72,34 @@ entry:
 
 define void @_ctor_DerDer(%DerDer* %this) {
 entry:
-  %memCast = bitcast %DerDer* %this to %Base*
-  %memPtr_a = getelementptr %Base, %Base* %memCast, i32 0, i32 0
+  %memCast = bitcast %DerDer* %this to %Der*
+  call void @_ctor_Der(%Der* %memCast)
+  %memCast1 = bitcast %DerDer* %this to %Base*
+  %memPtr_a = getelementptr %Base, %Base* %memCast1, i32 0, i32 0
   %loadtmp_a = load i32, i32* %memPtr_a, align 4
   %memPtr_c = getelementptr %DerDer, %DerDer* %this, i32 0, i32 1
   store i32 %loadtmp_a, i32* %memPtr_c, align 4
-  %memCast1 = bitcast %DerDer* %this to %Der*
-  %memPtr_b = getelementptr %Der, %Der* %memCast1, i32 0, i32 1
+  %memCast2 = bitcast %DerDer* %this to %Der*
+  %memPtr_b = getelementptr %Der, %Der* %memCast2, i32 0, i32 1
   %loadtmp_b = load i32, i32* %memPtr_b, align 4
   %memPtr_d = getelementptr %DerDer, %DerDer* %this, i32 0, i32 2
   store i32 %loadtmp_b, i32* %memPtr_d, align 4
-  %memCast2 = bitcast %DerDer* %this to %Base*
-  %memPtr_norm = getelementptr %Base, %Base* %memCast2, i32 0, i32 2
+  %memCast3 = bitcast %DerDer* %this to %Base*
+  %memPtr_norm = getelementptr %Base, %Base* %memCast3, i32 0, i32 2
   %loadtmp_norm = load %Normal, %Normal* %memPtr_norm, align 4
-  %memPtr_a3 = getelementptr %Normal, %Normal* %memPtr_norm, i32 0, i32 0
-  %loadtmp_a4 = load i32, i32* %memPtr_a3, align 4
+  %memPtr_a4 = getelementptr %Normal, %Normal* %memPtr_norm, i32 0, i32 0
+  %loadtmp_a5 = load i32, i32* %memPtr_a4, align 4
   %memPtr_e = getelementptr %DerDer, %DerDer* %this, i32 0, i32 3
-  store i32 %loadtmp_a4, i32* %memPtr_e, align 4
-  %memCast5 = bitcast %DerDer* %this to %Base*
-  %memPtr_norm6 = getelementptr %Base, %Base* %memCast5, i32 0, i32 2
-  %loadtmp_norm7 = load %Normal, %Normal* %memPtr_norm6, align 4
-  %calltmp = call i32 @_Normal_wow(%Normal* %memPtr_norm6)
+  store i32 %loadtmp_a5, i32* %memPtr_e, align 4
+  %memCast6 = bitcast %DerDer* %this to %Base*
+  %memPtr_norm7 = getelementptr %Base, %Base* %memCast6, i32 0, i32 2
+  %loadtmp_norm8 = load %Normal, %Normal* %memPtr_norm7, align 4
+  %calltmp = call i32 @_Normal_wow(%Normal* %memPtr_norm7)
   %memPtr_f = getelementptr %DerDer, %DerDer* %this, i32 0, i32 4
   store i32 %calltmp, i32* %memPtr_f, align 4
-  %memCast8 = bitcast %DerDer* %this to %Der*
-  %calltmp9 = call i32 @_Der_two(%Der* %memCast8)
+  %memCast9 = bitcast %DerDer* %this to %Der*
+  %calltmp10 = call i32 @_Der_two(%Der* %memCast9)
   %memPtr_g = getelementptr %DerDer, %DerDer* %this, i32 0, i32 5
-  store i32 %calltmp9, i32* %memPtr_g, align 4
+  store i32 %calltmp10, i32* %memPtr_g, align 4
   ret void
 }

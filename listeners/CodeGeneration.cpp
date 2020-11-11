@@ -286,6 +286,16 @@ void CodeGeneration::enterStructDef(bluefinParser::StructDefContext* ctx)
 
     structHelper.addStructDef(structSym, ctor);
     currentMethodThis = ctor->getArg(0); // referring to ctor
+    
+    // If the struct has a parent type, call its parent's ctor Function. We will need to bitcast our existing "this" ptr to 
+    // the parent's type
+    if (shared_ptr<StructSymbol> parentSym = structSym->getSuperClass()) {
+        Function* parentCtor = structHelper.getCtor(parentSym);
+		LLVMType* t = structHelper.getCtorThisPtr(parentSym)->getType();
+        // We bitcast the "this" ptr in case we're calling a parent's method. If not, bitcasting will simply return the original "this" ptr, unchanged 
+        Value* currentMethodThisCasted = Builder->CreateBitOrPointerCast(currentMethodThis, t, "memCast");
+        Builder->CreateCall(parentCtor, currentMethodThisCasted);
+    }
 }
 
 void CodeGeneration::exitStructDef(bluefinParser::StructDefContext* ctx)
