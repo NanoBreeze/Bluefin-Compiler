@@ -617,9 +617,14 @@ void CodeGeneration::exitFuncCall(bluefinParser::FuncCallContext* ctx)
     // In either case, we must remember to pass in the "this" variable
     if (isStructMethod(funcSym, symbolTable)) {
         F = methodToLLVMFunctions.at(funcSym);
-        LLVMType* t = F->getArg(0)->getType();
+        shared_ptr<StructSymbol> structSymContainer = getContainingStruct(funcSym, symbolTable);
+        LLVMType* t = getLLVMType(structSymContainer->getType());
+    
+        assert(t->getPointerTo() == F->getArg(0)->getType());
+            
         // We bitcast the "this" ptr in case we're calling a parent's method. If not, bitcasting will simply return the original "this" ptr, unchanged 
-        Value* currentMethodThisCasted = Builder->CreateBitOrPointerCast(currentMethodThis, t, "memCast");
+        // Alternatively, we could just bitcast it to F->getArg(0)->getType(), but finding the actual struct type is safer, in case we made a mistake
+        Value* currentMethodThisCasted = Builder->CreateBitOrPointerCast(currentMethodThis, t->getPointerTo(), "memCast");
         args.push_back(currentMethodThisCasted);
     }
     else {
@@ -688,12 +693,21 @@ void CodeGeneration::exitMemberAccess(bluefinParser::MemberAccessContext* ctx)
 			assert(false);
     }
 
-    shared_ptr<StructSymbol> structSym = dynamic_pointer_cast<StructSymbol>(symbolTable.getSymbolMatchingType(leftSym->getType()));
-    assert(structSym != nullptr);
+    // This is the StructSym corresponding to the left side. eg) `DerDer derder; derder.x;` Note that the 'x' may actually
+    // be inside a base class. As a result, we may need to convert the address of derder to Base 
+    // to correctly retrieve the addr of 'x'
+    shared_ptr<StructSymbol> structSymDer = dynamic_pointer_cast<StructSymbol>(symbolTable.getSymbolMatchingType(leftSym->getType()));
+    assert(structSymDer != nullptr);
 
     string memName = ctx->ID()->getText();
-	GetElementPtrInst* memPtr = createStructElementAddr(structSym, memName, address);
+	shared_ptr<Symbol> resMemSym = symbolTable.resolveMember(memName, structSymDer);
 
+    // The StructSymbol directly containing the resolved member (could be a base or a derived structSym)
+    shared_ptr<StructSymbol> structSymContainer = dynamic_pointer_cast<StructSymbol>(symbolTable.getScope(resMemSym));
+    LLVMType* t = getLLVMType(structSymContainer->getType());
+    Value* addressCasted = Builder->CreateBitOrPointerCast(address, t->getPointerTo(), "memCast"); // if not a derived type, this will generate no new IR, simply returns address
+
+	GetElementPtrInst* memPtr = createStructElementAddr(structSymContainer, memName, addressCasted);
     elementPtrs.emplace(ctx, memPtr);
 
     // TODO: Refactor. To allow this member access to be used, we load it. However, this means for each chained member access
@@ -730,8 +744,16 @@ void CodeGeneration::exitMethodCall(bluefinParser::MethodCallContext* ctx)
 		if (isa<AllocaInst, GlobalVariable>(leftAddr) == false)
 			assert(false);
     }
+
+	// The left address may refer to a derived type but the method actually comes from a base type. As a result, we will have to 
+    // cast the left address to whatever pointer type the method's first arg is
+	shared_ptr<StructSymbol> structSymContainer = getContainingStruct(funcSym, symbolTable);
+	LLVMType* t = getLLVMType(structSymContainer->getType());
+	assert(t->getPointerTo() == F->getArg(0)->getType());
+	Value* leftAddrCasted = Builder->CreateBitOrPointerCast(leftAddr, t->getPointerTo(), "memCast");
+
     vector<Value*> args;
-    args.push_back(leftAddr);
+    args.push_back(leftAddrCasted);
 	for (int i = 0; i < funcSym->getParams().size(); i++) {
 		Value* val = values.at(ctx->argList()->expr(i));
 		args.push_back(val);

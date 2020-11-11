@@ -42,7 +42,11 @@ namespace CodeGenTests {
 		resolutionListener.attachEventObserver(obs);
 		walker.walk(&resolutionListener, tree);
 
+		string resolutionOutput = obs->getOutput();
+		//std::cout << resolutionOutput << std::endl;
+
 		DecorateExprWithTypes decorateExprListener(symFact, symTab);
+		decorateExprListener.attachEventObserver(obs);
 		walker.walk(&decorateExprListener, tree);
 
 		map<ParseTree*, TypeContext> typeContexts = decorateExprListener.getTypeContexts();
@@ -51,6 +55,7 @@ namespace CodeGenTests {
 
 		string output = generator.dump();
 		bool ok = generator.isCodeGenOK();
+
 
 		string expectedOutput = SymbolTableTests::readFile(pathPrefix + expectedOutputFile);
 		std::cout << "OUTPUT:" << std::endl;
@@ -123,5 +128,9 @@ namespace CodeGenTests {
 
 	TEST(CodeGen, Program_StructInheritanceCtorCalls) {
 		validateCodeGen("StructInheritanceCtorCalls.bf", "StructInheritanceCtorCalls_expected.txt");
+	}
+
+	TEST(CodeGen, Program_StructInheritanceExternalAccess) {
+		validateCodeGen("StructInheritanceExternalAccess.bf", "StructInheritanceExternalAccess_expected.txt");
 	}
 }

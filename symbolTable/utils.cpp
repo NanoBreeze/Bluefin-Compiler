@@ -18,6 +18,11 @@ namespace bluefin {
 		return structSym != nullptr;
 	}
 
+	shared_ptr<StructSymbol> getContainingStruct(shared_ptr<FunctionSymbol> funcSym, SymbolTable& symbolTable) {
+		shared_ptr<StructSymbol> structSym = dynamic_pointer_cast<StructSymbol>(symbolTable.getScope(funcSym));
+		return structSym;
+	}
+
 	shared_ptr<StructSymbol> getContainingStruct(bluefinParser::FuncDefContext* ctx, SymbolTable& symbolTable)
 	{
 		return dynamic_pointer_cast<StructSymbol>(symbolTable.getScope(ctx));

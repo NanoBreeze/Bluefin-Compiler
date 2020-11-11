@@ -17,6 +17,10 @@ namespace bluefin {
 	// A FunctionSymbol can be either a real global function, or it could be inside a struct (thus, a method)
 	bool isStructMethod(shared_ptr<FunctionSymbol>, SymbolTable& symTab);
 
+	// Given a functionSym/method, get the containing struct. This is so that when calling the method,
+	// we know which ptr type to cast the address. 
+	shared_ptr<StructSymbol> getContainingStruct(shared_ptr<FunctionSymbol> funcSym, SymbolTable& symbolTable);
+
 	// Given a func def that's a method (inside a struct), retrieve the struct
 	// Returns null if not inside a struct. Somewhat duplicates isStructMethod(..)
 	shared_ptr<StructSymbol> getContainingStruct(bluefinParser::FuncDefContext* ctx, SymbolTable& symbolTable);
