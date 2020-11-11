@@ -116,4 +116,8 @@ namespace CodeGenTests {
 	TEST(CodeGen, Program_StructDefInheritance) {
 		validateCodeGen("StructDefInheritance.bf", "StructDefInheritance_expected.txt");
 	}
+
+	TEST(CodeGen, Program_StructInheritanceInternalAccess) {
+		validateCodeGen("StructInheritanceInternalAccess.bf", "StructInheritanceInternalAccess_expected.txt");
+	}
 }

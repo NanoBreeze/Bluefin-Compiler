@@ -347,7 +347,14 @@ void CodeGeneration::enterPrimaryId(bluefinParser::PrimaryIdContext* ctx)
         // would be generated either into either a ctor (inside a vardecl's expr()) or a method
 
         shared_ptr<StructSymbol> structSym = dynamic_pointer_cast<StructSymbol>(symbolTable.getScope(resolvedSym));
-        Value* thisPtr = currentMethodThis; 
+        Value* thisPtr = currentMethodThis;
+        LLVMType* t = getLLVMType(structSym->getType());
+
+        // this is pretty clever. The resolved symbol may actually be in a parent/grandparent's structDef.
+        // We're currently in the derived structDef. How do we access the parent/grandparent? One way is to
+        // bitcast the current address to the relevant StructType since the first member would correspond to the 
+        // parent anyways
+        thisPtr = Builder->CreateBitOrPointerCast(thisPtr, t->getPointerTo(), "memCast");
 
         GetElementPtrInst* memPtr = createStructElementAddr(structSym, varName, thisPtr);
         elementPtrs.emplace(ctx, memPtr);
@@ -563,7 +570,8 @@ void CodeGeneration::exitSimpleAssignExpr(bluefinParser::SimpleAssignExprContext
 {
     Value* address = nullptr;
 
-    if (auto leftCtx = dynamic_cast<bluefinParser::MemberAccessContext*>(ctx->expr(0)))
+    bluefinParser::ExprContext* leftCtx = ctx->expr(0);
+    if (elementPtrs.count(leftCtx) == 1)
         address = elementPtrs.at(leftCtx);
     else {
         // left sym is a primaryId (the root, eg, the 'a' in 'a.b.c')
@@ -593,13 +601,16 @@ void CodeGeneration::exitFuncCall(bluefinParser::FuncCallContext* ctx)
     string id = ctx->ID()->getText();
     Function* F = nullptr;
     vector<Value*> args;
+
     // The resolved FunctionSymbol that corresponds to this funcCall is either a global function or a struct's method
     // If it's a struct's method, that means we must currently be inside the ctor or a method itself 
     // In either case, we must remember to pass in the "this" variable
-
     if (isStructMethod(funcSym, symbolTable)) {
         F = methodToLLVMFunctions.at(funcSym);
-        args.push_back(currentMethodThis);
+        LLVMType* t = F->getArg(0)->getType();
+        // We bitcast the "this" ptr in case we're calling a parent's method. If not, bitcasting will simply return the original "this" ptr, unchanged 
+        Value* currentMethodThisCasted = Builder->CreateBitOrPointerCast(currentMethodThis, t, "memCast");
+        args.push_back(currentMethodThisCasted);
     }
     else {
         F = TheModule->getFunction(id);
