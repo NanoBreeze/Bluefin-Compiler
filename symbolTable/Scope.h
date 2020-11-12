@@ -23,7 +23,7 @@ namespace bluefin {
 		/**
 		\brief Puts the <symbol.name, symbol> pair into a map for further use
 		*/
-		void declare(shared_ptr<Symbol> symbol);
+		virtual void declare(shared_ptr<Symbol> symbol);
 
 		/**
 		\brief Looks up the name/identifier in the current scope and returns the symbol

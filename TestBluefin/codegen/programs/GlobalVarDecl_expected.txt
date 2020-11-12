@@ -1,0 +1,72 @@
+; ModuleID = 'GlobalVarDecl.bf'
+source_filename = "GlobalVarDecl.bf"
+
+@a = global i32 0
+@b = global i32 7
+@c = global i32 26
+@d = global i32 0
+@e = global i32 0
+@f = global i1 false
+@g = global float 0.000000e+00
+@h = global float 5.000000e+00
+@i = global float 0.000000e+00
+@j = global float 0.000000e+00
+@llvm.global_ctors = appending global [1 x { i32, void ()*, i8* }] [{ i32, void ()*, i8* } { i32 0, void ()* @_VarDeclInitializations, i8* null }]
+
+define i32 @foo() {
+entry:
+  ret i32 3
+}
+
+define void @hi(i32 %a) {
+entry:
+  %alloctmp_a = alloca i32, align 4
+  store i32 %a, i32* %alloctmp_a, align 4
+  %loadtmp_a = load i32, i32* %alloctmp_a, align 4
+  %addtmp = add i32 %loadtmp_a, 1
+  ret void
+}
+
+define internal void @internalGlobalVarDecl_d() {
+entry:
+  %calltmp = call i32 @foo()
+  store i32 %calltmp, i32* @d, align 4
+  ret void
+}
+
+define internal void @internalGlobalVarDecl_e() {
+entry:
+  %calltmp = call i32 @foo()
+  %addtmp = add i32 %calltmp, 9
+  store i32 %addtmp, i32* @e, align 4
+  ret void
+}
+
+define internal void @internalGlobalVarDecl_i() {
+entry:
+  %calltmp = call i32 @foo()
+  %addtmp = add i32 5, %calltmp
+  %casttmp = sitofp i32 %addtmp to float
+  store float %casttmp, float* @i, align 4
+  ret void
+}
+
+define internal void @internalGlobalVarDecl_j() {
+entry:
+  %loadtmp_e = load i32, i32* @e, align 4
+  %calltmp = call i32 @foo()
+  %multmp = mul i32 4, %calltmp
+  store i32 %multmp, i32* @e, align 4
+  %casttmp = sitofp i32 %multmp to float
+  store float %casttmp, float* @j, align 4
+  ret void
+}
+
+define internal void @_VarDeclInitializations() {
+entry:
+  call void @internalGlobalVarDecl_d()
+  call void @internalGlobalVarDecl_e()
+  call void @internalGlobalVarDecl_i()
+  call void @internalGlobalVarDecl_j()
+  ret void
+}

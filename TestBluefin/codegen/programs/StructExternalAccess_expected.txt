@@ -1,0 +1,136 @@
+; ModuleID = 'StructExternalAccess.bf'
+source_filename = "StructExternalAccess.bf"
+
+%Foo = type { i32, float }
+%Bar = type { %Foo, i32, float }
+
+define i32 @_Foo_here(%Foo* %this) {
+entry:
+  %memPtr_x = getelementptr %Foo, %Foo* %this, i32 0, i32 0
+  %loadtmp_x = load i32, i32* %memPtr_x, align 4
+  ret i32 %loadtmp_x
+}
+
+define i32 @_Foo_there(%Foo* %this, i32 %a) {
+entry:
+  %alloctmp_a = alloca i32, align 4
+  store i32 %a, i32* %alloctmp_a, align 4
+  %loadtmp_a = load i32, i32* %alloctmp_a, align 4
+  ret i32 %loadtmp_a
+}
+
+define void @_ctor_Foo(%Foo* %this) {
+entry:
+  ret void
+}
+
+define void @_ctor_Bar(%Bar* %this) {
+entry:
+  %memPtr_foo = getelementptr %Bar, %Bar* %this, i32 0, i32 0
+  call void @_ctor_Foo(%Foo* %memPtr_foo)
+  ret void
+}
+
+define void @foo() {
+entry:
+  %alloctmp_foo = alloca %Foo, align 8
+  call void @_ctor_Foo(%Foo* %alloctmp_foo)
+  %loadtmp_foo = load %Foo, %Foo* %alloctmp_foo, align 4
+  %memPtr_y = getelementptr %Foo, %Foo* %alloctmp_foo, i32 0, i32 1
+  %loadtmp_y = load float, float* %memPtr_y, align 4
+  %loadtmp_foo1 = load %Foo, %Foo* %alloctmp_foo, align 4
+  %memPtr_x = getelementptr %Foo, %Foo* %alloctmp_foo, i32 0, i32 0
+  %loadtmp_x = load i32, i32* %memPtr_x, align 4
+  %addtmp = add i32 %loadtmp_x, 5
+  %loadtmp_foo2 = load %Foo, %Foo* %alloctmp_foo, align 4
+  %memPtr_y3 = getelementptr %Foo, %Foo* %alloctmp_foo, i32 0, i32 1
+  %loadtmp_y4 = load float, float* %memPtr_y3, align 4
+  %loadtmp_foo5 = load %Foo, %Foo* %alloctmp_foo, align 4
+  %memPtr_x6 = getelementptr %Foo, %Foo* %alloctmp_foo, i32 0, i32 0
+  %loadtmp_x7 = load i32, i32* %memPtr_x6, align 4
+  %subtmp = sub i32 %loadtmp_x7, 5
+  %casttmp = sitofp i32 %subtmp to float
+  store float %casttmp, float* %memPtr_y3, align 4
+  ret void
+}
+
+define void @bar() {
+entry:
+  %alloctmp_bar = alloca %Bar, align 8
+  call void @_ctor_Bar(%Bar* %alloctmp_bar)
+  %loadtmp_bar = load %Bar, %Bar* %alloctmp_bar, align 4
+  %memPtr_foo = getelementptr %Bar, %Bar* %alloctmp_bar, i32 0, i32 0
+  %loadtmp_foo = load %Foo, %Foo* %memPtr_foo, align 4
+  %alloctmp_barTwo = alloca %Bar, align 8
+  call void @_ctor_Bar(%Bar* %alloctmp_barTwo)
+  %loadtmp_barTwo = load %Bar, %Bar* %alloctmp_barTwo, align 4
+  %memPtr_foo1 = getelementptr %Bar, %Bar* %alloctmp_barTwo, i32 0, i32 0
+  %loadtmp_foo2 = load %Foo, %Foo* %memPtr_foo1, align 4
+  %loadtmp_bar3 = load %Bar, %Bar* %alloctmp_bar, align 4
+  %memPtr_foo4 = getelementptr %Bar, %Bar* %alloctmp_bar, i32 0, i32 0
+  %loadtmp_foo5 = load %Foo, %Foo* %memPtr_foo4, align 4
+  %memPtr_x = getelementptr %Foo, %Foo* %memPtr_foo4, i32 0, i32 0
+  %loadtmp_x = load i32, i32* %memPtr_x, align 4
+  %loadtmp_bar6 = load %Bar, %Bar* %alloctmp_bar, align 4
+  %memPtr_foo7 = getelementptr %Bar, %Bar* %alloctmp_bar, i32 0, i32 0
+  %loadtmp_foo8 = load %Foo, %Foo* %memPtr_foo7, align 4
+  %memPtr_y = getelementptr %Foo, %Foo* %memPtr_foo7, i32 0, i32 1
+  %loadtmp_y = load float, float* %memPtr_y, align 4
+  store float 1.000000e+01, float* %memPtr_y, align 4
+  %loadtmp_bar9 = load %Bar, %Bar* %alloctmp_bar, align 4
+  %memPtr_foo10 = getelementptr %Bar, %Bar* %alloctmp_bar, i32 0, i32 0
+  %loadtmp_foo11 = load %Foo, %Foo* %memPtr_foo10, align 4
+  %memPtr_y12 = getelementptr %Foo, %Foo* %memPtr_foo10, i32 0, i32 1
+  %loadtmp_y13 = load float, float* %memPtr_y12, align 4
+  %loadtmp_bar14 = load %Bar, %Bar* %alloctmp_bar, align 4
+  %memPtr_foo15 = getelementptr %Bar, %Bar* %alloctmp_bar, i32 0, i32 0
+  %loadtmp_foo16 = load %Foo, %Foo* %memPtr_foo15, align 4
+  %memPtr_x17 = getelementptr %Foo, %Foo* %memPtr_foo15, i32 0, i32 0
+  %loadtmp_x18 = load i32, i32* %memPtr_x17, align 4
+  %casttmp = sitofp i32 %loadtmp_x18 to float
+  %loadtmp_bar19 = load %Bar, %Bar* %alloctmp_bar, align 4
+  %memPtr_foo20 = getelementptr %Bar, %Bar* %alloctmp_bar, i32 0, i32 0
+  %loadtmp_foo21 = load %Foo, %Foo* %memPtr_foo20, align 4
+  %memPtr_y22 = getelementptr %Foo, %Foo* %memPtr_foo20, i32 0, i32 1
+  %loadtmp_y23 = load float, float* %memPtr_y22, align 4
+  %subtmp = fsub float %casttmp, %loadtmp_y23
+  store float %subtmp, float* %memPtr_y12, align 4
+  ret void
+}
+
+define void @method() {
+entry:
+  %alloctmp_foo = alloca %Foo, align 8
+  call void @_ctor_Foo(%Foo* %alloctmp_foo)
+  %loadtmp_foo = load %Foo, %Foo* %alloctmp_foo, align 4
+  %calltmp = call i32 @_Foo_here(%Foo* %alloctmp_foo)
+  %alloctmp_a = alloca i32, align 4
+  %loadtmp_foo1 = load %Foo, %Foo* %alloctmp_foo, align 4
+  %calltmp2 = call i32 @_Foo_there(%Foo* %alloctmp_foo, i32 5)
+  store i32 %calltmp2, i32* %alloctmp_a, align 4
+  %loadtmp_foo3 = load %Foo, %Foo* %alloctmp_foo, align 4
+  %loadtmp_foo4 = load %Foo, %Foo* %alloctmp_foo, align 4
+  %memPtr_x = getelementptr %Foo, %Foo* %alloctmp_foo, i32 0, i32 0
+  %loadtmp_x = load i32, i32* %memPtr_x, align 4
+  %calltmp5 = call i32 @_Foo_there(%Foo* %alloctmp_foo, i32 %loadtmp_x)
+  %alloctmp_bar = alloca %Bar, align 8
+  call void @_ctor_Bar(%Bar* %alloctmp_bar)
+  %loadtmp_bar = load %Bar, %Bar* %alloctmp_bar, align 4
+  %memPtr_foo = getelementptr %Bar, %Bar* %alloctmp_bar, i32 0, i32 0
+  %loadtmp_foo6 = load %Foo, %Foo* %memPtr_foo, align 4
+  %calltmp7 = call i32 @_Foo_here(%Foo* %memPtr_foo)
+  %loadtmp_bar8 = load %Bar, %Bar* %alloctmp_bar, align 4
+  %memPtr_foo9 = getelementptr %Bar, %Bar* %alloctmp_bar, i32 0, i32 0
+  %loadtmp_foo10 = load %Foo, %Foo* %memPtr_foo9, align 4
+  %loadtmp_bar11 = load %Bar, %Bar* %alloctmp_bar, align 4
+  %memPtr_foo12 = getelementptr %Bar, %Bar* %alloctmp_bar, i32 0, i32 0
+  %loadtmp_foo13 = load %Foo, %Foo* %memPtr_foo12, align 4
+  %memPtr_x14 = getelementptr %Foo, %Foo* %memPtr_foo12, i32 0, i32 0
+  %loadtmp_x15 = load i32, i32* %memPtr_x14, align 4
+  %calltmp16 = call i32 @_Foo_there(%Foo* %memPtr_foo9, i32 %loadtmp_x15)
+  %loadtmp_a = load i32, i32* %alloctmp_a, align 4
+  %loadtmp_foo17 = load %Foo, %Foo* %alloctmp_foo, align 4
+  %calltmp18 = call i32 @_Foo_here(%Foo* %alloctmp_foo)
+  store i32 %calltmp18, i32* %alloctmp_a, align 4
+  ret void
+}

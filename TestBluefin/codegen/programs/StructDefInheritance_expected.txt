@@ -1,0 +1,29 @@
+; ModuleID = 'StructDefInheritance.bf'
+source_filename = "StructDefInheritance.bf"
+
+%Base = type { i32 }
+%Der = type { %Base, i32 }
+%DerDer = type { %Der, i32, %Base, %Der }
+
+define void @_ctor_Base(%Base* %this) {
+entry:
+  ret void
+}
+
+define void @_ctor_Der(%Der* %this) {
+entry:
+  %memCast = bitcast %Der* %this to %Base*
+  call void @_ctor_Base(%Base* %memCast)
+  ret void
+}
+
+define void @_ctor_DerDer(%DerDer* %this) {
+entry:
+  %memCast = bitcast %DerDer* %this to %Der*
+  call void @_ctor_Der(%Der* %memCast)
+  %memPtr_base = getelementptr %DerDer, %DerDer* %this, i32 0, i32 2
+  call void @_ctor_Base(%Base* %memPtr_base)
+  %memPtr_der = getelementptr %DerDer, %DerDer* %this, i32 0, i32 3
+  call void @_ctor_Der(%Der* %memPtr_der)
+  ret void
+}

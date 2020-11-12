@@ -1,0 +1,25 @@
+; ModuleID = 'ExprForBool.bf'
+source_filename = "ExprForBool.bf"
+
+define void @hi(i1 %a, i1 %b) {
+entry:
+  %alloctmp_a = alloca i1, align 1
+  store i1 %a, i1* %alloctmp_a, align 1
+  %alloctmp_b = alloca i1, align 1
+  store i1 %b, i1* %alloctmp_b, align 1
+  %loadtmp_a = load i1, i1* %alloctmp_a, align 1
+  %loadtmp_b = load i1, i1* %alloctmp_b, align 1
+  %andtmp = and i1 %loadtmp_a, %loadtmp_b
+  %loadtmp_a1 = load i1, i1* %alloctmp_a, align 1
+  %loadtmp_b2 = load i1, i1* %alloctmp_b, align 1
+  %ortmp = or i1 %loadtmp_a1, %loadtmp_b2
+  %loadtmp_a3 = load i1, i1* %alloctmp_a, align 1
+  %loadtmp_b4 = load i1, i1* %alloctmp_b, align 1
+  %andtmp5 = and i1 %loadtmp_a3, %loadtmp_b4
+  %loadtmp_b6 = load i1, i1* %alloctmp_b, align 1
+  %loadtmp_a7 = load i1, i1* %alloctmp_a, align 1
+  %ortmp8 = or i1 %loadtmp_b6, %loadtmp_a7
+  %loadtmp_a9 = load i1, i1* %alloctmp_a, align 1
+  %nottmp = xor i1 %loadtmp_a9, true
+  ret void
+}

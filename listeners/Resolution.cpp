@@ -114,7 +114,6 @@ void Resolution::exitMemberAccess(bluefinParser::MemberAccessContext* ctx)
 		return; 
 	}
 
-
 	if (structSym) { // the type of the leftward symbol (eg, the 'a' in 'a.b') is a struct and its StructSymbol exists. Now check that the id is a member
 		try {
 			shared_ptr<Symbol> resMemSym = symbolTable.resolveMember(memName, structSym);
@@ -196,7 +195,6 @@ void Resolution::exitMethodCall(bluefinParser::MethodCallContext* ctx)
 		broadcastEvent(ErrorEvent::UNRESOLVED_STRUCTDEF_TO_MATCH_TYPE, leftSymbol->getName());
 		return; 
 	}
-
 
 	if (structSym) { // the type of the leftward symbol (eg, the 'a' in 'a.b') is a struct and its StructSymbol exists. Now check that the id is a member
 		try {

@@ -1,0 +1,37 @@
+; ModuleID = 'LocalVarDecl.bf'
+source_filename = "LocalVarDecl.bf"
+
+define void @foo(i32 %a) {
+entry:
+  %alloctmp_a = alloca i32, align 4
+  store i32 %a, i32* %alloctmp_a, align 4
+  %alloctmp_b = alloca i32, align 4
+  %alloctmp_c = alloca i32, align 4
+  store i32 5, i32* %alloctmp_c, align 4
+  %alloctmp_d = alloca i1, align 1
+  store i1 true, i1* %alloctmp_d, align 1
+  %alloctmp_e = alloca float, align 4
+  store float 6.000000e+00, float* %alloctmp_e, align 4
+  %alloctmp_f = alloca i32, align 4
+  %loadtmp_a = load i32, i32* %alloctmp_a, align 4
+  %multmp = mul i32 %loadtmp_a, 2
+  %addtmp = add i32 7, %multmp
+  store i32 %addtmp, i32* %alloctmp_f, align 4
+  %alloctmp_g = alloca float, align 4
+  %loadtmp_a1 = load i32, i32* %alloctmp_a, align 4
+  %subtmp = sub i32 5, %loadtmp_a1
+  %casttmp = sitofp i32 %subtmp to float
+  store float %casttmp, float* %alloctmp_g, align 4
+  %alloctmp_h = alloca i1, align 1
+  %loadtmp_a2 = load i32, i32* %alloctmp_a, align 4
+  %cmpSGTtmp = icmp sgt i32 5, %loadtmp_a2
+  store i1 %cmpSGTtmp, i1* %alloctmp_h, align 1
+  %alloctmp_i = alloca float, align 4
+  %loadtmp_c = load i32, i32* %alloctmp_c, align 4
+  %loadtmp_c3 = load i32, i32* %alloctmp_c, align 4
+  %addtmp4 = add i32 9, %loadtmp_c3
+  store i32 %addtmp4, i32* %alloctmp_c, align 4
+  %casttmp5 = sitofp i32 %addtmp4 to float
+  store float %casttmp5, float* %alloctmp_i, align 4
+  ret void
+}

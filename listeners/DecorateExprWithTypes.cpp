@@ -71,8 +71,6 @@ void DecorateExprWithTypes::exitFuncCall(bluefinParser::FuncCallContext* ctx) {
 				if (isSubExprTypeUsable(curArgTypeCxt.getEvalType())) {
 					if (isBinaryOperatorOperandCompatible("=", curParamType, curArgTypeCxt.getEvalType())) {
 						curArgTypeCxt.setPromotionType(getPromotionType(curArgTypeCxt.getEvalType(), curParamType));
-
-						typeContexts.emplace(ctx, TypeContext { curArgTypeCxt.getPromotionType() });
 					}
 					else {
 						typeContexts.emplace(ctx, TypeContext { Type::getUnusableType() });
@@ -105,8 +103,9 @@ void bluefin::DecorateExprWithTypes::exitMethodCall(bluefinParser::MethodCallCon
 	if (structMemberTypeContext.getEvalType().isUserDefinedType()) {
 		shared_ptr<StructSymbol> structType = dynamic_pointer_cast<StructSymbol>(symbolTable.getSymbolMatchingType(structMemberTypeContext.getEvalType()));
 
+		string methodName = ctx->ID()->getText();
 		if (shared_ptr<FunctionSymbol> methodSym =
-			dynamic_pointer_cast<FunctionSymbol>(structType->resolve(ctx->ID()->getText()))) {
+			dynamic_pointer_cast<FunctionSymbol>(symbolTable.resolveMember(methodName, structType))) {
 
 			typeContexts.emplace(ctx, TypeContext{ methodSym->getType() });
 
@@ -125,7 +124,7 @@ void bluefin::DecorateExprWithTypes::exitMethodCall(bluefinParser::MethodCallCon
 						if (isBinaryOperatorOperandCompatible("=", curParamType, curArgTypeCxt.getEvalType())) {
 							curArgTypeCxt.setPromotionType(getPromotionType(curArgTypeCxt.getEvalType(), curParamType));
 
-							typeContexts.emplace(ctx, TypeContext { curArgTypeCxt.getPromotionType() });
+							typeContexts.emplace(ctx, TypeContext { curArgTypeCxt.getPromotionType() }); // TODO: I think this line should be removed
 						}
 						else {
 							typeContexts.emplace(ctx, TypeContext { Type::getUnusableType() });
@@ -323,7 +322,8 @@ void DecorateExprWithTypes::exitSimpleAssignExpr(bluefinParser::SimpleAssignExpr
 			rightTypeContext.setPromotionType(
 				getPromotionType(rightTypeContext.getEvalType(), leftTypeContext.getEvalType()));
 
-			typeContexts.emplace(ctx, TypeContext{ leftTypeContext.getEvalType() });
+			//typeContexts.emplace(ctx, TypeContext{ leftTypeContext.getEvalType() });
+			typeContexts.emplace(ctx, TypeContext{ leftTypeContext.getPromotionType() }); // doesn't really matter here whether eval or promo type
 		}
 		else {
 			typeContexts.emplace(ctx, TypeContext{ Type::getUnusableType() });
@@ -343,7 +343,7 @@ void DecorateExprWithTypes::exitMemberAccess(bluefinParser::MemberAccessContext*
 	if (typeContext.getEvalType().isUserDefinedType()) {
 		shared_ptr<StructSymbol> structSym = dynamic_pointer_cast<StructSymbol>(symbolTable.getSymbolMatchingType(typeContext.getEvalType())); // at this point, we expect this to pass
 
-		Type memberType = structSym->resolve(ctx->ID()->getText())->getType();
+		Type memberType = symbolTable.resolveMember(ctx->ID()->getText(), structSym)->getType();
 		typeContexts.emplace(ctx, TypeContext { memberType });
 	}
 	else {

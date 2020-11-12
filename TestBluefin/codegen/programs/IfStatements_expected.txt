@@ -1,0 +1,71 @@
+; ModuleID = 'IfStatements.bf'
+source_filename = "IfStatements.bf"
+
+define void @foo(i32 %a) {
+entry:
+  %alloctmp_a = alloca i32, align 4
+  store i32 %a, i32* %alloctmp_a, align 4
+  %loadtmp_a = load i32, i32* %alloctmp_a, align 4
+  %cmpSGTtmp = icmp sgt i32 %loadtmp_a, 5
+  br i1 %cmpSGTtmp, label %then, label %else
+
+then:                                             ; preds = %entry
+  %loadtmp_a1 = load i32, i32* %alloctmp_a, align 4
+  %addtmp = add i32 %loadtmp_a1, 5
+  %loadtmp_a5 = load i32, i32* %alloctmp_a, align 4
+  %cmpSGTtmp6 = icmp sgt i32 %loadtmp_a5, 6
+  br i1 %cmpSGTtmp6, label %then2, label %else3
+
+else:                                             ; preds = %entry
+  %loadtmp_a14 = load i32, i32* %alloctmp_a, align 4
+  %cmpSLTtmp = icmp slt i32 %loadtmp_a14, 8
+  br i1 %cmpSLTtmp, label %then12, label %merge13
+
+merge:                                            ; preds = %merge13, %merge4
+  %loadtmp_a23 = load i32, i32* %alloctmp_a, align 4
+  %addtmp24 = add i32 %loadtmp_a23, 10
+  %loadtmp_a27 = load i32, i32* %alloctmp_a, align 4
+  %cmpSGTtmp28 = icmp sgt i32 %loadtmp_a27, 50
+  br i1 %cmpSGTtmp28, label %then25, label %merge26
+
+then2:                                            ; preds = %then
+  %loadtmp_a7 = load i32, i32* %alloctmp_a, align 4
+  %addtmp8 = add i32 %loadtmp_a7, 6
+  br label %merge4
+
+else3:                                            ; preds = %then
+  %loadtmp_a9 = load i32, i32* %alloctmp_a, align 4
+  %subtmp = sub i32 %loadtmp_a9, 6
+  br label %merge4
+
+merge4:                                           ; preds = %else3, %then2
+  %loadtmp_a10 = load i32, i32* %alloctmp_a, align 4
+  %addtmp11 = add i32 %loadtmp_a10, 7
+  br label %merge
+
+then12:                                           ; preds = %else
+  %loadtmp_a15 = load i32, i32* %alloctmp_a, align 4
+  %subtmp16 = sub i32 %loadtmp_a15, 8
+  %loadtmp_a19 = load i32, i32* %alloctmp_a, align 4
+  %cmpSLTtmp20 = icmp slt i32 %loadtmp_a19, 9
+  br i1 %cmpSLTtmp20, label %then17, label %merge18
+
+merge13:                                          ; preds = %merge18, %else
+  %loadtmp_a21 = load i32, i32* %alloctmp_a, align 4
+  %subtmp22 = sub i32 %loadtmp_a21, 5
+  br label %merge
+
+then17:                                           ; preds = %then12
+  br label %merge18
+
+merge18:                                          ; preds = %then17, %then12
+  br label %merge13
+
+then25:                                           ; preds = %merge
+  br label %merge26
+
+merge26:                                          ; preds = %then25, %merge
+  %loadtmp_a29 = load i32, i32* %alloctmp_a, align 4
+  %addtmp30 = add i32 %loadtmp_a29, 60
+  ret void
+}

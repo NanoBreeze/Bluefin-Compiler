@@ -1,0 +1,50 @@
+; ModuleID = 'FuncDefFuncCallsRetStatement.bf'
+source_filename = "FuncDefFuncCallsRetStatement.bf"
+
+define void @hi() {
+entry:
+  ret void
+}
+
+define void @hey(i1 %a, float %b, i32 %c) {
+entry:
+  %alloctmp_a = alloca i1, align 1
+  store i1 %a, i1* %alloctmp_a, align 1
+  %alloctmp_b = alloca float, align 4
+  store float %b, float* %alloctmp_b, align 4
+  %alloctmp_c = alloca i32, align 4
+  store i32 %c, i32* %alloctmp_c, align 4
+  ret void
+}
+
+define float @floatOnly(float %a) {
+entry:
+  %alloctmp_a = alloca float, align 4
+  store float %a, float* %alloctmp_a, align 4
+  ret float 1.000000e+00
+}
+
+define i32 @intOnly(i32 %a) {
+entry:
+  %alloctmp_a = alloca i32, align 4
+  store i32 %a, i32* %alloctmp_a, align 4
+  ret i32 1
+}
+
+define i1 @boolOnly(i1 %a) {
+entry:
+  %alloctmp_a = alloca i1, align 1
+  store i1 %a, i1* %alloctmp_a, align 1
+  ret i1 false
+}
+
+define void @bar() {
+entry:
+  call void @hi()
+  call void @hey(i1 true, float 5.000000e+00, i32 5)
+  %calltmp = call float @floatOnly(float 5.000000e+00)
+  %calltmp1 = call i32 @intOnly(i32 5)
+  %calltmp2 = call i1 @boolOnly(i1 true)
+  %calltmp3 = call i1 @boolOnly(i1 false)
+  ret void
+}

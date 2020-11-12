@@ -4,7 +4,7 @@
 #include <memory>
 #include <unordered_map>
 #include "Scope.h"
-#include "../TestBluefin/utils.h"
+#include "../TestBluefin/testutils.h"
 
 namespace bluefin {
 

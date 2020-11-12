@@ -51,5 +51,19 @@ int main() {
 
 	structC = structD; // they both extend A but that doesn't mean they can be assigned to each other
 
+	int d;
+	c = d = 4; // we allow chaining assignments, the type is the type of lhs (assuming they're compatible)
+	
+	float e;
+	e = c = d = 9; // ok, because rhs of "e = ..." evaluates to int, so type promotion
+
+	d = e = c = 9; // not ok because lhs of "d = ..." is int; and rhs is float, so no type promotion
+		
+	// d + 8 = 9; TODO: This really shouldn't be allowed
+
+	// 5 = 6; TODO: this also shouldn't be allowed
+
+	// e = c+6 = 9;; TODO: this also shouldn't be allowed
+
 	return 0;
 }

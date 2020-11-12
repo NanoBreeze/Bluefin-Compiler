@@ -1,0 +1,34 @@
+; ModuleID = 'ExprForFloatLiterals.bf'
+source_filename = "ExprForFloatLiterals.bf"
+
+define void @foo(float %val) {
+entry:
+  %alloctmp_val = alloca float, align 4
+  store float %val, float* %alloctmp_val, align 4
+  %loadtmp_val = load float, float* %alloctmp_val, align 4
+  %addtmp = fadd float %loadtmp_val, 5.000000e+00
+  %loadtmp_val1 = load float, float* %alloctmp_val, align 4
+  %multmp = fmul float 9.500000e+00, %loadtmp_val1
+  %subtmp = fsub float %addtmp, %multmp
+  %loadtmp_val2 = load float, float* %alloctmp_val, align 4
+  %divtmp = fdiv float %loadtmp_val2, 3.500000e+00
+  %subtmp3 = fsub float %subtmp, %divtmp
+  %loadtmp_val4 = load float, float* %alloctmp_val, align 4
+  %cmpFGTtmp = fcmp ogt float %loadtmp_val4, 5.000000e+00
+  %loadtmp_val5 = load float, float* %alloctmp_val, align 4
+  %cmpFGEtmp = fcmp oge float %loadtmp_val5, 5.000000e+00
+  %loadtmp_val6 = load float, float* %alloctmp_val, align 4
+  %cmpFLTtmp = fcmp olt float %loadtmp_val6, 5.000000e+00
+  %loadtmp_val7 = load float, float* %alloctmp_val, align 4
+  %cmpFLEtmp = fcmp ole float %loadtmp_val7, 5.000000e+00
+  %loadtmp_val8 = load float, float* %alloctmp_val, align 4
+  %cmpEQtmp = fcmp oeq float %loadtmp_val8, 5.000000e+00
+  %loadtmp_val9 = load float, float* %alloctmp_val, align 4
+  %cmpNEtmp = fcmp one float %loadtmp_val9, 5.000000e+00
+  %loadtmp_val10 = load float, float* %alloctmp_val, align 4
+  %negtmp = fneg float %loadtmp_val10
+  %loadtmp_val11 = load float, float* %alloctmp_val, align 4
+  %addtmp12 = fadd float %loadtmp_val11, 1.000000e+00
+  %multmp13 = fmul float %addtmp12, 2.500000e+00
+  ret void
+}

@@ -1,0 +1,34 @@
+; ModuleID = 'ExprForIntLiterals.bf'
+source_filename = "ExprForIntLiterals.bf"
+
+define void @foo(i32 %val) {
+entry:
+  %alloctmp_val = alloca i32, align 4
+  store i32 %val, i32* %alloctmp_val, align 4
+  %loadtmp_val = load i32, i32* %alloctmp_val, align 4
+  %addtmp = add i32 %loadtmp_val, 5
+  %loadtmp_val1 = load i32, i32* %alloctmp_val, align 4
+  %multmp = mul i32 81, %loadtmp_val1
+  %subtmp = sub i32 %addtmp, %multmp
+  %loadtmp_val2 = load i32, i32* %alloctmp_val, align 4
+  %divtmp = sdiv i32 %loadtmp_val2, 3
+  %subtmp3 = sub i32 %subtmp, %divtmp
+  %loadtmp_val4 = load i32, i32* %alloctmp_val, align 4
+  %cmpSGTtmp = icmp sgt i32 %loadtmp_val4, 5
+  %loadtmp_val5 = load i32, i32* %alloctmp_val, align 4
+  %cmpSGEtmp = icmp sge i32 %loadtmp_val5, 5
+  %loadtmp_val6 = load i32, i32* %alloctmp_val, align 4
+  %cmpSLTtmp = icmp slt i32 %loadtmp_val6, 5
+  %loadtmp_val7 = load i32, i32* %alloctmp_val, align 4
+  %cmpSLEtmp = icmp sle i32 %loadtmp_val7, 5
+  %loadtmp_val8 = load i32, i32* %alloctmp_val, align 4
+  %cmpEQtmp = icmp eq i32 %loadtmp_val8, 5
+  %loadtmp_val9 = load i32, i32* %alloctmp_val, align 4
+  %cmpNEtmp = icmp ne i32 %loadtmp_val9, 5
+  %loadtmp_val10 = load i32, i32* %alloctmp_val, align 4
+  %negtmp = sub i32 0, %loadtmp_val10
+  %loadtmp_val11 = load i32, i32* %alloctmp_val, align 4
+  %addtmp12 = add i32 %loadtmp_val11, 3
+  %multmp13 = mul i32 %addtmp12, 3
+  ret void
+}

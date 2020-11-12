@@ -1,5 +1,6 @@
 /*
 Verify error messages when the rhs of a variable declaration doesn't match with specified type
+Includes global, local, and struct members
 */
 
 struct A {
@@ -7,6 +8,18 @@ struct A {
 		return 4;
 	}
 };
+
+struct B {
+	A a;
+	float b = 4;
+	A aa = a; // ok
+	int c = a.f(); // not ok, narrowing
+	float d = a.f() = 4; // ok
+};
+
+int globInt = 123;
+float glob = globInt = 99;
+int h = glob = 5; // not ok
 
 int main() {
 
@@ -25,7 +38,9 @@ int main() {
 
 	float f = first.f(); //valid 
 
-	// 5 = 6; TODO: this isn't a VarDecl but this also shouldn't be allowed
+	float g = a = b = 34; // ok
+
+	int h = g = 5; // not ok
 
 	return 0;
 }

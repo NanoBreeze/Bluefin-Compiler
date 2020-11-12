@@ -1,0 +1,97 @@
+; ModuleID = 'StructInheritanceExternalAccess.bf'
+source_filename = "StructInheritanceExternalAccess.bf"
+
+%Base = type { i32 }
+%Der = type { %Base }
+%DerDer = type { %Der, i32 }
+
+define void @_Base_hi(%Base* %this) {
+entry:
+  ret void
+}
+
+define i32 @_Base_hey(%Base* %this, i32 %a) {
+entry:
+  %alloctmp_a = alloca i32, align 4
+  store i32 %a, i32* %alloctmp_a, align 4
+  %loadtmp_a = load i32, i32* %alloctmp_a, align 4
+  ret i32 %loadtmp_a
+}
+
+define void @_ctor_Base(%Base* %this) {
+entry:
+  ret void
+}
+
+define i32 @_Der_foo(%Der* %this, i32 %a, i32 %b) {
+entry:
+  %alloctmp_a = alloca i32, align 4
+  store i32 %a, i32* %alloctmp_a, align 4
+  %alloctmp_b = alloca i32, align 4
+  store i32 %b, i32* %alloctmp_b, align 4
+  %loadtmp_a = load i32, i32* %alloctmp_a, align 4
+  %loadtmp_b = load i32, i32* %alloctmp_b, align 4
+  %addtmp = add i32 %loadtmp_a, %loadtmp_b
+  ret i32 %addtmp
+}
+
+define void @_ctor_Der(%Der* %this) {
+entry:
+  %memCast = bitcast %Der* %this to %Base*
+  call void @_ctor_Base(%Base* %memCast)
+  ret void
+}
+
+define i1 @_DerDer_getTrue(%DerDer* %this) {
+entry:
+  ret i1 true
+}
+
+define void @_ctor_DerDer(%DerDer* %this) {
+entry:
+  %memCast = bitcast %DerDer* %this to %Der*
+  call void @_ctor_Der(%Der* %memCast)
+  ret void
+}
+
+define void @foo() {
+entry:
+  %alloctmp_derder = alloca %DerDer, align 8
+  call void @_ctor_DerDer(%DerDer* %alloctmp_derder)
+  %alloctmp_c = alloca i32, align 4
+  %loadtmp_derder = load %DerDer, %DerDer* %alloctmp_derder, align 4
+  %memCast = bitcast %DerDer* %alloctmp_derder to %Base*
+  %memPtr_x = getelementptr %Base, %Base* %memCast, i32 0, i32 0
+  %loadtmp_x = load i32, i32* %memPtr_x, align 4
+  store i32 %loadtmp_x, i32* %alloctmp_c, align 4
+  %loadtmp_c = load i32, i32* %alloctmp_c, align 4
+  %loadtmp_derder1 = load %DerDer, %DerDer* %alloctmp_derder, align 4
+  %memPtr_z = getelementptr %DerDer, %DerDer* %alloctmp_derder, i32 0, i32 1
+  %loadtmp_z = load i32, i32* %memPtr_z, align 4
+  store i32 %loadtmp_z, i32* %alloctmp_c, align 4
+  ret void
+}
+
+define void @bar() {
+entry:
+  %alloctmp_derder = alloca %DerDer, align 8
+  call void @_ctor_DerDer(%DerDer* %alloctmp_derder)
+  %loadtmp_derder = load %DerDer, %DerDer* %alloctmp_derder, align 4
+  %memCast = bitcast %DerDer* %alloctmp_derder to %Base*
+  call void @_Base_hi(%Base* %memCast)
+  %alloctmp_a = alloca i32, align 4
+  %loadtmp_derder1 = load %DerDer, %DerDer* %alloctmp_derder, align 4
+  %memCast2 = bitcast %DerDer* %alloctmp_derder to %Base*
+  %calltmp = call i32 @_Base_hey(%Base* %memCast2, i32 5)
+  store i32 %calltmp, i32* %alloctmp_a, align 4
+  %loadtmp_a = load i32, i32* %alloctmp_a, align 4
+  %loadtmp_derder3 = load %DerDer, %DerDer* %alloctmp_derder, align 4
+  %memCast4 = bitcast %DerDer* %alloctmp_derder to %Der*
+  %calltmp5 = call i32 @_Der_foo(%Der* %memCast4, i32 1, i32 2)
+  store i32 %calltmp5, i32* %alloctmp_a, align 4
+  %alloctmp_b = alloca i1, align 1
+  %loadtmp_derder6 = load %DerDer, %DerDer* %alloctmp_derder, align 4
+  %calltmp7 = call i1 @_DerDer_getTrue(%DerDer* %alloctmp_derder)
+  store i1 %calltmp7, i1* %alloctmp_b, align 1
+  ret void
+}

@@ -1,0 +1,48 @@
+; ModuleID = 'WhileStatements.bf'
+source_filename = "WhileStatements.bf"
+
+define void @foo(i32 %a) {
+entry:
+  %alloctmp_a = alloca i32, align 4
+  store i32 %a, i32* %alloctmp_a, align 4
+  %loadtmp_a = load i32, i32* %alloctmp_a, align 4
+  %addtmp = add i32 %loadtmp_a, 1
+  br label %whileLoopCmp
+
+whileLoopCmp:                                     ; preds = %merge, %entry
+  %loadtmp_a1 = load i32, i32* %alloctmp_a, align 4
+  %cmpSGTtmp = icmp sgt i32 %loadtmp_a1, 2
+  br i1 %cmpSGTtmp, label %whileLoopBody, label %afterWhileLoop
+
+whileLoopBody:                                    ; preds = %whileLoopCmp
+  %loadtmp_a2 = load i32, i32* %alloctmp_a, align 4
+  %addtmp3 = add i32 %loadtmp_a2, 3
+  br label %whileLoopCmp4
+
+afterWhileLoop:                                   ; preds = %whileLoopCmp
+  %loadtmp_a9 = load i32, i32* %alloctmp_a, align 4
+  %addtmp10 = add i32 %loadtmp_a9, 5
+  ret void
+
+whileLoopCmp4:                                    ; preds = %whileLoopBody5, %whileLoopBody
+  %loadtmp_a7 = load i32, i32* %alloctmp_a, align 4
+  %cmpSLTtmp = icmp slt i32 %loadtmp_a7, 4
+  br i1 %cmpSLTtmp, label %whileLoopBody5, label %afterWhileLoop6
+
+whileLoopBody5:                                   ; preds = %whileLoopCmp4
+  br label %whileLoopCmp4
+
+afterWhileLoop6:                                  ; preds = %whileLoopCmp4
+  %loadtmp_a8 = load i32, i32* %alloctmp_a, align 4
+  %cmpEQtmp = icmp eq i32 %loadtmp_a8, 6
+  br i1 %cmpEQtmp, label %then, label %else
+
+then:                                             ; preds = %afterWhileLoop6
+  br label %merge
+
+else:                                             ; preds = %afterWhileLoop6
+  br label %merge
+
+merge:                                            ; preds = %else, %then
+  br label %whileLoopCmp
+}

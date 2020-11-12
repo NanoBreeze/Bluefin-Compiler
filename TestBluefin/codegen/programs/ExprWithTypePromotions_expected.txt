@@ -1,0 +1,94 @@
+; ModuleID = 'ExprWithTypePromotions.bf'
+source_filename = "ExprWithTypePromotions.bf"
+
+@one = global float 1.000000e+00
+@two = global float 0.000000e+00
+@llvm.global_ctors = appending global [1 x { i32, void ()*, i8* }] [{ i32, void ()*, i8* } { i32 0, void ()* @_VarDeclInitializations, i8* null }]
+
+define i32 @hi(float %a) {
+entry:
+  %alloctmp_a = alloca float, align 4
+  store float %a, float* %alloctmp_a, align 4
+  ret i32 3
+}
+
+define internal void @internalGlobalVarDecl_two() {
+entry:
+  %calltmp = call i32 @hi(float 1.000000e+00)
+  %casttmp = sitofp i32 %calltmp to float
+  store float %casttmp, float* @two, align 4
+  ret void
+}
+
+define void @foo(i32 %val) {
+entry:
+  %alloctmp_val = alloca i32, align 4
+  store i32 %val, i32* %alloctmp_val, align 4
+  %loadtmp_val = load i32, i32* %alloctmp_val, align 4
+  %casttmp = sitofp i32 %loadtmp_val to float
+  %addtmp = fadd float %casttmp, 5.000000e+00
+  %loadtmp_val1 = load i32, i32* %alloctmp_val, align 4
+  %casttmp2 = sitofp i32 %loadtmp_val1 to float
+  %multmp = fmul float 9.500000e+00, %casttmp2
+  %subtmp = fsub float %addtmp, %multmp
+  %loadtmp_val3 = load i32, i32* %alloctmp_val, align 4
+  %divtmp = sdiv i32 %loadtmp_val3, 2
+  %casttmp4 = sitofp i32 %divtmp to float
+  %subtmp5 = fsub float %subtmp, %casttmp4
+  %loadtmp_val6 = load i32, i32* %alloctmp_val, align 4
+  %addtmp7 = add i32 %loadtmp_val6, 5
+  %casttmp8 = sitofp i32 %addtmp7 to float
+  %loadtmp_val9 = load i32, i32* %alloctmp_val, align 4
+  %casttmp10 = sitofp i32 %loadtmp_val9 to float
+  %multmp11 = fmul float 9.500000e+00, %casttmp10
+  %subtmp12 = fsub float %casttmp8, %multmp11
+  %loadtmp_val13 = load i32, i32* %alloctmp_val, align 4
+  %casttmp14 = sitofp i32 %loadtmp_val13 to float
+  %cmpFGTtmp = fcmp ogt float %casttmp14, 5.000000e+00
+  %loadtmp_val15 = load i32, i32* %alloctmp_val, align 4
+  %casttmp16 = sitofp i32 %loadtmp_val15 to float
+  %cmpFGEtmp = fcmp oge float %casttmp16, 5.000000e+00
+  %loadtmp_val17 = load i32, i32* %alloctmp_val, align 4
+  %casttmp18 = sitofp i32 %loadtmp_val17 to float
+  %cmpFLTtmp = fcmp olt float %casttmp18, 5.000000e+00
+  %loadtmp_val19 = load i32, i32* %alloctmp_val, align 4
+  %casttmp20 = sitofp i32 %loadtmp_val19 to float
+  %cmpFLEtmp = fcmp ole float %casttmp20, 5.000000e+00
+  %loadtmp_val21 = load i32, i32* %alloctmp_val, align 4
+  %casttmp22 = sitofp i32 %loadtmp_val21 to float
+  %cmpEQtmp = fcmp oeq float %casttmp22, 5.000000e+00
+  %loadtmp_val23 = load i32, i32* %alloctmp_val, align 4
+  %casttmp24 = sitofp i32 %loadtmp_val23 to float
+  %cmpNEtmp = fcmp one float %casttmp24, 5.000000e+00
+  %loadtmp_val25 = load i32, i32* %alloctmp_val, align 4
+  %negtmp = sub i32 0, %loadtmp_val25
+  %cmpSGTtmp = icmp sgt i32 %negtmp, 3
+  %loadtmp_val26 = load i32, i32* %alloctmp_val, align 4
+  %casttmp27 = sitofp i32 %loadtmp_val26 to float
+  %cmpFLTtmp28 = fcmp olt float %casttmp27, 5.000000e+00
+  %cmpEQtmp29 = icmp eq i1 %cmpSGTtmp, %cmpFLTtmp28
+  %calltmp = call i32 @hi(float 5.000000e+00)
+  %addtmp30 = add i32 %calltmp, 5
+  %calltmp31 = call i32 @hi(float 5.000000e+00)
+  %casttmp32 = sitofp i32 %calltmp31 to float
+  %calltmp33 = call i32 @hi(float %casttmp32)
+  %addtmp34 = add i32 %calltmp33, 5
+  %calltmp35 = call i32 @hi(float 5.000000e+00)
+  %casttmp36 = sitofp i32 %calltmp35 to float
+  %addtmp37 = fadd float %casttmp36, 5.000000e+00
+  %calltmp38 = call i32 @hi(float 5.000000e+00)
+  %casttmp39 = sitofp i32 %calltmp38 to float
+  %cmpEQtmp40 = fcmp oeq float %casttmp39, 5.000000e+00
+  %alloctmp_three = alloca float, align 4
+  %loadtmp_val41 = load i32, i32* %alloctmp_val, align 4
+  %addtmp42 = add i32 2, %loadtmp_val41
+  %casttmp43 = sitofp i32 %addtmp42 to float
+  store float %casttmp43, float* %alloctmp_three, align 4
+  ret void
+}
+
+define internal void @_VarDeclInitializations() {
+entry:
+  call void @internalGlobalVarDecl_two()
+  ret void
+}

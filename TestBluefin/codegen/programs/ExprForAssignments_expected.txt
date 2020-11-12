@@ -1,0 +1,33 @@
+; ModuleID = 'ExprForAssignments.bf'
+source_filename = "ExprForAssignments.bf"
+
+@a = global i32 4
+@b = global i1 false
+@globalFloat = global float 0.000000e+00
+
+define void @foo(float %a) {
+entry:
+  %alloctmp_a = alloca float, align 4
+  store float %a, float* %alloctmp_a, align 4
+  %alloctmp_c = alloca i32, align 4
+  %alloctmp_d = alloca i32, align 4
+  %loadtmp_globalFloat = load float, float* @globalFloat, align 4
+  %loadtmp_c = load i32, i32* %alloctmp_c, align 4
+  %casttmp = sitofp i32 %loadtmp_c to float
+  store float %casttmp, float* @globalFloat, align 4
+  %loadtmp_d = load i32, i32* %alloctmp_d, align 4
+  %loadtmp_c1 = load i32, i32* %alloctmp_c, align 4
+  store i32 5, i32* %alloctmp_c, align 4
+  store i32 5, i32* %alloctmp_d, align 4
+  %loadtmp_globalFloat2 = load float, float* @globalFloat, align 4
+  %loadtmp_c3 = load i32, i32* %alloctmp_c, align 4
+  store i32 8, i32* %alloctmp_c, align 4
+  store float 8.000000e+00, float* @globalFloat, align 4
+  %loadtmp_globalFloat4 = load float, float* @globalFloat, align 4
+  %loadtmp_c5 = load i32, i32* %alloctmp_c, align 4
+  %loadtmp_d6 = load i32, i32* %alloctmp_d, align 4
+  store i32 %loadtmp_d6, i32* %alloctmp_c, align 4
+  %casttmp7 = sitofp i32 %loadtmp_d6 to float
+  store float %casttmp7, float* @globalFloat, align 4
+  ret void
+}

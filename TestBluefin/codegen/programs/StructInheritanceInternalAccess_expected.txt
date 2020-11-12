@@ -1,0 +1,105 @@
+; ModuleID = 'StructInheritanceInternalAccess.bf'
+source_filename = "StructInheritanceInternalAccess.bf"
+
+%Normal = type { i32 }
+%Base = type { i32, float, %Normal }
+%Der = type { %Base, i32 }
+%DerDer = type { %Der, i32, i32, i32, i32, i32 }
+
+define i32 @_Normal_wow(%Normal* %this) {
+entry:
+  ret i32 9
+}
+
+define void @_ctor_Normal(%Normal* %this) {
+entry:
+  ret void
+}
+
+define void @_ctor_Base(%Base* %this) {
+entry:
+  %memPtr_norm = getelementptr %Base, %Base* %this, i32 0, i32 2
+  call void @_ctor_Normal(%Normal* %memPtr_norm)
+  ret void
+}
+
+define void @_Der_one(%Der* %this) {
+entry:
+  %memCast = bitcast %Der* %this to %Base*
+  %memPtr_a = getelementptr %Base, %Base* %memCast, i32 0, i32 0
+  %loadtmp_a = load i32, i32* %memPtr_a, align 4
+  store i32 3, i32* %memPtr_a, align 4
+  %alloctmp_c = alloca i32, align 4
+  %memCast1 = bitcast %Der* %this to %Base*
+  %memPtr_a2 = getelementptr %Base, %Base* %memCast1, i32 0, i32 0
+  %loadtmp_a3 = load i32, i32* %memPtr_a2, align 4
+  %addtmp = add i32 %loadtmp_a3, 3
+  store i32 %addtmp, i32* %alloctmp_c, align 4
+  ret void
+}
+
+define i32 @_Der_two(%Der* %this) {
+entry:
+  %memPtr_b = getelementptr %Der, %Der* %this, i32 0, i32 1
+  %loadtmp_b = load i32, i32* %memPtr_b, align 4
+  store i32 1, i32* %memPtr_b, align 4
+  ret i32 2
+}
+
+define void @_ctor_Der(%Der* %this) {
+entry:
+  %memCast = bitcast %Der* %this to %Base*
+  call void @_ctor_Base(%Base* %memCast)
+  %memPtr_b = getelementptr %Der, %Der* %this, i32 0, i32 1
+  %loadtmp_b = load i32, i32* %memPtr_b, align 4
+  %memPtr_b1 = getelementptr %Der, %Der* %this, i32 0, i32 1
+  store i32 %loadtmp_b, i32* %memPtr_b1, align 4
+  ret void
+}
+
+define void @_DerDer_derThree(%DerDer* %this) {
+entry:
+  %memCast = bitcast %DerDer* %this to %Der*
+  %memPtr_b = getelementptr %Der, %Der* %memCast, i32 0, i32 1
+  %loadtmp_b = load i32, i32* %memPtr_b, align 4
+  store i32 4, i32* %memPtr_b, align 4
+  %memCast1 = bitcast %DerDer* %this to %Base*
+  %memPtr_a = getelementptr %Base, %Base* %memCast1, i32 0, i32 0
+  %loadtmp_a = load i32, i32* %memPtr_a, align 4
+  store i32 5, i32* %memPtr_a, align 4
+  ret void
+}
+
+define void @_ctor_DerDer(%DerDer* %this) {
+entry:
+  %memCast = bitcast %DerDer* %this to %Der*
+  call void @_ctor_Der(%Der* %memCast)
+  %memCast1 = bitcast %DerDer* %this to %Base*
+  %memPtr_a = getelementptr %Base, %Base* %memCast1, i32 0, i32 0
+  %loadtmp_a = load i32, i32* %memPtr_a, align 4
+  %memPtr_c = getelementptr %DerDer, %DerDer* %this, i32 0, i32 1
+  store i32 %loadtmp_a, i32* %memPtr_c, align 4
+  %memCast2 = bitcast %DerDer* %this to %Der*
+  %memPtr_b = getelementptr %Der, %Der* %memCast2, i32 0, i32 1
+  %loadtmp_b = load i32, i32* %memPtr_b, align 4
+  %memPtr_d = getelementptr %DerDer, %DerDer* %this, i32 0, i32 2
+  store i32 %loadtmp_b, i32* %memPtr_d, align 4
+  %memCast3 = bitcast %DerDer* %this to %Base*
+  %memPtr_norm = getelementptr %Base, %Base* %memCast3, i32 0, i32 2
+  %loadtmp_norm = load %Normal, %Normal* %memPtr_norm, align 4
+  %memPtr_a4 = getelementptr %Normal, %Normal* %memPtr_norm, i32 0, i32 0
+  %loadtmp_a5 = load i32, i32* %memPtr_a4, align 4
+  %memPtr_e = getelementptr %DerDer, %DerDer* %this, i32 0, i32 3
+  store i32 %loadtmp_a5, i32* %memPtr_e, align 4
+  %memCast6 = bitcast %DerDer* %this to %Base*
+  %memPtr_norm7 = getelementptr %Base, %Base* %memCast6, i32 0, i32 2
+  %loadtmp_norm8 = load %Normal, %Normal* %memPtr_norm7, align 4
+  %calltmp = call i32 @_Normal_wow(%Normal* %memPtr_norm7)
+  %memPtr_f = getelementptr %DerDer, %DerDer* %this, i32 0, i32 4
+  store i32 %calltmp, i32* %memPtr_f, align 4
+  %memCast9 = bitcast %DerDer* %this to %Der*
+  %calltmp10 = call i32 @_Der_two(%Der* %memCast9)
+  %memPtr_g = getelementptr %DerDer, %DerDer* %this, i32 0, i32 5
+  store i32 %calltmp10, i32* %memPtr_g, align 4
+  ret void
+}
