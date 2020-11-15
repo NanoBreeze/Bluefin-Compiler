@@ -10,6 +10,7 @@ namespace bluefin {
 	using std::string;
 	class Symbol;
 	class StructSymbol;
+	class FunctionSymbol;
 
 	enum class ScopeEvent {
 		ENTERING_SCOPE,
@@ -52,6 +53,18 @@ namespace bluefin {
 		ARGS_AND_PARAMS_COUNT_DIFFER // calling a function whose resolved symbol has diff. number of params
 	};
 
+	enum class PolymorphismErrorEvent {
+		FUNCTION_CANNOT_HAVE_OVERRIDE_SPECIFIER,
+		FUNCTION_CANNOT_HAVE_VIRTUAL_SPECIFIER,
+		CORRESPONDING_VIRTUAL_METHOD_NOT_FOUND,
+		MISSING_OVERRIDE_SPECIFIER,
+		NO_SUPERCLASS,
+		ILLEGAL_OVERLOAD_METHOD // The base class has a virtual method. Then the derived method also has a method with same name
+		// but different signature (doesn't matter whether the derived's method is virtual or not). Since we don't support 
+		// overloading/name mangling, this will cause problems for code gen's vtable, since it uses only the method's name to 
+		// determine offset. Without name mangling, there will be two diff methods of same name, bad, can't decide which one to use!
+		// eg) struct Base { virtual void a() {} }; struct Der extends Base { virtual void a(int a) {} };
+	};
 	// In the future, if our program gets more complex, we may need to inherit from EventObserver and let 
 	// there be different implementations of `onEvent(..)`
 	class EventObserver
@@ -64,13 +77,16 @@ namespace bluefin {
 		void onEvent(SimpleTypeErrorEvent, Type lhs, Type rhs = Type{ "" }); // admittedly, the syntax is quite ugly
 		void onEvent(OperatorTypeErrorEvent, string op, Type lhs, Type rhs = Type{ "" }); // admittedly, the syntax is quite ugly
 		void onEvent(FunctionCallTypeErrorEvent, string funcName, size_t argCount, size_t paramCount, bool isMethod);
+		void onEvent(PolymorphismErrorEvent e, string funcName);
 
 		string getOutput() const { return output; }
 		string getTypeOutput() const { return typeOutput; }
+		string getPolymorphismOutput() const { return polymorphismOutput; }
 
 	private:
 		string output;
 		string typeOutput; // string only for types
+		string polymorphismOutput; // string contains errors only for polymorphism
 		unsigned scopeLevel; // to be used only by scope-related events. 
 		string getSymbolCategory(shared_ptr<Symbol>) const;
 	};

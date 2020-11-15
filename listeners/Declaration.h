@@ -7,7 +7,6 @@
 #include "../symbolTable/SymbolTable.h"
 #include "../symbolTable/SymbolFactory.h"
 #include "../symbolTable/Scope.h"
-#include "../symbolTable/ErrorCollector.h"
 #include "../symbolTable/EventObserver.h"
 
 namespace bluefin {
@@ -52,19 +51,18 @@ namespace bluefin {
 		void enterMemberAccess(bluefinParser::MemberAccessContext*) override;
 		void enterMethodCall(bluefinParser::MethodCallContext*) override;
 
-		inline ErrorCollector getErrorCollector() const { return errCollector; }
 		void attachEventObserver(shared_ptr<EventObserver>);
 		void detachEventObserver(shared_ptr<EventObserver>); // is this even called? If arg not found, no error would be thrown
 
 	private:
 		SymbolTable& symbolTable;
 		SymbolFactory& symbolFactory;
-		ErrorCollector errCollector;
 		vector<shared_ptr<EventObserver>> eventObservers;
 
 		void broadcastEvent(ScopeEvent);
 		void broadcastEvent(SuccessEvent, shared_ptr<Symbol>, shared_ptr<StructSymbol> structSym = nullptr);
 		void broadcastEvent(ErrorEvent, string, shared_ptr<StructSymbol> structSym=nullptr);
+		void broadcastEvent(PolymorphismErrorEvent, string);
 
 		// to share a functionSymbol with its associated params
 		shared_ptr<FunctionSymbol> currFunctionSym;

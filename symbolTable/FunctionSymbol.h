@@ -16,21 +16,22 @@ namespace bluefin {
 	 So I imagine a call to SymbolTable::enterScope will occur on method decalaration.
 	 This means that function param will be in the same scope as the local variables.
 	 TODO: need to remove declaration scope from Standard
-	 Do we want to distinguish between function params (which can contain arguments) as a scope
-	 Or just a block scope...hmmmm
 	*/
 	class FunctionSymbol : public Symbol {
 	public:
 
-		FunctionSymbol(const string& name, Type type, size_t tokenIndex) :
-			Symbol(name, type, tokenIndex)
+		FunctionSymbol(const string& name, Type type, bool isVirtual, size_t tokenIndex) :
+			Symbol(name, type, tokenIndex), isFunctionVirtual{ isVirtual }
 		{}
 
 		void attachParam(shared_ptr<Symbol>); 
 
 		inline vector<shared_ptr<Symbol>> getParams() const { return params; }
 
+		inline bool isVirtual() const { return isFunctionVirtual; }
+
 	private:
 		vector<shared_ptr<Symbol>> params;
+		bool isFunctionVirtual;
 	};
 }

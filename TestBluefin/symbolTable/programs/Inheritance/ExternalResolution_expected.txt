@@ -12,7 +12,6 @@ setCurrentScope - Level 1
 declare - a - c_var - t_bool
 declare - g - c_function - t_void
 enterScope - Level 2
-resolve - Base::g - UNRESOLVED
 exitScope - Level 2
 exitScope - Level 1
 resolve - Der - c_struct - t_Der
@@ -20,7 +19,6 @@ declare - DerDer - c_struct - t_DerDer
 setCurrentScope - Level 1
 declare - h - c_function - t_float
 enterScope - Level 2
-resolve - Der::h - UNRESOLVED
 exitScope - Level 2
 exitScope - Level 1
 declare - x - c_var - t_int

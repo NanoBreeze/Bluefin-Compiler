@@ -16,6 +16,7 @@ namespace bluefin {
 
 	class StructSymbol;
 	class EventObserver;
+	class FunctionSymbol;
 
 
 	class SymbolTable
@@ -36,7 +37,10 @@ namespace bluefin {
 		shared_ptr<Symbol> resolve(const string name, const shared_ptr<Scope> scope) const;
 
 		// Searches in the structSym and its parent classes. Don't search in global scope
-		shared_ptr<Symbol> SymbolTable::resolveMember(const string memberName, const shared_ptr<StructSymbol> structSym) const;
+		shared_ptr<Symbol> resolveMember(const string memberName, const shared_ptr<StructSymbol> structSym) const;
+
+		// Searches in the structSym' parent chain for the specified virtual method. Don't search in global scope
+		bool findCorrespondingVirtualMethod(const shared_ptr<FunctionSymbol> funcSym, const shared_ptr<StructSymbol> structSym) const;
 
 		/* 
 		Why might somebody want the current scope?

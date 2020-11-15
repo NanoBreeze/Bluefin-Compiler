@@ -7,7 +7,6 @@
 
 #include "../../symbolTable/SymbolTable.h"
 #include "../../symbolTable/SymbolFactory.h"
-#include "../../symbolTable/ErrorCollector.h"
 #include "../../listeners/Declaration.h"
 #include "../../listeners/Resolution.h"
 
@@ -30,22 +29,37 @@ namespace SymbolTableTests {
 		SymbolTable symTab;
 		SymbolFactory symFact;
 
+		shared_ptr<EventObserver> obs = make_shared<EventObserver>();
+
 		Declaration declarationListener(symTab, symFact);
+		declarationListener.attachEventObserver(obs);
 		walker.walk(&declarationListener, tree);
 
 		Resolution resolutionListener(symTab);
 		walker.walk(&resolutionListener, tree);
 
 		string expectedOutput = readFile(pathPrefix + expectedOutputFile);
-		ErrorCollector errCollector = declarationListener.getErrorCollector();
+		string output = obs->getPolymorphismOutput();
 		std::cout << "OUTPUT:" << std::endl;
-		std::cout << errCollector.getMsg() << std::endl;
+		std::cout << output << std::endl;
 		std::cout << "EXPECTED:" << std::endl;
 		std::cout << expectedOutput << std::endl;
-		ASSERT_EQ(errCollector.getMsg(), expectedOutput);
+		ASSERT_EQ(output, expectedOutput);
 	}
 
-	TEST(Polymorphism, Program_OverrideMethod) {
-		validatePolymorphism("OverrideMethod.bf", "OverrideMethod_expected.txt");
+	TEST(Polymorphism, Program_IncorrectVirtualOverrideUse) {
+		validatePolymorphism("IncorrectVirtualOverrideUse.bf", "IncorrectVirtualOverrideUse_expected.txt");
+	}
+
+	TEST(Polymorphism, Program_MandatoryOverrideKeyword) {
+		validatePolymorphism("MandatoryOverrideKeyword.bf", "MandatoryOverrideKeyword_expected.txt");
+	}
+
+	TEST(Polymorphism, Program_VirtualMethodNotFound) {
+		validatePolymorphism("VirtualMethodNotFound.bf", "VirtualMethodNotFound_expected.txt");
+	}
+
+	TEST(Polymorphism, Program_IllegalVirtualMethodOverload) {
+		validatePolymorphism("IllegalVirtualMethodOverload.bf", "IllegalVirtualMethodOverload_expected.txt");
 	}
 }

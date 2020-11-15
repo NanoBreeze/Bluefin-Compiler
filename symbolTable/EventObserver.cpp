@@ -124,12 +124,6 @@ void EventObserver::onEvent(SimpleTypeErrorEvent typeEventError, Type lhs, Type 
 	case SimpleTypeErrorEvent::INCOMPATIBLE_ARG_PARAM_TYPE:
 		typeOutput += "Function call argument type invalid. Expected: '" + lhs.type2str() + "', Found: '" + rhs.type2str() + "'\n";
 		break;
-
-		/*
-	case SimpleTypeErrorEvent::INCOMPATIBLE_ASSIGNMENT_TYPE:
-		typeOutput += "Incompatible assignment. Expected: '" + lhsTypeName + "', Found: '" + rhsTypeName + "'\n";
-		break;
-		*/
 	default:
 		assert(false);
 	}
@@ -159,7 +153,31 @@ void EventObserver::onEvent(FunctionCallTypeErrorEvent funcCallTypeErrorEvent, s
 	default:
 		assert(false);
 	}
+}
 
+void EventObserver::onEvent(PolymorphismErrorEvent e, string funcName) {
+	switch (e) {
+	case PolymorphismErrorEvent::FUNCTION_CANNOT_HAVE_OVERRIDE_SPECIFIER:
+		polymorphismOutput += "'override' specifier can be applied only to methods. '" + funcName + "' is a function\n";
+		break;
+	case PolymorphismErrorEvent::FUNCTION_CANNOT_HAVE_VIRTUAL_SPECIFIER:
+		polymorphismOutput += "'virtual' specifier can be applied only to methods. '" + funcName + "' is a function\n";
+		break;
+	case PolymorphismErrorEvent::CORRESPONDING_VIRTUAL_METHOD_NOT_FOUND:
+		polymorphismOutput += "No corresponding virtual method matches method '" + funcName + "'\n";
+		break;
+	case PolymorphismErrorEvent::MISSING_OVERRIDE_SPECIFIER:
+		polymorphismOutput += "Missing 'override' specifier for method '" + funcName + "'\n";
+		break;
+	case PolymorphismErrorEvent::NO_SUPERCLASS:
+		polymorphismOutput += "Cannot apply 'override' qualifier on method '" + funcName + "' since its class has no parent class\n";
+		break;
+	case PolymorphismErrorEvent::ILLEGAL_OVERLOAD_METHOD:
+		polymorphismOutput += "Derived class' method '" + funcName + "' has same name as parent class' method but doesn't override\n";
+		break;
+	default:
+		assert(false);
+	}
 }
 
 string EventObserver::getSymbolCategory(shared_ptr<Symbol> symbol) const

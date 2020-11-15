@@ -1,0 +1,3 @@
+Cannot apply 'override' qualifier on method 'f' since its class has no parent class
+'override' specifier can be applied only to methods. 'g' is a function
+'virtual' specifier can be applied only to methods. 'h' is a function

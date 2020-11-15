@@ -3,6 +3,7 @@
 #include <exception>
 #include "SymbolTable.h"
 #include "StructSymbol.h"
+#include "FunctionSymbol.h"
 #include "BuiltinTypeSymbol.h"
 #include "./Exceptions.h"
 
@@ -80,6 +81,33 @@ namespace bluefin {
 		} while (currStructSym = currStructSym->getSuperClass());
 
 		throw UnresolvedSymbolException(memberName);
+	}
+
+	bool SymbolTable::findCorrespondingVirtualMethod(const shared_ptr<FunctionSymbol> funcSym, const shared_ptr<StructSymbol> structSym) const {
+		shared_ptr<StructSymbol> currStructSym = structSym->getSuperClass();
+		string methodName = funcSym->getName();
+
+		while (currStructSym) {
+			shared_ptr<FunctionSymbol> resolvedFunc = dynamic_pointer_cast<FunctionSymbol>(currStructSym->resolve(methodName));
+			if (resolvedFunc && resolvedFunc->isVirtual()) { // a virtual function has been found with the same name! Now check that its return and arg types are the same
+				if (resolvedFunc->getType() != funcSym->getType()) return false;
+
+				vector<shared_ptr<Symbol>> resolvedParams = resolvedFunc->getParams();
+				vector<shared_ptr<Symbol>> currParams = funcSym->getParams();
+
+				if (resolvedParams.size() != currParams.size()) return false;
+				for (int i = 0; i < resolvedParams.size(); i++) {
+					if (resolvedParams[i]->getType() != currParams[i]->getType()) {
+						return false;
+					}
+				}
+
+				return true;
+			}
+			currStructSym = currStructSym->getSuperClass();
+		}
+
+		return false;
 	}
 
 	shared_ptr<Symbol> SymbolTable::getSymbolMatchingType(Type type) const {

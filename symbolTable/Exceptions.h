@@ -93,4 +93,21 @@ namespace bluefin {
 	private:
 		const string memberName;
 	};
+
+	class UnresolvedVirtualMethodException : public exception
+	{
+	public:
+		UnresolvedVirtualMethodException(const string methodName) : methodName{ methodName }
+		{}
+
+		const char* what() const override {
+			return
+				("A virtual method with name " + methodName + " could not be found in parent chain").c_str();
+		}
+
+	private:
+		const string methodName;
+
+
+	};
 }

@@ -27,7 +27,8 @@ void Declaration::enterFuncDef(bluefinParser::FuncDefContext* ctx) {
 	// almost identical to enterVarDecl(..)
 	const string retTypeName = ctx->type()->getText();
 	string funcName = ctx->ID()->getText();
-	shared_ptr<Symbol> funcSym = symbolFactory.createFunctionSymbol(funcName, Type{ retTypeName }, ctx->getStart()->getTokenIndex());
+	bool isVirtual = (ctx->Virtual() != nullptr);
+	shared_ptr<Symbol> funcSym = symbolFactory.createFunctionSymbol(funcName, Type{ retTypeName }, ctx->getStart()->getTokenIndex(), isVirtual);
 
 	try {
 		symbolTable.declare(funcSym, ctx);
@@ -45,95 +46,40 @@ void Declaration::enterFuncDef(bluefinParser::FuncDefContext* ctx) {
 void Declaration::exitFuncDef(bluefinParser::FuncDefContext* ctx)
 {
 	/* Check override specifier
-	- name, return type, and param types must match with superclasses
+	- superclass must exist
+	- name, return type, and param types must match superclass' (or its superclass') corresponding virtual method
 	- can only occur in methods, not in functions
 	- Also check if override specifier doesn't exist but is supposed to
 	*/
 
-	if (ctx->Override()) {
-		if (!currStructSym) {
-			errCollector.err(ErrorCollector::OVERRIDE_NO_FUNCTION);
-			goto finish;
-		}
-
-		shared_ptr<StructSymbol> superClass = currStructSym->getSuperClass();
-		if (!superClass) {
-			errCollector.err(ErrorCollector::OVERRIDE_MISSING_SUPERCLASS);
-			goto finish;
-		}
-
-		shared_ptr<Symbol> resolved = superClass->resolve(ctx->ID()->getText());
-		if (!resolved)  {
-			errCollector.err(ErrorCollector::OVERRIDE_UNRESOLVED_NAME);
-			goto finish;
-		}
-
-		shared_ptr<FunctionSymbol> resolvedFunc = dynamic_pointer_cast<FunctionSymbol>(resolved);
-		if (!resolvedFunc) {
-			errCollector.err(ErrorCollector::OVERRIDE_RESOLVED_NAME_BUT_NOT_METHOD);
-			goto finish;
-		}
-
-		if (resolvedFunc->getType() != currFunctionSym->getType()) {
-			errCollector.err(ErrorCollector::OVERRIDE_UNMATCHED_RETURN_TYPE);
-			goto finish;
-		}
-		
-		if (resolvedFunc->getParams().size() != currFunctionSym->getParams().size()) {
-			errCollector.err(ErrorCollector::OVERRIDE_UNMATCHED_PARAMETER_TYPES);
-			goto finish;
-		}
-
-		vector<shared_ptr<Symbol>> resolvedParams = resolvedFunc->getParams();
-		vector<shared_ptr<Symbol>> currParams = currFunctionSym->getParams();
-		assert(resolvedParams.size() == currParams.size());
-
-		for (int i = 0; i < resolvedParams.size(); i++) {
-			if (resolvedParams[i]->getType() != currParams[i]->getType()) {
-				errCollector.err(ErrorCollector::OVERRIDE_UNMATCHED_PARAMETER_TYPES);
-				goto finish;
-			}
-		}
-
-		errCollector.success(ErrorCollector::OVERRIDE_SUCCESSFUL);
-
+	string funcName = ctx->ID()->getText();
+	// A method can't contain 'virtual' and 'override'
+	if (ctx->Virtual()) {
+		if (!currStructSym) 
+			broadcastEvent(PolymorphismErrorEvent::FUNCTION_CANNOT_HAVE_VIRTUAL_SPECIFIER, funcName);
 	}
-	// this gets ugly
-	else {
+	else if (ctx->Override()) {
+		if (!currStructSym)
+			broadcastEvent(PolymorphismErrorEvent::FUNCTION_CANNOT_HAVE_OVERRIDE_SPECIFIER, funcName);
+		else if (!currStructSym->getSuperClass())
+			broadcastEvent(PolymorphismErrorEvent::NO_SUPERCLASS, funcName);
+		else {
+			// Note, find virtual method in parent chain
+			shared_ptr<FunctionSymbol> resolvedFunc = nullptr;
+			bool foundVirtMethod = symbolTable.findCorrespondingVirtualMethod(currFunctionSym, currStructSym);
+			if (!foundVirtMethod)
+				broadcastEvent(PolymorphismErrorEvent::CORRESPONDING_VIRTUAL_METHOD_NOT_FOUND, funcName);
+		}
+	}
+	else { 
 		if (currStructSym && currStructSym->getSuperClass()) {
-			string memberToSearchFor = ctx->ID()->getText();
-			shared_ptr<Symbol> resolved = currStructSym->getSuperClass()->resolve(memberToSearchFor);
-			if (resolved) {
-				broadcastEvent(SuccessEvent::RESOLVED_SYMBOL, resolved, currStructSym->getSuperClass());
-
-				shared_ptr<FunctionSymbol> resolvedFunc = dynamic_pointer_cast<FunctionSymbol>(resolved);
-				if (resolvedFunc &&
-					resolvedFunc->getType() == currFunctionSym->getType()) {
-
-					vector<shared_ptr<Symbol>> resolvedParams = resolvedFunc->getParams();
-					vector<shared_ptr<Symbol>> currParams = currFunctionSym->getParams();
-
-					if (resolvedParams.size() == currParams.size()) {
-						bool sameParamTypes = true;
-						for (int i = 0; i < resolvedParams.size(); i++) {
-							if (resolvedParams[i]->getType() != currParams[i]->getType()) {
-								sameParamTypes = false;
-							}
-						}
-						if (sameParamTypes) {
-							errCollector.err(ErrorCollector::OVERRIDE_SPECIFIER_NEEDED);
-						}
-					}
-				}
-			}
-			else {
-				broadcastEvent(ErrorEvent::UNRESOLVED_SYMBOL, memberToSearchFor, currStructSym->getSuperClass());
-			}
-
+			// the method doesn't contain the 'override' keyword. Check if it's supposed to (corresponding virtual method exists)
+			bool foundVirtMethod = symbolTable.findCorrespondingVirtualMethod(currFunctionSym, currStructSym);
+			if (foundVirtMethod)
+				broadcastEvent(PolymorphismErrorEvent::MISSING_OVERRIDE_SPECIFIER, funcName);
 		}
 	}
 
-	finish:
 	symbolTable.exitScope();
 	broadcastEvent(ScopeEvent::EXITING_SCOPE);
 	currFunctionSym = nullptr;
@@ -236,6 +182,13 @@ void Declaration::broadcastEvent(SuccessEvent e, shared_ptr<Symbol> sym, shared_
 void Declaration::broadcastEvent(ErrorEvent e, string symName, shared_ptr<StructSymbol> structSym) {
 	for ( shared_ptr<EventObserver> obs : eventObservers) {
 		obs->onEvent(e, symName, structSym);
+	}
+}
+
+void Declaration::broadcastEvent(PolymorphismErrorEvent e, string funcName)
+{
+	for (shared_ptr<EventObserver> obs : eventObservers) {
+		obs->onEvent(e, funcName);
 	}
 }
 

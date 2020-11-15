@@ -13,7 +13,6 @@ declare - a - c_var - t_bool
 declare - b - c_var - t_Base
 declare - f - c_function - t_void
 enterScope - Level 2
-resolve - Base::f - c_function - t_float
 exitScope - Level 2
 exitScope - Level 1
 declare - main - c_function - t_int

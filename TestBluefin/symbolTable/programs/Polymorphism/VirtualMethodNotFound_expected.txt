@@ -1,0 +1,6 @@
+No corresponding virtual method matches method 'a'
+No corresponding virtual method matches method 'b'
+No corresponding virtual method matches method 'nonExistant'
+No corresponding virtual method matches method 'i'
+No corresponding virtual method matches method 'normal'
+No corresponding virtual method matches method 'normal'
