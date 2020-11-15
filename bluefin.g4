@@ -2,7 +2,7 @@ grammar bluefin;
 
 program : (funcDef | varDecl | structDef)+ ;
 
-funcDef : type ID '(' paramList? ')' Override?  '{' stmt* '}' ;
+funcDef : Virtual? type ID '(' paramList? ')' Override?  '{' stmt* '}' ;
 
 type : builtinType
      | ID ;
@@ -88,6 +88,8 @@ BOOL: 'true' | 'false' ;
 STRING : '"' .*? '"' ;                // no escaping " for now
 
 Override: 'override' ;
+
+Virtual: 'virtual' ;
 
 ID : LETTER+;     // only characters
 

@@ -19,7 +19,7 @@ public:
     T__20 = 21, T__21 = 22, T__22 = 23, T__23 = 24, T__24 = 25, T__25 = 26, 
     T__26 = 27, T__27 = 28, T__28 = 29, TInt = 30, TFloat = 31, TString = 32, 
     TBool = 33, TVoid = 34, FLOAT = 35, BOOL = 36, STRING = 37, Override = 38, 
-    ID = 39, INT = 40, WS = 41, LINE_COMMENT = 42, MULTILINE_COMMENT = 43
+    Virtual = 39, ID = 40, INT = 41, WS = 42, LINE_COMMENT = 43, MULTILINE_COMMENT = 44
   };
 
   enum {
@@ -86,6 +86,7 @@ public:
     virtual size_t getRuleIndex() const override;
     TypeContext *type();
     antlr4::tree::TerminalNode *ID();
+    antlr4::tree::TerminalNode *Virtual();
     ParamListContext *paramList();
     antlr4::tree::TerminalNode *Override();
     std::vector<StmtContext *> stmt();
