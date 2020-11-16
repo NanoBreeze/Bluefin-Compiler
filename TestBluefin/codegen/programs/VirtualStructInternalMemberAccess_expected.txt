@@ -1,0 +1,57 @@
+; ModuleID = 'VirtualStructInternalMemberAccess.bf'
+source_filename = "VirtualStructInternalMemberAccess.bf"
+
+%Base = type { i32 (...)**, i32 }
+%Der = type { %Base, i32, i32 }
+
+@_vtable_Base = global [1 x i8*] [i8* bitcast (void (%Base*)* @_Base_one to i8*)]
+@_vtable_Der = global [1 x i8*] [i8* bitcast (void (%Der*)* @_Der_one to i8*)]
+
+define void @_Base_one(%Base* %this) {
+entry:
+  %memPtr_a = getelementptr %Base, %Base* %this, i32 0, i32 1
+  %loadtmp_a = load i32, i32* %memPtr_a, align 4
+  store i32 4, i32* %memPtr_a, align 4
+  ret void
+}
+
+define void @_ctor_Base(%Base* %this) {
+entry:
+  %memPtr_a = getelementptr %Base, %Base* %this, i32 0, i32 1
+  store i32 0, i32* %memPtr_a, align 4
+  ret void
+}
+
+define void @_Der_here(%Der* %this) {
+entry:
+  %memCast = bitcast %Der* %this to %Base*
+  %memPtr_a = getelementptr %Base, %Base* %memCast, i32 0, i32 1
+  %loadtmp_a = load i32, i32* %memPtr_a, align 4
+  store i32 5, i32* %memPtr_a, align 4
+  %memPtr_b = getelementptr %Der, %Der* %this, i32 0, i32 1
+  %loadtmp_b = load i32, i32* %memPtr_b, align 4
+  store i32 5, i32* %memPtr_b, align 4
+  ret void
+}
+
+define void @_Der_one(%Der* %this) {
+entry:
+  %memCast = bitcast %Der* %this to %Base*
+  %memPtr_a = getelementptr %Base, %Base* %memCast, i32 0, i32 1
+  %loadtmp_a = load i32, i32* %memPtr_a, align 4
+  store i32 123, i32* %memPtr_a, align 4
+  %memPtr_b = getelementptr %Der, %Der* %this, i32 0, i32 1
+  %loadtmp_b = load i32, i32* %memPtr_b, align 4
+  store i32 123, i32* %memPtr_b, align 4
+  %memPtr_c = getelementptr %Der, %Der* %this, i32 0, i32 2
+  %loadtmp_c = load i32, i32* %memPtr_c, align 4
+  store i32 123, i32* %memPtr_c, align 4
+  ret void
+}
+
+define void @_ctor_Der(%Der* %this) {
+entry:
+  %memCast = bitcast %Der* %this to %Base*
+  call void @_ctor_Base(%Base* %memCast)
+  ret void
+}

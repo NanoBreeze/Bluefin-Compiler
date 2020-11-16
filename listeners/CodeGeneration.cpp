@@ -1045,6 +1045,9 @@ GetElementPtrInst* CodeGeneration::createStructElementAddr(shared_ptr<StructSymb
     Value* zero = Builder->getInt32(0);
     size_t memberIndex = structSym->getFieldIndex(fieldName);
 
+    if (shouldLLVMStructTypeContainExplicitVPtr(structSym))
+        memberIndex++;
+
     // If this struct extends a parent struct, then in the generated IR code for this struct, the first member is the parent type,
     // which means we must increment the memberIndex by 1
     if (structSym->getSuperClass())

@@ -135,4 +135,12 @@ namespace CodeGenTests {
 	TEST(CodeGen, Program_StructDefVtableVptr) {
 		validateCodeGen("StructDefVtableVptr.bf", "StructDefVtableVptr_expected.txt");
 	}
+
+	TEST(CodeGen, Program_VirtualStructInternalMemberAccess) {
+		validateCodeGen("VirtualStructInternalMemberAccess.bf", "VirtualStructInternalMemberAccess_expected.txt");
+	}
+
+	TEST(CodeGen, Program_VirtualStructExternalMemberAccess) {
+		validateCodeGen("VirtualStructExternalMemberAccess.bf", "VirtualStructExternalMemberAccess_expected.txt");
+	}
 }

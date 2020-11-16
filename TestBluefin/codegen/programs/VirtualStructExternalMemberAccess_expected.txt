@@ -1,0 +1,61 @@
+; ModuleID = 'VirtualStructExternalMemberAccess.bf'
+source_filename = "VirtualStructExternalMemberAccess.bf"
+
+%Base = type { i32 (...)**, i32, i1 }
+%Der = type { %Base, i32 }
+
+@_vtable_Base = global [1 x i8*] [i8* bitcast (void (%Base*)* @_Base_one to i8*)]
+@_vtable_Der = global [2 x i8*] [i8* bitcast (void (%Der*)* @_Der_one to i8*), i8* bitcast (void (%Der*)* @_Der_two to i8*)]
+
+define void @_Base_one(%Base* %this) {
+entry:
+  ret void
+}
+
+define void @_ctor_Base(%Base* %this) {
+entry:
+  ret void
+}
+
+define void @_Der_one(%Der* %this) {
+entry:
+  ret void
+}
+
+define void @_Der_two(%Der* %this) {
+entry:
+  ret void
+}
+
+define void @_ctor_Der(%Der* %this) {
+entry:
+  %memCast = bitcast %Der* %this to %Base*
+  call void @_ctor_Base(%Base* %memCast)
+  ret void
+}
+
+define void @foo() {
+entry:
+  %alloctmp_base = alloca %Base, align 8
+  call void @_ctor_Base(%Base* %alloctmp_base)
+  %loadtmp_base = load %Base, %Base* %alloctmp_base, align 8
+  %memPtr_a = getelementptr %Base, %Base* %alloctmp_base, i32 0, i32 1
+  %loadtmp_a = load i32, i32* %memPtr_a, align 4
+  %addtmp = add i32 %loadtmp_a, 1
+  %loadtmp_base1 = load %Base, %Base* %alloctmp_base, align 8
+  %memPtr_b = getelementptr %Base, %Base* %alloctmp_base, i32 0, i32 2
+  %loadtmp_b = load i1, i1* %memPtr_b, align 1
+  store i1 true, i1* %memPtr_b, align 1
+  %alloctmp_der = alloca %Der, align 8
+  call void @_ctor_Der(%Der* %alloctmp_der)
+  %loadtmp_der = load %Der, %Der* %alloctmp_der, align 8
+  %memPtr_a2 = getelementptr %Der, %Der* %alloctmp_der, i32 0, i32 1
+  %loadtmp_a3 = load i32, i32* %memPtr_a2, align 4
+  store i32 2, i32* %memPtr_a2, align 4
+  %loadtmp_der4 = load %Der, %Der* %alloctmp_der, align 8
+  %memCast = bitcast %Der* %alloctmp_der to %Base*
+  %memPtr_b5 = getelementptr %Base, %Base* %memCast, i32 0, i32 2
+  %loadtmp_b6 = load i1, i1* %memPtr_b5, align 1
+  store i1 false, i1* %memPtr_b5, align 1
+  ret void
+}
