@@ -37,4 +37,7 @@ namespace bluefin {
 	// Given a VarDecl that's inside a struct (so it's a field), get the containing struct
 	// Returns null if not inside a struct. Somewhat duplicates isStructMethod(..)
 	shared_ptr<StructSymbol> getContainingStruct(bluefinParser::VarDeclContext* ctx, SymbolTable& symbolTable);
+
+	// Given the structSym, search in its class hierarchy for the closest override method that corresponds to every virtual method
+	vector<shared_ptr<FunctionSymbol>> getVTableMethods(shared_ptr<StructSymbol> structSym);
 }

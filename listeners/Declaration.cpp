@@ -27,8 +27,10 @@ void Declaration::enterFuncDef(bluefinParser::FuncDefContext* ctx) {
 	// almost identical to enterVarDecl(..)
 	const string retTypeName = ctx->type()->getText();
 	string funcName = ctx->ID()->getText();
-	bool isVirtual = (ctx->Virtual() != nullptr);
-	shared_ptr<Symbol> funcSym = symbolFactory.createFunctionSymbol(funcName, Type{ retTypeName }, ctx->getStart()->getTokenIndex(), isVirtual);
+	bool isVirtual = (ctx->Virtual() != nullptr); 
+	bool isOverride = (ctx->Override() != nullptr); 
+	// if either contains 'virtual' or 'override' specifiers, then the method belongs in the vtable
+	shared_ptr<Symbol> funcSym = symbolFactory.createFunctionSymbol(funcName, Type{ retTypeName }, ctx->getStart()->getTokenIndex(), isVirtual, isOverride);
 
 	try {
 		symbolTable.declare(funcSym, ctx);

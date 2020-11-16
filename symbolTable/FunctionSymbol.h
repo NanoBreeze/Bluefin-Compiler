@@ -20,8 +20,8 @@ namespace bluefin {
 	class FunctionSymbol : public Symbol {
 	public:
 
-		FunctionSymbol(const string& name, Type type, bool isVirtual, size_t tokenIndex) :
-			Symbol(name, type, tokenIndex), isFunctionVirtual{ isVirtual }
+		FunctionSymbol(const string& name, Type type, bool isVirtual, bool isOverride, size_t tokenIndex) :
+			Symbol(name, type, tokenIndex), isFunctionVirtual{ isVirtual }, isFunctionOverride {isOverride}
 		{}
 
 		void attachParam(shared_ptr<Symbol>); 
@@ -30,8 +30,11 @@ namespace bluefin {
 
 		inline bool isVirtual() const { return isFunctionVirtual; }
 
+		inline bool isOverride() const { return isFunctionOverride; }
+
 	private:
 		vector<shared_ptr<Symbol>> params;
 		bool isFunctionVirtual;
+		bool isFunctionOverride;
 	};
 }

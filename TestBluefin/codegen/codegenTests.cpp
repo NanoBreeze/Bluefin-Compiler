@@ -43,7 +43,6 @@ namespace CodeGenTests {
 		walker.walk(&resolutionListener, tree);
 
 		string resolutionOutput = obs->getOutput();
-		//std::cout << resolutionOutput << std::endl;
 
 		DecorateExprWithTypes decorateExprListener(symFact, symTab);
 		decorateExprListener.attachEventObserver(obs);
@@ -55,7 +54,6 @@ namespace CodeGenTests {
 
 		string output = generator.dump();
 		bool ok = generator.isCodeGenOK();
-
 
 		string expectedOutput = SymbolTableTests::readFile(pathPrefix + expectedOutputFile);
 		std::cout << "OUTPUT:" << std::endl;
@@ -132,5 +130,9 @@ namespace CodeGenTests {
 
 	TEST(CodeGen, Program_StructInheritanceExternalAccess) {
 		validateCodeGen("StructInheritanceExternalAccess.bf", "StructInheritanceExternalAccess_expected.txt");
+	}
+
+	TEST(CodeGen, Program_StructDefVtableVptr) {
+		validateCodeGen("StructDefVtableVptr.bf", "StructDefVtableVptr_expected.txt");
 	}
 }

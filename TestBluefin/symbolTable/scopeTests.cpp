@@ -210,7 +210,7 @@ namespace SymbolTableTests {
 
 		symtab.enterScope("First");
 		shared_ptr<Symbol> symA = make_shared<VariableSymbol>("a", Type::INT(), 0);
-		shared_ptr<Symbol> symAFunc = make_shared<FunctionSymbol>("a", Type::FLOAT(), 0, false);
+		shared_ptr<Symbol> symAFunc = make_shared<FunctionSymbol>("a", Type::FLOAT(), 0, false, false);
 		symtab.declare(symA);
 
 		ASSERT_THROW(symtab.declare(symAFunc), RedeclarationException);

@@ -264,7 +264,8 @@ void CodeGeneration::enterStructDef(bluefinParser::StructDefContext* ctx)
     bluefinToLLVMTypes.emplace(structSym->getType(), structType); 
 
 	// Create the Function/method here so that later, internal VarDecl (fields) can forward reference them
-    for (auto funcSym : structSym->getMethods()) {
+    vector<shared_ptr<FunctionSymbol>> methods = structSym->getMethods();
+    for (auto funcSym : methods) {
         Function* F = createFunction(funcSym, structType);
 		BasicBlock* BB = BasicBlock::Create(*TheContext, "entry", F);
 		Builder->SetInsertPoint(BB);
@@ -279,6 +280,28 @@ void CodeGeneration::enterStructDef(bluefinParser::StructDefContext* ctx)
 
         methodToLLVMFunctions.emplace(funcSym, F);
     }
+
+    // Now create the vtable if any methods were declared virtual
+    vector<shared_ptr<FunctionSymbol>> vtableMethods = getVTableMethods(structSym);
+
+    if (vtableMethods.size() > 0) {
+		vector<Constant*> virtualMethodPtrs;
+		for (auto funcSym : vtableMethods) {
+			if (funcSym->isVirtual() || funcSym->isOverride()) {
+				Function* F = methodToLLVMFunctions.at(funcSym);
+				PointerType* u8PtrType = LLVMType::getInt8PtrTy(*TheContext);
+				Constant* virtualMethodPtr = ConstantExpr::getBitCast(F, u8PtrType);
+				virtualMethodPtrs.push_back(virtualMethodPtr);
+			}
+		}
+
+        ArrayType* arrType = ArrayType::get(LLVMType::getInt8PtrTy(*TheContext), virtualMethodPtrs.size());
+        Constant* constantArr = ConstantArray::get(arrType, virtualMethodPtrs);
+
+        GlobalVariable* glob = new GlobalVariable(*TheModule, constantArr->getType(), false,
+            GlobalVariable::LinkageTypes::ExternalLinkage, constantArr, "_vtable_" + structSym->getName());
+    }
+
 
     Function* ctor = createCtor(structType);
     BasicBlock* BB = BasicBlock::Create(*TheContext, "entry", ctor);
