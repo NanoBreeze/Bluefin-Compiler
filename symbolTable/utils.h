@@ -40,4 +40,6 @@ namespace bluefin {
 
 	// Given the structSym, search in its class hierarchy for the closest override method that corresponds to every virtual method
 	vector<shared_ptr<FunctionSymbol>> getVTableMethods(shared_ptr<StructSymbol> structSym);
+
+	bool shouldLLVMStructTypeContainExplicitVPtr(const shared_ptr<StructSymbol> structSym);
 }

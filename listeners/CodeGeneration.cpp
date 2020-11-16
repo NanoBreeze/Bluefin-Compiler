@@ -1022,6 +1022,11 @@ Function* CodeGeneration::createGlobalVarDeclFunction(string id) const
 StructType* CodeGeneration::createStruct(shared_ptr<StructSymbol> structSym) const
 {
     vector<LLVMType*> members;
+    if (shouldLLVMStructTypeContainExplicitVPtr(structSym)) {
+		LLVMType* fPtr = FunctionType::get(LLVMType::getInt32Ty(*TheContext), true);
+		members.push_back(fPtr->getPointerTo()->getPointerTo());
+    }
+
     if (shared_ptr<StructSymbol> parentSym = structSym->getSuperClass()) {
         members.push_back(getLLVMType(parentSym->getType()));
     }

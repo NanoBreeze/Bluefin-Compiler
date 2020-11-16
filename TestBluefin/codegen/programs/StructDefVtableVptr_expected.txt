@@ -1,0 +1,95 @@
+; ModuleID = 'StructDefVtableVptr.bf'
+source_filename = "StructDefVtableVptr.bf"
+
+%Base = type { i32 (...)** }
+%Der = type { %Base }
+%DerDer = type { %Der, i1 }
+%NonVirtualBase = type {}
+%VirtualDer = type { i32 (...)**, %NonVirtualBase, i32 }
+
+@_vtable_Base = global [2 x i8*] [i8* bitcast (void (%Base*)* @_Base_one to i8*), i8* bitcast (i32 (%Base*, i1)* @_Base_two to i8*)]
+@_vtable_Der = global [3 x i8*] [i8* bitcast (void (%Der*)* @_Der_one to i8*), i8* bitcast (i32 (%Der*, i1)* @_Der_two to i8*), i8* bitcast (i1 (%Der*)* @_Der_three to i8*)]
+@_vtable_DerDer = global [3 x i8*] [i8* bitcast (void (%Der*)* @_Der_one to i8*), i8* bitcast (i32 (%DerDer*, i1)* @_DerDer_two to i8*), i8* bitcast (i1 (%Der*)* @_Der_three to i8*)]
+@_vtable_VirtualDer = global [1 x i8*] [i8* bitcast (void (%VirtualDer*)* @_VirtualDer_here to i8*)]
+
+define void @_Base_one(%Base* %this) {
+entry:
+  ret void
+}
+
+define i32 @_Base_two(%Base* %this, i1 %a) {
+entry:
+  %alloctmp_a = alloca i1, align 1
+  store i1 %a, i1* %alloctmp_a, align 1
+  ret i32 3
+}
+
+define void @_ctor_Base(%Base* %this) {
+entry:
+  ret void
+}
+
+define void @_Der_one(%Der* %this) {
+entry:
+  ret void
+}
+
+define i1 @_Der_three(%Der* %this) {
+entry:
+  ret i1 true
+}
+
+define i32 @_Der_two(%Der* %this, i1 %a) {
+entry:
+  %alloctmp_a = alloca i1, align 1
+  store i1 %a, i1* %alloctmp_a, align 1
+  ret i32 4
+}
+
+define void @_Der_notVirtualMethod(%Der* %this) {
+entry:
+  ret void
+}
+
+define void @_ctor_Der(%Der* %this) {
+entry:
+  %memCast = bitcast %Der* %this to %Base*
+  call void @_ctor_Base(%Base* %memCast)
+  ret void
+}
+
+define i32 @_DerDer_two(%DerDer* %this, i1 %a) {
+entry:
+  %alloctmp_a = alloca i1, align 1
+  store i1 %a, i1* %alloctmp_a, align 1
+  ret i32 5
+}
+
+define void @_ctor_DerDer(%DerDer* %this) {
+entry:
+  %memCast = bitcast %DerDer* %this to %Der*
+  call void @_ctor_Der(%Der* %memCast)
+  ret void
+}
+
+define void @_NonVirtualBase_one(%NonVirtualBase* %this) {
+entry:
+  ret void
+}
+
+define void @_ctor_NonVirtualBase(%NonVirtualBase* %this) {
+entry:
+  ret void
+}
+
+define void @_VirtualDer_here(%VirtualDer* %this) {
+entry:
+  ret void
+}
+
+define void @_ctor_VirtualDer(%VirtualDer* %this) {
+entry:
+  %memCast = bitcast %VirtualDer* %this to %NonVirtualBase*
+  call void @_ctor_NonVirtualBase(%NonVirtualBase* %memCast)
+  ret void
+}

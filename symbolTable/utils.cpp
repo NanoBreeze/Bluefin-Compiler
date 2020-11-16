@@ -106,4 +106,36 @@ namespace bluefin {
 
 		return vtableMethods;
 	}
+
+	bool shouldLLVMStructTypeContainExplicitVPtr(const shared_ptr<StructSymbol> structSym)
+	{
+		// If a class' hierarchy (parent and recursive parents) contains a virtual method, then
+		// no need for explicit vptr since a parent would already have it
+		// If the hierarchy doesn't contain a virtual method but our current class contains it
+		// then we do need explicit vptr 
+
+		bool isHierarchyContainsVirtualMethod = false; // hierarchy here excludes the current struct
+		shared_ptr<StructSymbol> currStruct = structSym->getSuperClass();
+		while (currStruct) {
+			for (auto method : currStruct->getMethods()) {
+				if (method->isVirtual()) {
+					isHierarchyContainsVirtualMethod = true;
+					break;
+				}
+			}
+			currStruct = currStruct->getSuperClass();
+		}
+
+		if (isHierarchyContainsVirtualMethod) return false;
+
+		bool isStructContainsVirtualMethod = false;
+		for (auto method : structSym->getMethods()) {
+			if (method->isVirtual()) {
+				isStructContainsVirtualMethod = true;
+				break;
+			}
+		}
+
+		return isStructContainsVirtualMethod;
+	}
 }
