@@ -143,4 +143,8 @@ namespace CodeGenTests {
 	TEST(CodeGen, Program_VirtualStructExternalMemberAccess) {
 		validateCodeGen("VirtualStructExternalMemberAccess.bf", "VirtualStructExternalMemberAccess_expected.txt");
 	}
+
+	TEST(CodeGen, Program_VirtualStructMethodCalls) {
+		validateCodeGen("VirtualStructMethodCalls.bf", "VirtualStructMethodCalls_expected.txt");
+	}
 }

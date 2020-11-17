@@ -1,6 +1,7 @@
 #include "utils.h"
 #include "SymbolTable.h"
 #include "StructSymbol.h"
+#include "Exceptions.h"
 
 #include <deque>
 
@@ -137,5 +138,15 @@ namespace bluefin {
 		}
 
 		return isStructContainsVirtualMethod;
+	}
+
+	size_t getVTableMethodIndex(shared_ptr<StructSymbol> structSym, string methodName) {
+		vector<shared_ptr<FunctionSymbol>> methods = getVTableMethods(structSym);
+		for (int i = 0; i < methods.size(); i++) {
+			if (methods[i]->getName() == methodName)
+				return i;
+		}
+
+		throw MethodNoIndexInVTableException(methodName);
 	}
 }

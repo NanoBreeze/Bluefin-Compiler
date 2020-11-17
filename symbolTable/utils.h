@@ -42,4 +42,6 @@ namespace bluefin {
 	vector<shared_ptr<FunctionSymbol>> getVTableMethods(shared_ptr<StructSymbol> structSym);
 
 	bool shouldLLVMStructTypeContainExplicitVPtr(const shared_ptr<StructSymbol> structSym);
+
+	size_t getVTableMethodIndex(shared_ptr<StructSymbol> structSym, string methodName);
 }

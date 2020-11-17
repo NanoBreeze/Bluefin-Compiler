@@ -633,6 +633,7 @@ void CodeGeneration::exitFuncCall(bluefinParser::FuncCallContext* ctx)
 
     string id = ctx->ID()->getText();
     Function* F = nullptr;
+    Value* methodPtr = nullptr;
     vector<Value*> args;
 
     // The resolved FunctionSymbol that corresponds to this funcCall is either a global function or a struct's method
@@ -641,12 +642,26 @@ void CodeGeneration::exitFuncCall(bluefinParser::FuncCallContext* ctx)
     if (isStructMethod(funcSym, symbolTable)) {
         F = methodToLLVMFunctions.at(funcSym);
         shared_ptr<StructSymbol> structSymContainer = getContainingStruct(funcSym, symbolTable);
+
+        if (funcSym->isVirtual() || funcSym->isOverride()) { // if it contains the 'virtual' or 'override' keyword, then use vptr
+            LLVMType* funcTypePtr = F->getType();
+			Value* vptrCasted = Builder->CreateBitOrPointerCast(currentMethodThis, funcTypePtr->getPointerTo(), "memCast");
+
+            int memberIndex = getVTableMethodIndex(structSymContainer, funcSym->getName());
+			Value* index = Builder->getInt64(memberIndex);
+			Value* methodPtrPtr = Builder->CreateGEP(funcTypePtr, vptrCasted, index, "vtableMethodPtr");
+
+            methodPtr = Builder->CreateLoad(methodPtrPtr, "vtableMethod");
+            assert(isa<FunctionType>(funcTypePtr->getPointerElementType()));
+            string str = dump();
+        }
+
         LLVMType* t = getLLVMType(structSymContainer->getType());
-    
         assert(t->getPointerTo() == F->getArg(0)->getType());
             
-        // We bitcast the "this" ptr in case we're calling a parent's method. If not, bitcasting will simply return the original "this" ptr, unchanged 
-        // Alternatively, we could just bitcast it to F->getArg(0)->getType(), but finding the actual struct type is safer, in case we made a mistake
+        // We bitcast the "this" ptr in case we're calling a parent's method. If not, bitcasting will 
+        // simply return the original "this" ptr, unchanged. Alternatively, we could just bitcast it 
+        // to F->getArg(0)->getType(), but finding the actual struct type is safer, in case we made a mistake
         Value* currentMethodThisCasted = Builder->CreateBitOrPointerCast(currentMethodThis, t->getPointerTo(), "memCast");
         args.push_back(currentMethodThisCasted);
     }
@@ -662,8 +677,12 @@ void CodeGeneration::exitFuncCall(bluefinParser::FuncCallContext* ctx)
 
     string twine = (F->getReturnType() == LLVMType::getVoidTy(*TheContext)) ? "" : "calltmp"; // if the function ret type is void
     // the function call must not have a name (other the return value doesn't exist). Otherwise, Builder->CreateCall(..) will trigger an assertion
-    Value* funcRetVal = Builder->CreateCall(F, args, twine);
 
+    // methodPtr is used to handle vtable calls
+	Value* funcRetVal = methodPtr ? Builder->CreateCall(dyn_cast<FunctionType>(F->getType()->getPointerElementType()), methodPtr, args, twine)
+								  : Builder->CreateCall(F, args, twine);
+
+	string str = dump();
     // We want to check whether the return value of the function call needs to be promoted
     funcRetVal = createCastIfNecessary(ctx, funcRetVal);
     values.emplace(ctx, funcRetVal);
@@ -1042,7 +1061,6 @@ GetElementPtrInst* CodeGeneration::createStructElementAddr(shared_ptr<StructSymb
 {
     LLVMType* structType = getLLVMType(structSym->getType());
 
-    Value* zero = Builder->getInt32(0);
     size_t memberIndex = structSym->getFieldIndex(fieldName);
 
     if (shouldLLVMStructTypeContainExplicitVPtr(structSym))
@@ -1053,6 +1071,7 @@ GetElementPtrInst* CodeGeneration::createStructElementAddr(shared_ptr<StructSymb
     if (structSym->getSuperClass())
         memberIndex++;
 
+    Value* zero = Builder->getInt32(0);
     Value* index = Builder->getInt32(memberIndex);
     Value* indices[2] = { zero, index };
 

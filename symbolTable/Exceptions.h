@@ -107,7 +107,22 @@ namespace bluefin {
 
 	private:
 		const string methodName;
+	};
 
+	// Used if we can't find the index of the method in a vtable
+	class MethodNoIndexInVTableException : public exception
+	{
+	public:
+		MethodNoIndexInVTableException(const string methodName) :
+		methodName { methodName }
+		{}
 
+		const char* what() const override {
+			return
+				("The index of " + methodName + " could not be found. It doesn't exist in the vtable").c_str();
+		}
+
+	private:
+		const string methodName;
 	};
 }
