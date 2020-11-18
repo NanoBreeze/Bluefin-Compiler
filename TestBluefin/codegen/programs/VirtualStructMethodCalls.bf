@@ -28,3 +28,12 @@ struct Der extends Base {
 		virtualMethod();				// calls Base::virtualMethod() since we don't override
 	}
 };
+
+void foo() {
+	Base base;
+	Der der;
+
+	base.one(true) && der.one(false);	// check that virtual methods can be used in expressions
+	der.virtualMethod();				// call virtual method defined only in base impl.
+	base.nonVirtualMethod(1);			// make normal method call
+}

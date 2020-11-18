@@ -174,7 +174,6 @@ void CodeGeneration::exitVarDecl(bluefinParser::VarDeclContext* ctx)
 
             Function* varDeclCtor = structHelper.getCtor(structOfVarDeclType);
             GetElementPtrInst* memPtr = createStructElementAddr(structSym, id, thisPtr);
-            string str = dump();
             Builder->CreateCall(varDeclCtor, memPtr);
         }
         if (ctx->expr()) {
@@ -281,28 +280,6 @@ void CodeGeneration::enterStructDef(bluefinParser::StructDefContext* ctx)
         methodToLLVMFunctions.emplace(funcSym, F);
     }
 
-    // Now create the vtable if any methods were declared virtual
-    vector<shared_ptr<FunctionSymbol>> vtableMethods = getVTableMethods(structSym);
-
-    if (vtableMethods.size() > 0) {
-		vector<Constant*> virtualMethodPtrs;
-		for (auto funcSym : vtableMethods) {
-			if (funcSym->isVirtual() || funcSym->isOverride()) {
-				Function* F = methodToLLVMFunctions.at(funcSym);
-				PointerType* u8PtrType = LLVMType::getInt8PtrTy(*TheContext);
-				Constant* virtualMethodPtr = ConstantExpr::getBitCast(F, u8PtrType);
-				virtualMethodPtrs.push_back(virtualMethodPtr);
-			}
-		}
-
-        ArrayType* arrType = ArrayType::get(LLVMType::getInt8PtrTy(*TheContext), virtualMethodPtrs.size());
-        Constant* constantArr = ConstantArray::get(arrType, virtualMethodPtrs);
-
-        GlobalVariable* glob = new GlobalVariable(*TheModule, constantArr->getType(), false,
-            GlobalVariable::LinkageTypes::ExternalLinkage, constantArr, "_vtable_" + structSym->getName());
-    }
-
-
     Function* ctor = createCtor(structType);
     BasicBlock* BB = BasicBlock::Create(*TheContext, "entry", ctor);
     Builder->SetInsertPoint(BB);
@@ -318,6 +295,36 @@ void CodeGeneration::enterStructDef(bluefinParser::StructDefContext* ctx)
         // We bitcast the "this" ptr in case we're calling a parent's method. If not, bitcasting will simply return the original "this" ptr, unchanged 
         Value* currentMethodThisCasted = Builder->CreateBitOrPointerCast(currentMethodThis, t, "memCast");
         Builder->CreateCall(parentCtor, currentMethodThisCasted);
+    }
+
+    // Now create the vtable if any methods were declared virtual, and assign the vptr correctly.
+    // Make sure the vptr is set after the superclass ctor call
+    vector<shared_ptr<FunctionSymbol>> vtableMethods = getVTableMethods(structSym);
+    if (vtableMethods.size() > 0) {
+		vector<Constant*> virtualMethodPtrs;
+		for (auto funcSym : vtableMethods) {
+			if (funcSym->isVirtual() || funcSym->isOverride()) {
+				Function* F = methodToLLVMFunctions.at(funcSym);
+				PointerType* u8PtrType = LLVMType::getInt8PtrTy(*TheContext);
+				Constant* virtualMethodPtr = ConstantExpr::getBitCast(F, u8PtrType);
+				virtualMethodPtrs.push_back(virtualMethodPtr);
+			}
+		}
+
+        assert(virtualMethodPtrs.size() > 0);
+        ArrayType* arrType = ArrayType::get(LLVMType::getInt8PtrTy(*TheContext), virtualMethodPtrs.size());
+        Constant* constantArr = ConstantArray::get(arrType, virtualMethodPtrs);
+
+        GlobalVariable* vtable = new GlobalVariable(*TheModule, constantArr->getType(), false,
+            GlobalVariable::LinkageTypes::ExternalLinkage, constantArr, "_vtable_" + structSym->getName());
+
+        // Now store vptr
+        // Personally, I think i8Ptr works just as well, but looking at C++'s LLVM IR, they use i32 for the vptr, whereas
+        // actually function pointers in the vtable are casted to i8*
+		LLVMType* i32 = FunctionType::get(LLVMType::getInt32Ty(*TheContext), true);
+		Value* vptrCastedPtr = Builder->CreateBitOrPointerCast(currentMethodThis, i32->getPointerTo()->getPointerTo()->getPointerTo(), "memCast");
+        Constant* vtableCasted = ConstantExpr::getBitCast(vtable, i32->getPointerTo()->getPointerTo());
+        Builder->CreateStore(vtableCasted, vptrCastedPtr);
     }
 }
 
@@ -653,7 +660,6 @@ void CodeGeneration::exitFuncCall(bluefinParser::FuncCallContext* ctx)
 
             methodPtr = Builder->CreateLoad(methodPtrPtr, "vtableMethod");
             assert(isa<FunctionType>(funcTypePtr->getPointerElementType()));
-            string str = dump();
         }
 
         LLVMType* t = getLLVMType(structSymContainer->getType());
@@ -682,7 +688,6 @@ void CodeGeneration::exitFuncCall(bluefinParser::FuncCallContext* ctx)
 	Value* funcRetVal = methodPtr ? Builder->CreateCall(dyn_cast<FunctionType>(F->getType()->getPointerElementType()), methodPtr, args, twine)
 								  : Builder->CreateCall(F, args, twine);
 
-	string str = dump();
     // We want to check whether the return value of the function call needs to be promoted
     funcRetVal = createCastIfNecessary(ctx, funcRetVal);
     values.emplace(ctx, funcRetVal);

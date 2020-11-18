@@ -14,6 +14,8 @@ entry:
 
 define void @_ctor_Base(%Base* %this) {
 entry:
+  %memCast = bitcast %Base* %this to i32 (...)***
+  store i32 (...)** bitcast ([1 x i8*]* @_vtable_Base to i32 (...)**), i32 (...)*** %memCast, align 8
   ret void
 }
 
@@ -31,6 +33,8 @@ define void @_ctor_Der(%Der* %this) {
 entry:
   %memCast = bitcast %Der* %this to %Base*
   call void @_ctor_Base(%Base* %memCast)
+  %memCast1 = bitcast %Der* %this to i32 (...)***
+  store i32 (...)** bitcast ([2 x i8*]* @_vtable_Der to i32 (...)**), i32 (...)*** %memCast1, align 8
   ret void
 }
 
