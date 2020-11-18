@@ -1,5 +1,5 @@
 /*
-Call a virtual method by using the vptr
+Call a virtual method by using the vptr. Applies to both internal and external method calls
 */
 
 struct Base {
@@ -21,6 +21,7 @@ struct Base {
 
 struct Der extends Base {
 	bool one(bool val) override {
+		one(val);
 		return val;
 	}
 

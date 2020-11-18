@@ -1,0 +1,116 @@
+; ModuleID = 'VirtualStructMethodCalls.bf'
+source_filename = "VirtualStructMethodCalls.bf"
+
+%Base = type { i32 (...)**, i32 }
+%Der = type { %Base }
+
+@_vtable_Base = global [2 x i8*] [i8* bitcast (void (%Base*)* @_Base_virtualMethod to i8*), i8* bitcast (i1 (%Base*, i1)* @_Base_one to i8*)]
+@_vtable_Der = global [2 x i8*] [i8* bitcast (void (%Base*)* @_Base_virtualMethod to i8*), i8* bitcast (i1 (%Der*, i1)* @_Der_one to i8*)]
+
+define void @_Base_virtualMethod(%Base* %this) {
+entry:
+  %memCast = bitcast %Base* %this to i1 (%Base*, i1)***
+  %vptrLoaded = load i1 (%Base*, i1)**, i1 (%Base*, i1)*** %memCast, align 8
+  %vtableMethodPtr = getelementptr i1 (%Base*, i1)*, i1 (%Base*, i1)** %vptrLoaded, i64 1
+  %vtableMethod = load i1 (%Base*, i1)*, i1 (%Base*, i1)** %vtableMethodPtr, align 8
+  %calltmp = call i1 %vtableMethod(%Base* %this, i1 true)
+  ret void
+}
+
+define i1 @_Base_one(%Base* %this, i1 %val) {
+entry:
+  %alloctmp_val = alloca i1, align 1
+  store i1 %val, i1* %alloctmp_val, align 1
+  call void @_Base_nonVirtualMethod(%Base* %this, i32 1)
+  %loadtmp_val = load i1, i1* %alloctmp_val, align 1
+  %nottmp = xor i1 %loadtmp_val, true
+  ret i1 %nottmp
+}
+
+define void @_Base_nonVirtualMethod(%Base* %this, i32 %val) {
+entry:
+  %alloctmp_val = alloca i32, align 4
+  store i32 %val, i32* %alloctmp_val, align 4
+  %memPtr_a = getelementptr %Base, %Base* %this, i32 0, i32 1
+  %loadtmp_a = load i32, i32* %memPtr_a, align 4
+  %loadtmp_val = load i32, i32* %alloctmp_val, align 4
+  %addtmp = add i32 %loadtmp_a, %loadtmp_val
+  %memCast = bitcast %Base* %this to void (%Base*)***
+  %vptrLoaded = load void (%Base*)**, void (%Base*)*** %memCast, align 8
+  %vtableMethodPtr = getelementptr void (%Base*)*, void (%Base*)** %vptrLoaded, i64 0
+  %vtableMethod = load void (%Base*)*, void (%Base*)** %vtableMethodPtr, align 8
+  call void %vtableMethod(%Base* %this)
+  ret void
+}
+
+define void @_ctor_Base(%Base* %this) {
+entry:
+  %memCast = bitcast %Base* %this to i32 (...)***
+  store i32 (...)** bitcast ([2 x i8*]* @_vtable_Base to i32 (...)**), i32 (...)*** %memCast, align 8
+  ret void
+}
+
+define i1 @_Der_one(%Der* %this, i1 %val) {
+entry:
+  %alloctmp_val = alloca i1, align 1
+  store i1 %val, i1* %alloctmp_val, align 1
+  %loadtmp_val = load i1, i1* %alloctmp_val, align 1
+  %memCast = bitcast %Der* %this to i1 (%Der*, i1)***
+  %vptrLoaded = load i1 (%Der*, i1)**, i1 (%Der*, i1)*** %memCast, align 8
+  %vtableMethodPtr = getelementptr i1 (%Der*, i1)*, i1 (%Der*, i1)** %vptrLoaded, i64 1
+  %vtableMethod = load i1 (%Der*, i1)*, i1 (%Der*, i1)** %vtableMethodPtr, align 8
+  %calltmp = call i1 %vtableMethod(%Der* %this, i1 %loadtmp_val)
+  %loadtmp_val1 = load i1, i1* %alloctmp_val, align 1
+  ret i1 %loadtmp_val1
+}
+
+define void @_Der_foo(%Der* %this) {
+entry:
+  %memCast = bitcast %Der* %this to void (%Base*)***
+  %vptrLoaded = load void (%Base*)**, void (%Base*)*** %memCast, align 8
+  %vtableMethodPtr = getelementptr void (%Base*)*, void (%Base*)** %vptrLoaded, i64 0
+  %vtableMethod = load void (%Base*)*, void (%Base*)** %vtableMethodPtr, align 8
+  %memCast1 = bitcast %Der* %this to %Base*
+  call void %vtableMethod(%Base* %memCast1)
+  ret void
+}
+
+define void @_ctor_Der(%Der* %this) {
+entry:
+  %memCast = bitcast %Der* %this to %Base*
+  call void @_ctor_Base(%Base* %memCast)
+  %memCast1 = bitcast %Der* %this to i32 (...)***
+  store i32 (...)** bitcast ([2 x i8*]* @_vtable_Der to i32 (...)**), i32 (...)*** %memCast1, align 8
+  ret void
+}
+
+define void @foo() {
+entry:
+  %alloctmp_base = alloca %Base, align 8
+  call void @_ctor_Base(%Base* %alloctmp_base)
+  %alloctmp_der = alloca %Der, align 8
+  call void @_ctor_Der(%Der* %alloctmp_der)
+  %loadtmp_base = load %Base, %Base* %alloctmp_base, align 8
+  %memCast = bitcast %Base* %alloctmp_base to i1 (%Base*, i1)***
+  %vptrLoaded = load i1 (%Base*, i1)**, i1 (%Base*, i1)*** %memCast, align 8
+  %vtableMethodPtr = getelementptr i1 (%Base*, i1)*, i1 (%Base*, i1)** %vptrLoaded, i64 1
+  %vtableMethod = load i1 (%Base*, i1)*, i1 (%Base*, i1)** %vtableMethodPtr, align 8
+  %calltmp = call i1 %vtableMethod(%Base* %alloctmp_base, i1 true)
+  %loadtmp_der = load %Der, %Der* %alloctmp_der, align 8
+  %memCast1 = bitcast %Der* %alloctmp_der to i1 (%Der*, i1)***
+  %vptrLoaded2 = load i1 (%Der*, i1)**, i1 (%Der*, i1)*** %memCast1, align 8
+  %vtableMethodPtr3 = getelementptr i1 (%Der*, i1)*, i1 (%Der*, i1)** %vptrLoaded2, i64 1
+  %vtableMethod4 = load i1 (%Der*, i1)*, i1 (%Der*, i1)** %vtableMethodPtr3, align 8
+  %calltmp5 = call i1 %vtableMethod4(%Der* %alloctmp_der, i1 false)
+  %andtmp = and i1 %calltmp, %calltmp5
+  %loadtmp_der6 = load %Der, %Der* %alloctmp_der, align 8
+  %memCast7 = bitcast %Der* %alloctmp_der to %Base*
+  %memCast8 = bitcast %Base* %memCast7 to void (%Base*)***
+  %vptrLoaded9 = load void (%Base*)**, void (%Base*)*** %memCast8, align 8
+  %vtableMethodPtr10 = getelementptr void (%Base*)*, void (%Base*)** %vptrLoaded9, i64 0
+  %vtableMethod11 = load void (%Base*)*, void (%Base*)** %vtableMethodPtr10, align 8
+  call void %vtableMethod11(%Base* %memCast7)
+  %loadtmp_base12 = load %Base, %Base* %alloctmp_base, align 8
+  call void @_Base_nonVirtualMethod(%Base* %alloctmp_base, i32 1)
+  ret void
+}

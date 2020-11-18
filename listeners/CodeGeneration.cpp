@@ -650,13 +650,22 @@ void CodeGeneration::exitFuncCall(bluefinParser::FuncCallContext* ctx)
         F = methodToLLVMFunctions.at(funcSym);
         shared_ptr<StructSymbol> structSymContainer = getContainingStruct(funcSym, symbolTable);
 
+        /* Sample code from C++ . Notice that we need to cast Base* to a triple pointer, to laod the double pointer (vptr) and then offset from that
+            %5 = load %class.Base*, %class.Base** %4, align 8
+		    %6 = bitcast %class.Base* %5 to i32 (%class.Base*)***
+			%7 = load i32 (%class.Base*)**, i32 (%class.Base*)*** %6, align 8
+			%8 = getelementptr inbounds i32 (%class.Base*)*, i32 (%class.Base*)** %7, i64 0
+			%9 = load i32 (%class.Base*)*, i32 (%class.Base*)** %8, align 8
+			%10 = call i32 %9(%class.Base* %5)
+        */
         if (funcSym->isVirtual() || funcSym->isOverride()) { // if it contains the 'virtual' or 'override' keyword, then use vptr
             LLVMType* funcTypePtr = F->getType();
-			Value* vptrCasted = Builder->CreateBitOrPointerCast(currentMethodThis, funcTypePtr->getPointerTo(), "memCast");
+			Value* triplePtr = Builder->CreateBitOrPointerCast(currentMethodThis, funcTypePtr->getPointerTo()->getPointerTo(), "memCast");
+            Value* vptrLoaded = Builder->CreateLoad(triplePtr, "vptrLoaded");
 
             int memberIndex = getVTableMethodIndex(structSymContainer, funcSym->getName());
 			Value* index = Builder->getInt64(memberIndex);
-			Value* methodPtrPtr = Builder->CreateGEP(funcTypePtr, vptrCasted, index, "vtableMethodPtr");
+			Value* methodPtrPtr = Builder->CreateGEP(funcTypePtr, vptrLoaded, index, "vtableMethodPtr");
 
             methodPtr = Builder->CreateLoad(methodPtrPtr, "vtableMethod");
             assert(isa<FunctionType>(funcTypePtr->getPointerElementType()));
@@ -799,6 +808,20 @@ void CodeGeneration::exitMethodCall(bluefinParser::MethodCallContext* ctx)
 	assert(t->getPointerTo() == F->getArg(0)->getType());
 	Value* leftAddrCasted = Builder->CreateBitOrPointerCast(leftAddr, t->getPointerTo(), "memCast");
 
+    Value* methodPtr = nullptr;
+    if (funcSym->isVirtual() || funcSym->isOverride()) { // if it contains the 'virtual' or 'override' keyword, then use vptr
+        LLVMType* funcTypePtr = F->getType();
+        Value* triplePtr = Builder->CreateBitOrPointerCast(leftAddrCasted, funcTypePtr->getPointerTo()->getPointerTo(), "memCast");
+        Value* vptrLoaded = Builder->CreateLoad(triplePtr, "vptrLoaded");
+
+        int memberIndex = getVTableMethodIndex(structSymContainer, funcSym->getName());
+        Value* index = Builder->getInt64(memberIndex);
+        Value* methodPtrPtr = Builder->CreateGEP(funcTypePtr, vptrLoaded, index, "vtableMethodPtr");
+
+        methodPtr = Builder->CreateLoad(methodPtrPtr, "vtableMethod");
+        assert(isa<FunctionType>(funcTypePtr->getPointerElementType()));
+    }
+
     vector<Value*> args;
     args.push_back(leftAddrCasted);
 	for (int i = 0; i < funcSym->getParams().size(); i++) {
@@ -807,7 +830,10 @@ void CodeGeneration::exitMethodCall(bluefinParser::MethodCallContext* ctx)
 	}
 
     string twine = (F->getReturnType() == LLVMType::getVoidTy(*TheContext)) ? "" : "calltmp"; // if the function ret type is void
-	Value* funcRetVal = Builder->CreateCall(F, args, twine);
+
+	Value* funcRetVal = methodPtr ? Builder->CreateCall(dyn_cast<FunctionType>(F->getType()->getPointerElementType()), methodPtr, args, twine)
+								  : Builder->CreateCall(F, args, twine);
+
     funcRetVal = createCastIfNecessary(ctx, funcRetVal);
 
     values.emplace(ctx, funcRetVal);
