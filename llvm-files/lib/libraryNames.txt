@@ -1,0 +1,10 @@
+LLVMAnalysis.lib
+LLVMBinaryFormat.lib
+LLVMBitstreamReader.lib
+LLVMCore.lib
+LLVMDemangle.lib
+LLVMRemarks.lib
+LLVMSupport.lib
+LLVMTableGen.lib
+LLVMTableGenGlobalSel.lib
+LLVMTransformUtils.lib
